@@ -36,7 +36,7 @@ mt19937state *mt19937var;
 const char *argp_program_version =
     "OpenGraph 1.0";
 const char *argp_program_bug_address =
-    "<atmughrabi@gmail.com><atmughra@ncsu.edu>";
+    "<atmughrabi@gmail.com> <atmughra@ncsu.edu>";
 /* Program documentation. */
 static char doc[] =
     "OpenGraph is an open source graph processing framework, it is designed to be a portable benchmarking suite for various graph processing algorithms.";

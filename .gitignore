@@ -2,10 +2,7 @@
 00_graph_bench/bin
 00_graph_bench/build
 
-03_Reading/
-
 nohup.out
 00_graph_bench/nohup.out
-00_graph_bench/labelmap
 
 
