@@ -49,7 +49,7 @@ static struct argp_option options[] =
 {
     {
         "graph-file",         'f', "<FILE>",      0,
-        "\nEdge list represents the graph binary format to run the algorithm textual format change graph-file-format"
+        "\nEdgelist representing the graph,in binary format to run the algorithm. Or if in textual format change graph-file-format"
     },
     {
         "graph-file-format",  'z', "[TEXT|BIN|CSR:1]",      0,
@@ -111,8 +111,8 @@ static struct argp_option options[] =
         "\nGenerate random weights don't load from graph file. Check ->graphConfig.h #define WEIGHTED 1 beforehand then recompile using this option"
     },
     {
-        "symmetries",        's', 0,      0,
-        "\nSymmetric graph, create a set of incoming edges"
+        "symmetrize",        's', 0,      0,
+        "\nSymmetrize graph, create a set of incoming edges"
     },
     {
         "stats",             'x', 0,      0,

@@ -157,17 +157,29 @@ OpenGraph can handle multiple representations of the graph structure in memory, 
 # OpenGraph Options 
 
 ```
-Usage: open-graph [OPTION...]
+Usage: open-graph-openmp [OPTION...]
             -f <graph file> -d [data structure] -a [algorithm] -r [root] -n
             [num threads] [-h -c -s -w]
 OpenGraph is an open source graph processing framework, it is designed to be a
 portable benchmarking suite for various graph processing algorithms.
 
   -a, --algorithm=[DEFAULT:0]   
-                             [0]-BFS, [1]-Page-rank, [2]-SSSP-DeltaStepping,
-                             [3]-SSSP-BellmanFord, [4]-DFS,[5]-SPMV,
-                             [6]-Connected-Components, [7]-Triangle Counting,
+                             [0]-BFS
+                             [1]-Page-rank
+                             [2]-SSSP-DeltaStepping
+                             [3]-SSSP-BellmanFord
+                             [4]-DFS
+                             [5]-SPMV
+                             [6]-Connected-Components
+                             [7]-Triangle Counting
                              [8]-IncrementalAggregation
+
+   -d, --data-structure=[DEFAULT:0]
+                             [0]-CSR
+                             [1]-Grid
+                             [2]-Adj-LinkedList
+                             [3]-Adj-ArrayList
+                             [4-5] same order bitmap frontiers
 
   -b, --delta=[DELTA:1]      
                              SSSP Delta value [Default:1]
@@ -182,17 +194,13 @@ portable benchmarking suite for various graph processing algorithms.
                              [0]-text edgeList [1]-binary edgeList [2]-graphCSR
                              binary
 
-  -d, --data-structure=[DEFAULT:0]
-                             [0]-CSR, [1]-Grid, [2]-Adj LinkedList, [3]-Adj
-                             ArrayList
-
   -e, --tolerance=[EPSILON:0.0001], --epsilon=[EPSILON:0.0001]
                              Tolerance value of for page rank [default:0.0001]
                             
   -f, --graph-file=<FILE>    
-                             Edge list represents the graph binary format to
-                             run the algorithm textual format change
-                             graph-file-format
+                             Edgelist representing the graph,in binary format
+                             to run the algorithm. Or if in textual format
+                             change graph-file-format
 
   -g, --bin-size=SIZE:512    
                              You bin vertices's histogram according to this
@@ -200,14 +208,13 @@ portable benchmarking suite for various graph processing algorithms.
                              illustrate 
 
   -i, --num-iterations=[DEFAULT:20]
-                             
                              Number of iterations for page rank to converge
                              [default:20] SSSP-BellmanFord [default:V-1] 
 
   -j, --in-out-degree=[DEFAULT:2]
-                             
-                             [1]-in-degree, [2]-out-degree, bin histogram with
-                             out/in-degree binned. [DEFAULT:2]  
+                             [1]-in-degree, 
+                             [2]-out-degree, bin histogram with
+                             out/in-degree binned.
 
   -k, --remove-duplicate     
                              Removers duplicate edges and self loops from the
@@ -215,28 +222,37 @@ portable benchmarking suite for various graph processing algorithms.
 
   -l, --light-reorder=[ORDER:0]   
                              Relabels the graph for better cache performance.
-                             [default:0]-no-reordering [1]-page-rank-order
-                             [2]-in-degree [3]-out-degree [4]-in/out degree
-                             [5]-Rabbit [6]-Epoch-pageRank [7]-Epoch-BFS
+                             [default:0]-no-reordering 
+                             [1]-page-rank-order
+                             [2]-in-degree 
+                             [3]-out-degree 
+                             [4]-in/out degree
+                             [5]-Rabbit
+                             [6]-Epoch-pageRank 
+                             [7]-Epoch-BFS
                              [8]-LoadFromFile 
 
   -n, --num-threads=[DEFAULT:MAX]
+                             
                              Default:max number of threads the system has
-
   -o, --sort=[DEFAULT:0]     
-                             [0]-radix-src [1]-radix-src-dest [2]-count-src
+                             [0]-radix-src 
+                             [1]-radix-src-dest 
+                             [2]-count-src
                              [3]-count-src-dst
 
   -p, --direction=[DEFAULT:0]   
-                             [0]-PULL, [1]-PUSH,[2]-HYBRID. NOTE: Please
-                             consult the function switch table for each
+                             [0]-PULL
+                             [1]-PUSH
+                             [2]-HYBRID.
+                             NOTE: Please consult the function switch table for each
                              algorithm
 
   -r, --root=[DEFAULT:0]     
                              BFS, DFS, SSSP root
 
-  -s, --symmetries           
-                             Symmetric graph, create a set of incoming edges
+  -s, --symmetrize           
+                             Symmetrize graph, create a set of incoming edges
 
   -t, --num-trials=[DEFAULT:1]   
                              Number of random trials for each whole run (graph
@@ -250,18 +266,19 @@ portable benchmarking suite for various graph processing algorithms.
   -x, --stats                
                              Dump a histogram to file based on in-out degree
                              count bins / sorted according to in/out-degree or
-                             page-ranks
-                             --bin-size/--in-out-degree are related bin
+                             page-ranks, --bin-size/--in-out-degree are related bin
                              verticies in  terms of in or out degrees 
 
   -z, --graph-file-format=[TEXT|BIN|CSR:1]
-                             
+                             [0]-text edgeList
+                             [1]-binary edgeList 
+                             [2]-graphCSR binary
                              Specify file format to be read, is it textual edge
                              list, or a binary file edge list. This is
                              specifically useful if you have Graph CSR/Grid
                              structure already saved in a binary file format to
-                             skip the preprocessing step. [0]-text edgeList
-                             [1]-binary edgeList [2]-graphCSR binary
+                             skip the preprocessing step. 
+
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
