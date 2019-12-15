@@ -1,0 +1,28 @@
+sudo: required
+dist: xenial
+
+before_install:
+  - sudo apt-get update -qq
+  - git submodule update --init --recursive
+ 
+
+env: OMP_NUM_THREADS=4
+
+language: c
+compiler:
+  - gcc
+
+script:
+  - make -j
+  - make test
+
+notifications:
+email:
+  on_success: never
+  on_failure: always
+  recipients:
+    - atmughrabi@gmail.com
+
+branches:
+  only:
+    - master
