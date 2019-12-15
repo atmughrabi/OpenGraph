@@ -71,7 +71,7 @@ open@graph:~OpenGraph$ cd 00_graph_bench/
 ```console
 open@graph:~OpenGraph/00_graph_bench$ make 
 ```
-3. From the root directory you can modify the Makefile with the [(parameters)](#open-graph-options) you need for OpenMP:
+3. From the root directory you can modify the Makefile with the [(parameters)](#opengraph-options) you need for OpenMP:
 ```console
 open@graph:~OpenGraph/00_graph_bench$ make run
 ```
@@ -344,5 +344,5 @@ portable benchmarking suite for various graph processing algorithms.
   - [ ] BC    (Betweenness Centrality)
 - [x] Support testing
 
-Report bugs to <atmughra@ncsu.edu>
-[<p align="right"> <img src="./02_slides/fig/logo1.png" width="200" ></p>](#open-graph-benchmark-suite)
+Report bugs to <atmughrabi@gmail.com><atmughra@ncsu.edu>
+[<p align="right"> <img src="./02_slides/fig/logo1.png" width="200" ></p>](#opengraph-benchmark-suite)
