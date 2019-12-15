@@ -3,8 +3,7 @@ dist: xenial
 
 before_install:
   - sudo apt-get update -qq
-  - git submodule update --init --recursive
- 
+  - sudo apt-get install libjudy-dev
 
 env: OMP_NUM_THREADS=4
 
