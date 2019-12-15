@@ -163,6 +163,12 @@ Usage: open-graph-openmp [OPTION...]
 OpenGraph is an open source graph processing framework, it is designed to be a
 portable benchmarking suite for various graph processing algorithms.
 
+
+  -f, --graph-file=<FILE>    
+                             Edgelist representing the graph,in binary format
+                             to run the algorithm. Or if in textual format
+                             change graph-file-format
+                             
   -a, --algorithm=[DEFAULT:0]   
                              [0]-BFS
                              [1]-Page-rank
@@ -174,12 +180,22 @@ portable benchmarking suite for various graph processing algorithms.
                              [7]-Triangle Counting
                              [8]-IncrementalAggregation
 
-   -d, --data-structure=[DEFAULT:0]
+  -d, --data-structure=[DEFAULT:0]
                              [0]-CSR
                              [1]-Grid
                              [2]-Adj-LinkedList
                              [3]-Adj-ArrayList
                              [4-5] same order bitmap frontiers
+
+  -p, --direction=[DEFAULT:0]   
+                             [0]-PULL
+                             [1]-PUSH
+                             [2]-HYBRID.
+                             NOTE: Please consult the function switch table for each
+                             algorithm
+
+  -r, --root=[DEFAULT:0]     
+                             BFS, DFS, SSSP root
 
   -b, --delta=[DELTA:1]      
                              SSSP Delta value [Default:1]
@@ -196,11 +212,6 @@ portable benchmarking suite for various graph processing algorithms.
 
   -e, --tolerance=[EPSILON:0.0001], --epsilon=[EPSILON:0.0001]
                              Tolerance value of for page rank [default:0.0001]
-                            
-  -f, --graph-file=<FILE>    
-                             Edgelist representing the graph,in binary format
-                             to run the algorithm. Or if in textual format
-                             change graph-file-format
 
   -g, --bin-size=SIZE:512    
                              You bin vertices's histogram according to this
@@ -240,16 +251,6 @@ portable benchmarking suite for various graph processing algorithms.
                              [1]-radix-src-dest 
                              [2]-count-src
                              [3]-count-src-dst
-
-  -p, --direction=[DEFAULT:0]   
-                             [0]-PULL
-                             [1]-PUSH
-                             [2]-HYBRID.
-                             NOTE: Please consult the function switch table for each
-                             algorithm
-
-  -r, --root=[DEFAULT:0]     
-                             BFS, DFS, SSSP root
 
   -s, --symmetrize           
                              Symmetrize graph, create a set of incoming edges
