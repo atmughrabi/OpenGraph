@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/atmughrabi/OpenGraph.svg?token=L3reAtGHdEVVPvzcVqQ6&branch=master)](https://travis-ci.com/atmughrabi/OpenGraph)
-[<p align="center"><img src="./02_slides/fig/logo.png" width="650" ></p>](#open-graph-benchmark-suite)
+[<p align="center"><img src="./02_slides/fig/logo.png" width="650" ></p>](#opengraph-benchmark-suite)
 
 # OpenGraph Benchmark Suite
 
@@ -282,8 +282,6 @@ portable benchmarking suite for various graph processing algorithms.
         * `incrementalAgreggation.h` - Incremental Aggregation for clustering
         * `pageRank.h` - Page Rank Algorithm
         * `SPMV.h` - Sparse Matrix Vector Multiplication
-      * `gem5aladdin`- gem5-aladdin integration
-      * `capi` - CAPI integration
     * `preprocessing` - preprocessing graph structure
       * `countsort.h` - sort edge list using count sort
       * `radixsort.h` - sort edge list using radix sort
@@ -304,8 +302,6 @@ portable benchmarking suite for various graph processing algorithms.
         * `incrementalAgreggation.c` - Incremental Aggregation for clustering
         * `pageRank.c` - Page Rank Algorithm
         * `SPMV.c` - Sparse Matrix Vector Multiplication
-      * `gem5aladdin`- gem5-aladdin integration
-      * `capi` - CAPI integration
     * `preprocessing` - preprocessing graph structure
       * `countsort.c` - sort edge list using count sort
       * `radixsort.c` - sort edge list using radix sort
