@@ -16,14 +16,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 #include "myMalloc.h"
 #include "arrayStack.h"
 #include "bitmap.h"
 
-struct ArrayStack *newArrayStack(__u32 size)
+struct ArrayStack *newArrayStack(uint32_t size)
 {
 
     struct ArrayStack *arrayStack = (struct ArrayStack *) my_malloc( sizeof(struct ArrayStack));
@@ -33,7 +33,7 @@ struct ArrayStack *newArrayStack(__u32 size)
     arrayStack->tail_next = 0;
     arrayStack->size = size;
 
-    arrayStack->Stack = (__u32 *) my_malloc(size * sizeof(__u32));
+    arrayStack->Stack = (uint32_t *) my_malloc(size * sizeof(uint32_t));
 
 
     arrayStack->q_bitmap = newBitmap(size);
@@ -72,7 +72,7 @@ void freeArrayStack(struct ArrayStack *q)
 
 }
 
-void pushArrayStack (struct ArrayStack *q, __u32 k)
+void pushArrayStack (struct ArrayStack *q, uint32_t k)
 {
 
     q->Stack[q->tail] = k;
@@ -82,7 +82,7 @@ void pushArrayStack (struct ArrayStack *q, __u32 k)
 }
 
 
-void pushArrayStackWithBitmap (struct ArrayStack *q, __u32 k)
+void pushArrayStackWithBitmap (struct ArrayStack *q, uint32_t k)
 {
 
     q->Stack[q->tail] = k;
@@ -94,26 +94,26 @@ void pushArrayStackWithBitmap (struct ArrayStack *q, __u32 k)
 }
 
 
-void pushArrayStackAtomic (struct ArrayStack *q, __u32 k)
+void pushArrayStackAtomic (struct ArrayStack *q, uint32_t k)
 {
 
-    __u32 local_q_tail = __sync_fetch_and_add(&q->tail, 1);
+    uint32_t local_q_tail = __sync_fetch_and_add(&q->tail, 1);
     q->Stack[local_q_tail] = k;
 
 }
 
 
-void pushArrayStackWithBitmapAtomic (struct ArrayStack *q, __u32 k)
+void pushArrayStackWithBitmapAtomic (struct ArrayStack *q, uint32_t k)
 {
 
-    __u32 local_q_tail = __sync_fetch_and_add(&q->tail, 1);
+    uint32_t local_q_tail = __sync_fetch_and_add(&q->tail, 1);
     q->Stack[local_q_tail] = k;
     setBitAtomic(q->q_bitmap, k);
 
 }
 
 
-void pushArrayStackDelayed (struct ArrayStack *q, __u32 k)
+void pushArrayStackDelayed (struct ArrayStack *q, uint32_t k)
 {
 
     q->Stack[q->tail_next] = k;
@@ -121,7 +121,7 @@ void pushArrayStackDelayed (struct ArrayStack *q, __u32 k)
 
 }
 
-void pushArrayStackDelayedWithBitmap (struct ArrayStack *q, __u32 k)
+void pushArrayStackDelayedWithBitmap (struct ArrayStack *q, uint32_t k)
 {
 
     q->Stack[q->tail_next] = k;
@@ -130,10 +130,10 @@ void pushArrayStackDelayedWithBitmap (struct ArrayStack *q, __u32 k)
 
 }
 
-void pushArrayStackDelayedWithBitmapAtomic (struct ArrayStack *q, __u32 k)
+void pushArrayStackDelayedWithBitmapAtomic (struct ArrayStack *q, uint32_t k)
 {
 
-    __u32 local_q_tail_next = __sync_fetch_and_add(&q->tail_next, 1);
+    uint32_t local_q_tail_next = __sync_fetch_and_add(&q->tail_next, 1);
     setBitAtomic(q->q_bitmap, k);
     q->Stack[local_q_tail_next] = k;
 
@@ -158,10 +158,10 @@ void slideWindowArrayStackBitmap (struct ArrayStack *q)
 
 }
 
-__u32 popArrayStack(struct ArrayStack *q)
+uint32_t popArrayStack(struct ArrayStack *q)
 {
 
-    __u32 k = q->Stack[q->tail - 1];
+    uint32_t k = q->Stack[q->tail - 1];
     clearBit(q->q_bitmap, k);
     q->tail = q->tail - 1;
 
@@ -170,16 +170,16 @@ __u32 popArrayStack(struct ArrayStack *q)
 }
 
 
-__u32 frontArrayStack (struct ArrayStack *q)
+uint32_t frontArrayStack (struct ArrayStack *q)
 {
 
-    __u32 k = q->Stack[q->head];
+    uint32_t k = q->Stack[q->head];
 
     return k;
 
 }
 
-__u8 isEmptyArrayStackCurr (struct ArrayStack *q)
+uint8_t isEmptyArrayStackCurr (struct ArrayStack *q)
 {
 
     if((q->tail > q->head))
@@ -189,7 +189,7 @@ __u8 isEmptyArrayStackCurr (struct ArrayStack *q)
 
 }
 
-__u8 isEmptyArrayStack (struct ArrayStack *q)
+uint8_t isEmptyArrayStack (struct ArrayStack *q)
 {
 
     if(!isEmptyArrayStackCurr(q) || !isEmptyArrayStackNext(q))
@@ -199,7 +199,7 @@ __u8 isEmptyArrayStack (struct ArrayStack *q)
 
 }
 
-__u8 isEmptyArrayStackNext (struct ArrayStack *q)
+uint8_t isEmptyArrayStackNext (struct ArrayStack *q)
 {
 
     if((q->tail_next > q->head))
@@ -209,7 +209,7 @@ __u8 isEmptyArrayStackNext (struct ArrayStack *q)
 
 }
 
-__u8  ispushArrayStack  (struct ArrayStack *q, __u32 k)
+uint8_t  ispushArrayStack  (struct ArrayStack *q, uint32_t k)
 {
 
 
@@ -217,7 +217,7 @@ __u8  ispushArrayStack  (struct ArrayStack *q, __u32 k)
 
 }
 
-__u8  ispushArrayStackNext  (struct ArrayStack *q, __u32 k)
+uint8_t  ispushArrayStackNext  (struct ArrayStack *q, uint32_t k)
 {
 
 
@@ -225,21 +225,21 @@ __u8  ispushArrayStackNext  (struct ArrayStack *q, __u32 k)
 
 }
 
-__u32 sizeArrayStackCurr(struct ArrayStack *q)
+uint32_t sizeArrayStackCurr(struct ArrayStack *q)
 {
 
     return q->tail - q->head;
 
 }
 
-__u32 sizeArrayStackNext(struct ArrayStack *q)
+uint32_t sizeArrayStackNext(struct ArrayStack *q)
 {
 
     return q->tail_next - q->tail;
 }
 
 
-__u32 sizeArrayStack(struct ArrayStack *q)
+uint32_t sizeArrayStack(struct ArrayStack *q)
 {
 
     return q->tail_next - q->head;
@@ -249,10 +249,10 @@ __u32 sizeArrayStack(struct ArrayStack *q)
 void flushArrayStackToShared(struct ArrayStack *local_q, struct ArrayStack *shared_q)
 {
 
-    __u32 shared_q_tail_next = __sync_fetch_and_add(&shared_q->tail_next, local_q->tail);
-    __u32 local_q_size = local_q->tail - local_q->head;
+    uint32_t shared_q_tail_next = __sync_fetch_and_add(&shared_q->tail_next, local_q->tail);
+    uint32_t local_q_size = local_q->tail - local_q->head;
 
-    memcpy(&shared_q->Stack[shared_q_tail_next], &local_q->Stack[local_q->head], local_q_size * (sizeof(__u32)));
+    memcpy(&shared_q->Stack[shared_q_tail_next], &local_q->Stack[local_q->head], local_q_size * (sizeof(uint32_t)));
 
     local_q->head = 0;
     local_q->tail = 0;
@@ -265,8 +265,8 @@ void flushArrayStackToShared(struct ArrayStack *local_q, struct ArrayStack *shar
 void arrayStackGenerateBitmap(struct ArrayStack *q)
 {
 
-    __u32 v;
-    __u32 i;
+    uint32_t v;
+    uint32_t i;
 
     #pragma omp parallel for
     for(i = q->head ; i < q->tail; i++)
@@ -281,8 +281,8 @@ void arrayStackGenerateBitmap(struct ArrayStack *q)
 void arrayStackToBitmap(struct ArrayStack *q, struct Bitmap *b)
 {
 
-    __u32 v;
-    __u32 i;
+    uint32_t v;
+    uint32_t i;
 
     #pragma omp parallel for default(none) shared(q,b) private(v,i)
     for(i = q->head ; i < q->tail; i++)
@@ -303,9 +303,9 @@ void bitmapToArrayStack(struct Bitmap *b, struct ArrayStack *q, struct ArrayStac
 
     #pragma omp parallel default(none) shared(b,localFrontierStacks,q)
     {
-        __u32 i;
+        uint32_t i;
 
-        __u32 t_id = omp_get_thread_num();
+        uint32_t t_id = omp_get_thread_num();
         struct ArrayStack *localFrontierStack = localFrontierStacks[t_id];
 
         #pragma omp for

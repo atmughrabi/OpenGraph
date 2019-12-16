@@ -21,6 +21,7 @@ email:
   on_failure: always
   recipients:
     - atmughrabi@gmail.com
+    - atmughra@ncsu.edu
 
 branches:
   only:

@@ -1,7 +1,7 @@
 #ifndef GRAPHCONFIG_H
 #define GRAPHCONFIG_H
 
-#include <linux/types.h>
+#include <stdint.h>
 #include "mt19937.h"
 
 
@@ -18,24 +18,24 @@ struct Arguments
     int xflag;
     int sflag;
     int dflag;
-    __u32 binSize;
-    __u32 inout_degree;
-    __u32 iterations;
-    __u32 trials;
+    uint32_t binSize;
+    uint32_t inout_degree;
+    uint32_t iterations;
+    uint32_t trials;
     double epsilon;
     int root;
-    __u32 algorithm;
-    __u32 datastructure;
-    __u32 pushpull;
-    __u32 sort;
-    __u32 lmode;
-    __u32 symmetric;
-    __u32 weighted;
-    __u32 delta;
-    __u32 numThreads;
+    uint32_t algorithm;
+    uint32_t datastructure;
+    uint32_t pushpull;
+    uint32_t sort;
+    uint32_t lmode;
+    uint32_t symmetric;
+    uint32_t weighted;
+    uint32_t delta;
+    uint32_t numThreads;
     char *fnameb;
-    __u32 fnameb_format;
-    __u32 convert_format;
+    uint32_t fnameb_format;
+    uint32_t convert_format;
 };
 
 #endif

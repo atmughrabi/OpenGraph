@@ -1,7 +1,7 @@
 #ifndef GRAPHCSR_H
 #define GRAPHCSR_H
 
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "graphConfig.h"
 #include "edgeList.h"
@@ -12,11 +12,11 @@
 struct GraphCSR
 {
 
-    __u32 num_edges;
-    __u32 num_vertices;
+    uint32_t num_edges;
+    uint32_t num_vertices;
 
 #if WEIGHTED
-    __u32 max_weight;
+    uint32_t max_weight;
 #endif
  
     struct Vertex *vertices;
@@ -30,8 +30,8 @@ struct GraphCSR
 
 void graphCSRFree (struct GraphCSR *graphCSR);
 void graphCSRPrint (struct GraphCSR *graphCSR);
-struct GraphCSR *graphCSRAssignEdgeList (struct GraphCSR *graphCSR, struct EdgeList *edgeList, __u8 inverse);
-struct GraphCSR *graphCSRNew(__u32 V, __u32 E,  __u8 inverse);
+struct GraphCSR *graphCSRAssignEdgeList (struct GraphCSR *graphCSR, struct EdgeList *edgeList, uint8_t inverse);
+struct GraphCSR *graphCSRNew(uint32_t V, uint32_t E,  uint8_t inverse);
 struct GraphCSR *graphCSRPreProcessingStep (struct Arguments *arguments);
 void graphCSRPrintMessageWithtime(const char *msg, double time);
 struct GraphCSR *readFromBinFileGraphCSR (const char *fname);

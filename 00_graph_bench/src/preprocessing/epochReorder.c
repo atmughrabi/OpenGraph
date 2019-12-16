@@ -13,7 +13,7 @@
 // Editor : Abdullah Mughrabi
 // -----------------------------------------------------------------------------
 
-#include <linux/types.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -34,11 +34,11 @@
 #include "BFS.h"
 
 
-__u32 epochAtomicMin(__u32 *dist, __u32 newValue)
+uint32_t epochAtomicMin(uint32_t *dist, uint32_t newValue)
 {
 
-    __u32 oldValue;
-    __u32 flag = 0;
+    uint32_t oldValue;
+    uint32_t flag = 0;
 
     do
     {
@@ -65,11 +65,11 @@ __u32 epochAtomicMin(__u32 *dist, __u32 newValue)
 
 
 
-struct EpochReorder *newEpochReoder( __u32 softThreshold, __u32 hardThreshold, __u32 numCounters, __u32 numVertices)
+struct EpochReorder *newEpochReoder( uint32_t softThreshold, uint32_t hardThreshold, uint32_t numCounters, uint32_t numVertices)
 {
 
-    __u32 v = 0;
-    __u32 n = 0;
+    uint32_t v = 0;
+    uint32_t n = 0;
 
     struct EpochReorder *epochReorder = (struct EpochReorder *) my_malloc(sizeof(struct EpochReorder));
 
@@ -85,15 +85,15 @@ struct EpochReorder *newEpochReoder( __u32 softThreshold, __u32 hardThreshold, _
     epochReorder->recencyBits = newBitmap(numVertices);
 
 
-    epochReorder->frequency = (__u32 **) my_malloc(sizeof(__u32 *) * numCounters);
-    epochReorder->reuse = (__u32 **) my_malloc(sizeof(__u32 *) * numCounters);
+    epochReorder->frequency = (uint32_t **) my_malloc(sizeof(uint32_t *) * numCounters);
+    epochReorder->reuse = (uint32_t **) my_malloc(sizeof(uint32_t *) * numCounters);
 
-    epochReorder->base_reuse = (__u32 *) my_malloc(sizeof(__u32) * numVertices);
+    epochReorder->base_reuse = (uint32_t *) my_malloc(sizeof(uint32_t) * numVertices);
 
     for(v = 0; v < numCounters; v++)
     {
-        epochReorder->frequency[v] = (__u32 *) my_malloc(sizeof(__u32) * numVertices);
-        epochReorder->reuse[v] = (__u32 *) my_malloc(sizeof(__u32) * numVertices);
+        epochReorder->frequency[v] = (uint32_t *) my_malloc(sizeof(uint32_t) * numVertices);
+        epochReorder->reuse[v] = (uint32_t *) my_malloc(sizeof(uint32_t) * numVertices);
     }
 
 
@@ -118,16 +118,16 @@ struct EpochReorder *newEpochReoder( __u32 softThreshold, __u32 hardThreshold, _
 
 }
 
-__u32 *epochReorderPageRank(struct GraphCSR *graph)
+uint32_t *epochReorderPageRank(struct GraphCSR *graph)
 {
 
 
-    __u32 numCounters = 20;
-    __u32 hardThreshold = 4096;
-    __u32 softThreshold = 8192;
+    uint32_t numCounters = 20;
+    uint32_t hardThreshold = 4096;
+    uint32_t softThreshold = 8192;
     double epsilon = 1e-6;
-    __u32 iterations = 2;
-    __u32 *labels;
+    uint32_t iterations = 2;
+    uint32_t *labels;
 
     struct EpochReorder *epochReorder = newEpochReoder(softThreshold, hardThreshold, numCounters, graph->num_vertices);
 
@@ -143,21 +143,21 @@ __u32 *epochReorderPageRank(struct GraphCSR *graph)
 
 
 
-float *epochReorderPageRankPullGraphCSR(struct EpochReorder *epochReorder, double epsilon,  __u32 iterations, struct GraphCSR *graph)
+float *epochReorderPageRankPullGraphCSR(struct EpochReorder *epochReorder, double epsilon,  uint32_t iterations, struct GraphCSR *graph)
 {
 
-    __u32 iter;
-    __u32 j;
-    __u32 v;
-    __u32 u;
-    __u32 degree;
-    __u32 edge_idx;
-    __u32 activeVertices = 0;
+    uint32_t iter;
+    uint32_t j;
+    uint32_t v;
+    uint32_t u;
+    uint32_t degree;
+    uint32_t edge_idx;
+    uint32_t activeVertices = 0;
     double error_total = 0;
     // float init_pr = 1.0f / (float)graph->num_vertices;
     float base_pr = (1.0f - Damp);
     struct Vertex *vertices = NULL;
-    __u32 *sorted_edges_array = NULL;
+    uint32_t *sorted_edges_array = NULL;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
@@ -280,20 +280,20 @@ float *epochReorderPageRankPullGraphCSR(struct EpochReorder *epochReorder, doubl
 }
 
 
-__u32 *epochReorderRecordBFS(struct GraphCSR *graph)
+uint32_t *epochReorderRecordBFS(struct GraphCSR *graph)
 {
 
 
-    __u32 *labels;
-    __u32 *labelsInverse;
-    __u32 *degrees;
-    __u32 root = generateRandInt(mt19937var);
+    uint32_t *labels;
+    uint32_t *labelsInverse;
+    uint32_t *degrees;
+    uint32_t root = generateRandInt(mt19937var);
     int v;
 
 
-    labels = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    labelsInverse = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    degrees = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    labels = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    labelsInverse = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    degrees = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
 
 
@@ -316,12 +316,12 @@ __u32 *epochReorderRecordBFS(struct GraphCSR *graph)
     //   // printf("%u %u \n",labelsInverse[v],degrees[v] );
     // }
 
-    __u32 numCounters = 32;
-    __u32 hardThreshold = degrees[graph->num_vertices - 1 ];
-    __u32 softThreshold = hardThreshold / 4;
-    __u32 t1 = 0;
-    __u32 t2 = 1;
-    __u32 nextTerm = 1;
+    uint32_t numCounters = 32;
+    uint32_t hardThreshold = degrees[graph->num_vertices - 1 ];
+    uint32_t softThreshold = hardThreshold / 4;
+    uint32_t t1 = 0;
+    uint32_t t2 = 1;
+    uint32_t nextTerm = 1;
 
     struct EpochReorder *epochReorder = newEpochReoder(softThreshold, hardThreshold, numCounters, graph->num_vertices);
 
@@ -383,7 +383,7 @@ __u32 *epochReorderRecordBFS(struct GraphCSR *graph)
 //      end while
 //  return parents
 
-void epochReorderBreadthFirstSearchGraphCSR(struct EpochReorder *epochReorder, __u32 source, struct GraphCSR *graph)
+void epochReorderBreadthFirstSearchGraphCSR(struct EpochReorder *epochReorder, uint32_t source, struct GraphCSR *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphCSR(graph);
@@ -393,20 +393,20 @@ void epochReorderBreadthFirstSearchGraphCSR(struct EpochReorder *epochReorder, _
     struct Bitmap *bitmapCurr = newBitmap(graph->num_vertices);
     struct Bitmap *bitmapNext = newBitmap(graph->num_vertices);
 
-    __u32 P = numThreads;
-    __u32 mu = graph->num_edges; // number of edges to check from sharedFrontierQueue
-    __u32 mf = graph->vertices->out_degree[source]; // number of edges from unexplored verticies
-    __u32 nf = 0; // number of vertices in sharedFrontierQueue
-    __u32 nf_prev = 0; // number of vertices in sharedFrontierQueue
-    __u32 n = graph->num_vertices; // number of nodes
-    __u32 alpha = 15;
-    __u32 beta = 18;
+    uint32_t P = numThreads;
+    uint32_t mu = graph->num_edges; // number of edges to check from sharedFrontierQueue
+    uint32_t mf = graph->vertices->out_degree[source]; // number of edges from unexplored verticies
+    uint32_t nf = 0; // number of vertices in sharedFrontierQueue
+    uint32_t nf_prev = 0; // number of vertices in sharedFrontierQueue
+    uint32_t n = graph->num_vertices; // number of nodes
+    uint32_t alpha = 15;
+    uint32_t beta = 18;
 
 
     struct ArrayQueue **localFrontierQueues = (struct ArrayQueue **) my_malloc( P * sizeof(struct ArrayQueue *));
 
 
-    __u32 i;
+    uint32_t i;
     for(i = 0 ; i < P ; i++)
     {
         localFrontierQueues[i] = newArrayQueue(graph->num_vertices);
@@ -532,22 +532,22 @@ void epochReorderBreadthFirstSearchGraphCSR(struct EpochReorder *epochReorder, _
 //      end for
 //  end for
 
-__u32 epochReorderTopDownStepGraphCSR(struct EpochReorder *epochReorder, struct GraphCSR *graph, struct ArrayQueue *sharedFrontierQueue, struct ArrayQueue **localFrontierQueues, struct BFSStats *stats)
+uint32_t epochReorderTopDownStepGraphCSR(struct EpochReorder *epochReorder, struct GraphCSR *graph, struct ArrayQueue *sharedFrontierQueue, struct ArrayQueue **localFrontierQueues, struct BFSStats *stats)
 {
 
 
 
-    __u32 v;
-    __u32 u;
-    __u32 i;
-    __u32 j;
-    __u32 edge_idx;
-    __u32 mf = 0;
+    uint32_t v;
+    uint32_t u;
+    uint32_t i;
+    uint32_t j;
+    uint32_t edge_idx;
+    uint32_t mf = 0;
 
 
     #pragma omp parallel default (none) private(u,v,j,i,edge_idx) shared(stats,epochReorder,localFrontierQueues,graph,sharedFrontierQueue,mf)
     {
-        __u32 t_id = omp_get_thread_num();
+        uint32_t t_id = omp_get_thread_num();
         struct ArrayQueue *localFrontierQueue = localFrontierQueues[t_id];
 
 
@@ -595,20 +595,20 @@ __u32 epochReorderTopDownStepGraphCSR(struct EpochReorder *epochReorder, struct 
 //      end if
 //  end for
 
-__u32 epochReorderBottomUpStepGraphCSR(struct EpochReorder *epochReorder, struct GraphCSR *graph, struct Bitmap *bitmapCurr, struct Bitmap *bitmapNext, struct BFSStats *stats)
+uint32_t epochReorderBottomUpStepGraphCSR(struct EpochReorder *epochReorder, struct GraphCSR *graph, struct Bitmap *bitmapCurr, struct Bitmap *bitmapNext, struct BFSStats *stats)
 {
 
 
-    __u32 v;
-    __u32 u;
-    __u32 j;
-    __u32 edge_idx;
-    __u32 out_degree;
+    uint32_t v;
+    uint32_t u;
+    uint32_t j;
+    uint32_t edge_idx;
+    uint32_t out_degree;
     struct Vertex *vertices = NULL;
-    __u32 *sorted_edges_array = NULL;
+    uint32_t *sorted_edges_array = NULL;
 
-    // __u32 processed_nodes = bitmapCurr->numSetBits;
-    __u32 nf = 0; // number of vertices in sharedFrontierQueue
+    // uint32_t processed_nodes = bitmapCurr->numSetBits;
+    uint32_t nf = 0; // number of vertices in sharedFrontierQueue
     // stats->processed_nodes += processed_nodes;
 
 #if DIRECTED
@@ -649,16 +649,16 @@ __u32 epochReorderBottomUpStepGraphCSR(struct EpochReorder *epochReorder, struct
 
 
 
-__u32 *epochReorderCreateLabels(struct EpochReorder *epochReorder)
+uint32_t *epochReorderCreateLabels(struct EpochReorder *epochReorder)
 {
 
-    // __u32 *labels;
-    __u32 *labelsInverse = NULL;
-    __u32 *histMaps = NULL;
-    __u32 *histValues = NULL;
-    __u32 *histDegree = NULL;
-    __u32 v = 0;
-    __u32 h = 0;
+    // uint32_t *labels;
+    uint32_t *labelsInverse = NULL;
+    uint32_t *histMaps = NULL;
+    uint32_t *histValues = NULL;
+    uint32_t *histDegree = NULL;
+    uint32_t v = 0;
+    uint32_t h = 0;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
     printf(" -----------------------------------------------------\n");
@@ -669,11 +669,11 @@ __u32 *epochReorderCreateLabels(struct EpochReorder *epochReorder)
 
 
 
-    // labels = (__u32 *) my_malloc(epochReorder->numVertices * sizeof(__u32));
-    labelsInverse = (__u32 *) my_malloc(epochReorder->numVertices * sizeof(__u32));
-    histMaps = (__u32 *) my_malloc(epochReorder->numVertices * sizeof(__u32));
-    histValues = (__u32 *) my_malloc(epochReorder->numVertices * sizeof(__u32));
-    histDegree = (__u32 *) my_malloc((epochReorder->numCounters) * sizeof(__u32));
+    // labels = (uint32_t *) my_malloc(epochReorder->numVertices * sizeof(uint32_t));
+    labelsInverse = (uint32_t *) my_malloc(epochReorder->numVertices * sizeof(uint32_t));
+    histMaps = (uint32_t *) my_malloc(epochReorder->numVertices * sizeof(uint32_t));
+    histValues = (uint32_t *) my_malloc(epochReorder->numVertices * sizeof(uint32_t));
+    histDegree = (uint32_t *) my_malloc((epochReorder->numCounters) * sizeof(uint32_t));
 
 
     #pragma omp parallel for
@@ -695,8 +695,8 @@ __u32 *epochReorderCreateLabels(struct EpochReorder *epochReorder)
     #pragma omp parallel for private(h) shared(histValues, histMaps, epochReorder)
     for(v = 0; v < epochReorder->numVertices; v++)
     {
-        __u32 maxValue = 0;
-        __u32 maxIndex = UINT_MAX;
+        uint32_t maxValue = 0;
+        uint32_t maxIndex = UINT_MAX;
         for(h = 0; h < epochReorder->numCounters; h++ )
         {
             if(epochReorder->reuse[h][v] > maxValue)
@@ -712,7 +712,7 @@ __u32 *epochReorderCreateLabels(struct EpochReorder *epochReorder)
         // histDegree[maxIndex]++;
         // else
         // {
-        // __u32 random_hist =  generateRandInt(mt19937var) % (epochReorder->numCounters - 1);
+        // uint32_t random_hist =  generateRandInt(mt19937var) % (epochReorder->numCounters - 1);
         // histDegree[random_hist]++;
 
         // }
@@ -728,7 +728,7 @@ __u32 *epochReorderCreateLabels(struct EpochReorder *epochReorder)
     //     labels[labelsInverse[v]] = v;
     //  }
 
-    // __u32 Accume = histMaps[0];
+    // uint32_t Accume = histMaps[0];
     // for(v = 0; v < (epochReorder->numVertices); v++)
     // {
 
@@ -757,8 +757,8 @@ __u32 *epochReorderCreateLabels(struct EpochReorder *epochReorder)
 void printEpochs(struct EpochReorder *epochReorder)
 {
 
-    __u32 v = 0;
-    __u32 h = 0;
+    uint32_t v = 0;
+    uint32_t h = 0;
 
     for(v = 0; v < 10; v++)
     {
@@ -772,10 +772,10 @@ void printEpochs(struct EpochReorder *epochReorder)
 
 }
 
-void epochReorderIncrementCounters(struct EpochReorder *epochReorder, __u32 v)
+void epochReorderIncrementCounters(struct EpochReorder *epochReorder, uint32_t v)
 {
 
-    __u32 histogramIndex = 0;
+    uint32_t histogramIndex = 0;
 
 
     if(epochReorder->hardcounter > epochReorder->hardThreshold)
@@ -806,11 +806,11 @@ void epochReorderIncrementCounters(struct EpochReorder *epochReorder, __u32 v)
 
 }
 
-void atomicEpochReorderIncrementCounters(struct EpochReorder *epochReorder, __u32 v)
+void atomicEpochReorderIncrementCounters(struct EpochReorder *epochReorder, uint32_t v)
 {
 
 
-    __u32 histogramIndex = 0;
+    uint32_t histogramIndex = 0;
 
     if(epochAtomicMin(&(epochReorder->hardcounter), epochReorder->hardThreshold))
     {
@@ -874,7 +874,7 @@ void atomicEpochReorderIncrementCounters(struct EpochReorder *epochReorder, __u3
 void freeEpochReorder(struct EpochReorder *epochReorder)
 {
 
-    __u32 v;
+    uint32_t v;
 
     if(epochReorder)
     {
@@ -894,22 +894,22 @@ void freeEpochReorder(struct EpochReorder *epochReorder)
 
 
 
-void radixSortCountSortEdgesByEpochs (__u32 **histValues, __u32 **histValuesTemp, __u32 **histMaps, __u32 **histMapsTemp, __u32 **labels, __u32 **labelsTemp, __u32 radix, __u32 buckets, __u32 *buckets_count, __u32 num_vertices)
+void radixSortCountSortEdgesByEpochs (uint32_t **histValues, uint32_t **histValuesTemp, uint32_t **histMaps, uint32_t **histMapsTemp, uint32_t **labels, uint32_t **labelsTemp, uint32_t radix, uint32_t buckets, uint32_t *buckets_count, uint32_t num_vertices)
 {
 
-    __u32 *tempPointer1 = NULL;
-    __u32 *tempPointer2 = NULL;
-    __u32 *tempPointer3 = NULL;
-    __u32 t = 0;
-    __u32 o = 0;
-    __u32 u = 0;
-    __u32 i = 0;
-    __u32 j = 0;
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 t_id = 0;
-    __u32 offset_start = 0;
-    __u32 offset_end = 0;
-    __u32 base = 0;
+    uint32_t *tempPointer1 = NULL;
+    uint32_t *tempPointer2 = NULL;
+    uint32_t *tempPointer3 = NULL;
+    uint32_t t = 0;
+    uint32_t o = 0;
+    uint32_t u = 0;
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+    uint32_t base = 0;
 
     #pragma omp parallel default(none) shared(histValues, histValuesTemp, histMaps, histMapsTemp,radix,labels,labelsTemp,buckets,buckets_count, num_vertices) firstprivate(t_id, P, offset_end,offset_start,base,i,j,t,u,o)
     {
@@ -994,7 +994,7 @@ void radixSortCountSortEdgesByEpochs (__u32 **histValues, __u32 **histValuesTemp
 }
 
 
-__u32 *radixSortEdgesByEpochs (__u32 *histValues, __u32 *histMaps, __u32 *labels, __u32 num_vertices)
+uint32_t *radixSortEdgesByEpochs (uint32_t *histValues, uint32_t *histMaps, uint32_t *labels, uint32_t num_vertices)
 {
 
 
@@ -1005,25 +1005,25 @@ __u32 *radixSortEdgesByEpochs (__u32 *histValues, __u32 *histMaps, __u32 *labels
     // Do counting sort for every digit. Note that instead
     // of passing digit number, exp is passed. exp is 10^i
     // where i is current digit number
-    __u32 radix = 4;  // 32/8 8 bit radix needs 4 iterations
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 buckets = 256; // 2^radix = 256 buckets
-    __u32 *buckets_count = NULL;
+    uint32_t radix = 4;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t buckets = 256; // 2^radix = 256 buckets
+    uint32_t *buckets_count = NULL;
 
     // omp_set_num_threads(P);
 
-    __u32 j = 0; //1,2,3 iteration
-    __u32 v = 0;
+    uint32_t j = 0; //1,2,3 iteration
+    uint32_t v = 0;
 
 
-    __u32 *histValuesTemp = NULL;
-    __u32 *histMapsTemp = NULL;
-    __u32 *labelsTemp = NULL;
+    uint32_t *histValuesTemp = NULL;
+    uint32_t *histMapsTemp = NULL;
+    uint32_t *labelsTemp = NULL;
 
-    buckets_count = (__u32 *) my_malloc(P * buckets * sizeof(__u32));
-    histValuesTemp = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
-    histMapsTemp = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
-    labelsTemp = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
+    buckets_count = (uint32_t *) my_malloc(P * buckets * sizeof(uint32_t));
+    histValuesTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    histMapsTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    labelsTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
     #pragma omp parallel for
     for(v = 0; v < num_vertices; v++)

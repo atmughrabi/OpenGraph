@@ -68,7 +68,7 @@ int main()
 
     struct Timer *timer = (struct Timer *) my_malloc(sizeof(struct Timer));
     struct GraphAdjArrayList *graphAdjArrayList = NULL;
-    __u32 root = 6;
+    uint32_t root = 6;
     // printf("Filename : %s \n",fnameb);
 
     // Start(timer);

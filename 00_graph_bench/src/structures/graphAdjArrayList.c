@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 #include "timer.h"
@@ -48,7 +48,7 @@ void graphAdjArrayListPrintMessageWithtime(const char *msg, double time)
 }
 
 // A utility function that creates a graphAdjArrayList of V vertices
-struct GraphAdjArrayList *graphAdjArrayListGraphNew(__u32 V)
+struct GraphAdjArrayList *graphAdjArrayListGraphNew(uint32_t V)
 {
 
     struct GraphAdjArrayList *graphAdjArrayList = (struct GraphAdjArrayList *) my_malloc( sizeof(struct GraphAdjArrayList));
@@ -56,7 +56,7 @@ struct GraphAdjArrayList *graphAdjArrayListGraphNew(__u32 V)
     graphAdjArrayList->num_vertices = V;
     graphAdjArrayList->vertices = (struct AdjArrayList *) my_malloc( V * sizeof(struct AdjArrayList));
 
-    __u32 i;
+    uint32_t i;
     for(i = 0; i < V; i++)
     {
         graphAdjArrayList->vertices[i].outNodes = NULL;
@@ -186,11 +186,11 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeListNewWithInverse(struct EdgeLis
 struct GraphAdjArrayList *graphAdjArrayListEdgeListProcessInOutDegree(struct GraphAdjArrayList *graphAdjArrayList, struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
+    uint32_t i;
+    uint32_t src;
 
 #if DIRECTED
-    __u32 dest;
+    uint32_t dest;
 #endif
 
     #pragma omp parallel for
@@ -217,8 +217,8 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeListProcessInOutDegree(struct Gra
 struct GraphAdjArrayList *graphAdjArrayListEdgeListProcessOutDegree(struct GraphAdjArrayList *graphAdjArrayList, struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
+    uint32_t i;
+    uint32_t src;
     #pragma omp parallel for
     for(i = 0; i < edgeList->num_edges; i++)
     {
@@ -239,8 +239,8 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeListProcessOutDegree(struct Graph
 struct GraphAdjArrayList *graphAdjArrayListEdgeListProcessInDegree(struct GraphAdjArrayList *graphAdjArrayList, struct EdgeList *inverseEdgeList)
 {
 
-    __u32 i;
-    __u32 dest;
+    uint32_t i;
+    uint32_t dest;
 
     #pragma omp parallel for
     for(i = 0; i < inverseEdgeList->num_edges; i++)
@@ -262,7 +262,7 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeListProcessInDegree(struct GraphA
 struct GraphAdjArrayList *graphAdjArrayListEdgeAllocate(struct GraphAdjArrayList *graphAdjArrayList)
 {
 
-    __u32 v;
+    uint32_t v;
     #pragma omp parallel for
     for(v = 0; v < graphAdjArrayList->num_vertices; v++)
     {
@@ -283,7 +283,7 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeAllocate(struct GraphAdjArrayList
 struct GraphAdjArrayList *graphAdjArrayListEdgeAllocateInodes(struct GraphAdjArrayList *graphAdjArrayList)
 {
 #if DIRECTED
-    __u32 v;
+    uint32_t v;
     // #pragma omp parallel for
     for(v = 0; v < graphAdjArrayList->num_vertices; v++)
     {
@@ -304,7 +304,7 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeAllocateInodes(struct GraphAdjArr
 struct GraphAdjArrayList *graphAdjArrayListEdgeAllocateOutNodes(struct GraphAdjArrayList *graphAdjArrayList)
 {
 
-    __u32 v;
+    uint32_t v;
     // #pragma omp parallel for
     for(v = 0; v < graphAdjArrayList->num_vertices; v++)
     {
@@ -324,15 +324,15 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeAllocateOutNodes(struct GraphAdjA
 struct GraphAdjArrayList *graphAdjArrayListEdgePopulate(struct GraphAdjArrayList *graphAdjArrayList, struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
+    uint32_t i;
+    uint32_t src;
 
 #if DIRECTED
-    __u32 dest;
-    __u32 in_degree;
+    uint32_t dest;
+    uint32_t in_degree;
 #endif
 
-    __u32 out_degree;
+    uint32_t out_degree;
 
     // #pragma omp parallel for
     for(i = 0; i < edgeList->num_edges; i++)
@@ -378,9 +378,9 @@ struct GraphAdjArrayList *graphAdjArrayListEdgePopulate(struct GraphAdjArrayList
 struct GraphAdjArrayList *graphAdjArrayListEdgePopulateOutNodes(struct GraphAdjArrayList *graphAdjArrayList, struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
-    __u32 out_degree;
+    uint32_t i;
+    uint32_t src;
+    uint32_t out_degree;
 
 
     for(i = 0; i < edgeList->num_edges; i++)
@@ -412,9 +412,9 @@ struct GraphAdjArrayList *graphAdjArrayListEdgePopulateInNodes(struct GraphAdjAr
 
 
 #if DIRECTED
-    __u32 i;
-    __u32 dest;
-    __u32 in_degree;
+    uint32_t i;
+    uint32_t dest;
+    uint32_t in_degree;
 
 
     for(i = 0; i < inverseEdgeList->num_edges; i++)
@@ -469,7 +469,7 @@ void graphAdjArrayListPrint(struct GraphAdjArrayList *graphAdjArrayList)
     printf(" -----------------------------------------------------\n");
 
     // struct AdjArrayList* pCrawl;
-    // __u32 v;
+    // uint32_t v;
     // for (v = 0; v < graphAdjArrayList->num_vertices; v++){
 
     //     pCrawl = &(graphAdjArrayList->vertices[v]);
@@ -487,7 +487,7 @@ void graphAdjArrayListPrint(struct GraphAdjArrayList *graphAdjArrayList)
 void graphAdjArrayListFree(struct GraphAdjArrayList *graphAdjArrayList)
 {
 
-    __u32 v;
+    uint32_t v;
     struct AdjArrayList *pCrawl;
 
     for (v = 0; v < graphAdjArrayList->num_vertices; ++v)

@@ -40,11 +40,11 @@
 struct DFSStats *newDFSStatsGraphCSR(struct GraphCSR *graph)
 {
 
-    __u32 vertex_id;
+    uint32_t vertex_id;
 
     struct DFSStats *stats = (struct DFSStats *) my_malloc(sizeof(struct DFSStats));
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
     stats->num_vertices = graph->num_vertices;
@@ -65,11 +65,11 @@ struct DFSStats *newDFSStatsGraphCSR(struct GraphCSR *graph)
 struct DFSStats *newDFSStatsGraphGrid(struct GraphGrid *graph)
 {
 
-    __u32 vertex_id;
+    uint32_t vertex_id;
 
     struct DFSStats *stats = (struct DFSStats *) my_malloc(sizeof(struct DFSStats));
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
     stats->num_vertices = graph->num_vertices;
@@ -88,11 +88,11 @@ struct DFSStats *newDFSStatsGraphGrid(struct GraphGrid *graph)
 struct DFSStats *newDFSStatsGraphAdjArrayList(struct GraphAdjArrayList *graph)
 {
 
-    __u32 vertex_id;
+    uint32_t vertex_id;
 
     struct DFSStats *stats = (struct DFSStats *) my_malloc(sizeof(struct DFSStats));
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
     stats->num_vertices = graph->num_vertices;
@@ -112,11 +112,11 @@ struct DFSStats *newDFSStatsGraphAdjArrayList(struct GraphAdjArrayList *graph)
 struct DFSStats *newDFSStatsGraphAdjLinkedList(struct GraphAdjLinkedList *graph)
 {
 
-    __u32 vertex_id;
+    uint32_t vertex_id;
 
     struct DFSStats *stats = (struct DFSStats *) my_malloc(sizeof(struct DFSStats));
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
     stats->num_vertices = graph->num_vertices;
@@ -156,7 +156,7 @@ void freeDFSStats(struct DFSStats *stats)
 
 
 
-struct DFSStats  *depthFirstSearchGraphCSRBase(__u32 source, struct GraphCSR *graph)
+struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR *graph)
 {
 
     struct DFSStats *stats = newDFSStatsGraphCSR(graph);
@@ -187,17 +187,17 @@ struct DFSStats  *depthFirstSearchGraphCSRBase(__u32 source, struct GraphCSR *gr
     while(!isEmptyArrayStackCurr(sharedFrontierStack))  // start while
     {
 
-        __u32 v = popArrayStack(sharedFrontierStack);
+        uint32_t v = popArrayStack(sharedFrontierStack);
 
         stats->processed_nodes++;
-        __u32 edge_idx = graph->vertices->edges_idx[v];
-        __u32 j;
+        uint32_t edge_idx = graph->vertices->edges_idx[v];
+        uint32_t j;
 
 
         for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
         {
 
-            __u32 u = graph->sorted_edges_array->edges_array_dest[j];
+            uint32_t u = graph->sorted_edges_array->edges_array_dest[j];
             int u_parent = stats->parents[u];
             if(u_parent < 0 )
             {
@@ -228,7 +228,7 @@ struct DFSStats  *depthFirstSearchGraphCSRBase(__u32 source, struct GraphCSR *gr
 
 
 
-struct DFSStats  *depthFirstSearchGraphCSR(__u32 source, struct GraphCSR *graph)
+struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph)
 {
 
     struct DFSStats *stats = newDFSStatsGraphCSR(graph);
@@ -261,16 +261,16 @@ struct DFSStats  *depthFirstSearchGraphCSR(__u32 source, struct GraphCSR *graph)
     while(!isEmptyArrayStackCurr(sharedFrontierStack))  // start while
     {
 
-        __u32 v = popArrayStack(sharedFrontierStack);
+        uint32_t v = popArrayStack(sharedFrontierStack);
 
         stats->processed_nodes++;
-        __u32 edge_idx = graph->vertices->edges_idx[v];
-        __u32 j;
+        uint32_t edge_idx = graph->vertices->edges_idx[v];
+        uint32_t j;
 
         for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
         {
 
-            __u32 u = graph->sorted_edges_array->edges_array_dest[j];
+            uint32_t u = graph->sorted_edges_array->edges_array_dest[j];
             int u_parent = stats->parents[u];
             if(u_parent < 0 )
             {
@@ -299,7 +299,7 @@ struct DFSStats  *depthFirstSearchGraphCSR(__u32 source, struct GraphCSR *graph)
     return stats;
 }
 
-struct DFSStats  *pDepthFirstSearchGraphCSR(__u32 source, struct GraphCSR *graph)
+struct DFSStats  *pDepthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph)
 {
 
     struct DFSStats *stats = newDFSStatsGraphCSR(graph);
@@ -343,23 +343,23 @@ struct DFSStats  *pDepthFirstSearchGraphCSR(__u32 source, struct GraphCSR *graph
 
 }
 
-void parallelDepthFirstSearchGraphCSRTask(__u32 source, struct GraphCSR *graph, struct DFSStats *stats)
+void parallelDepthFirstSearchGraphCSRTask(uint32_t source, struct GraphCSR *graph, struct DFSStats *stats)
 {
 
-    __u32 v = source;
+    uint32_t v = source;
 
     #pragma omp atomic update
     stats->processed_nodes++;
 
     // printf("%u \n", stats->processed_nodes);
 
-    __u32 edge_idx = graph->vertices->edges_idx[v];
-    __u32 j;
+    uint32_t edge_idx = graph->vertices->edges_idx[v];
+    uint32_t j;
 
     for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
     {
 
-        __u32 u = graph->sorted_edges_array->edges_array_dest[j];
+        uint32_t u = graph->sorted_edges_array->edges_array_dest[j];
         int u_parent = stats->parents[u];
         if(u_parent < 0 )
         {

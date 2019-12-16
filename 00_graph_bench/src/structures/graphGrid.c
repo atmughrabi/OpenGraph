@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "timer.h"
 #include "graphConfig.h"
@@ -79,12 +79,12 @@ void  graphGridPrint(struct GraphGrid *graphGrid)
 
 
 
-    //   __u32 i;
+    //   uint32_t i;
     //    for ( i = 0; i < ( graphGrid->grid->num_partitions*graphGrid->grid->num_partitions); ++i)
     //       {
 
-    //       __u32 x = i % graphGrid->grid->num_partitions;    // % is the "modulo operator", the remainder of i / width;
-    // __u32 y = i / graphGrid->grid->num_partitions;
+    //       uint32_t x = i % graphGrid->grid->num_partitions;    // % is the "modulo operator", the remainder of i / width;
+    // uint32_t y = i / graphGrid->grid->num_partitions;
 
     //      if(graphGrid->grid->partitions[i].num_edges){
 

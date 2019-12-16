@@ -1,7 +1,7 @@
 #ifndef GRAPHADJLINKEDLIST_H
 #define GRAPHADJLINKEDLIST_H
 
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 #include "graphConfig.h"
@@ -14,11 +14,11 @@
 // in GraphAdjLinkedList)
 struct  GraphAdjLinkedList
 {
-    __u32 num_vertices;
-    __u32 num_edges;
+    uint32_t num_vertices;
+    uint32_t num_edges;
   
 #if WEIGHTED
-    __u32 max_weight;
+    uint32_t max_weight;
 #endif
 
     struct AdjLinkedList *vertices;
@@ -27,11 +27,11 @@ struct  GraphAdjLinkedList
 
 
 // A utility function that creates a GraphAdjLinkedList of V vertices
-struct GraphAdjLinkedList *graphAdjLinkedListGraphNew(__u32 V);
+struct GraphAdjLinkedList *graphAdjLinkedListGraphNew(uint32_t V);
 struct GraphAdjLinkedList *graphAdjLinkedListEdgeListNew(struct EdgeList *edgeList);
 void graphAdjLinkedListPrint(struct GraphAdjLinkedList *graphAdjLinkedList);
 void graphAdjLinkedListFree(struct GraphAdjLinkedList *graphAdjLinkedList);
-void adjLinkedListAddEdge(struct GraphAdjLinkedList *graphAdjLinkedList, struct EdgeList *edge, __u32 i, omp_lock_t *vertex_lock);
+void adjLinkedListAddEdge(struct GraphAdjLinkedList *graphAdjLinkedList, struct EdgeList *edge, uint32_t i, omp_lock_t *vertex_lock);
 void   graphAdjLinkedListPrintMessageWithtime(const char *msg, double time);
 struct GraphAdjLinkedList *graphAdjLinkedListPreProcessingStep (struct Arguments *arguments);
 

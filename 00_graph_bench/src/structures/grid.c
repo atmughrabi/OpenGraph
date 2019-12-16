@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 #include "grid.h"
@@ -59,19 +59,19 @@ void gridPrint(struct Grid *grid)
     //  for ( i = 0; i < grid->num_vertices; ++i)
     //     {
 
-    //         __u32 begin = getPartitionRangeBegin();
-    //         __u32 end = getPartitionRangeEnd();
+    //         uint32_t begin = getPartitionRangeBegin();
+    //         uint32_t end = getPartitionRangeEnd();
 
 
 
     //     }
 
-    //   __u32 i;
+    //   uint32_t i;
     //    for ( i = 0; i < (grid->num_partitions*grid->num_partitions); ++i)
     //       {
 
-    //       __u32 x = i % grid->num_partitions;    // % is the "modulo operator", the remainder of i / width;
-    // __u32 y = i / grid->num_partitions;
+    //       uint32_t x = i % grid->num_partitions;    // % is the "modulo operator", the remainder of i / width;
+    // uint32_t y = i / grid->num_partitions;
 
 
     //       printf("| %-11s (%u,%u)   | \n", "Partition: ", y, x);
@@ -86,9 +86,9 @@ void gridPrint(struct Grid *grid)
 void   graphGridResetActivePartitions(struct Grid *grid)
 {
 
-    __u32 totalPartitions = 0;
+    uint32_t totalPartitions = 0;
     totalPartitions = grid->num_partitions * grid->num_partitions;
-    __u32 i;
+    uint32_t i;
 
     #pragma omp parallel for default(none) shared(grid,totalPartitions) private(i)
     for (i = 0; i < totalPartitions; ++i)
@@ -107,13 +107,13 @@ void   graphGridResetActivePartitionsMap(struct Grid *grid)
 
 }
 
-void   graphGridSetActivePartitionsMap(struct Grid *grid, __u32 vertex)
+void   graphGridSetActivePartitionsMap(struct Grid *grid, uint32_t vertex)
 {
 
-    __u32 row = getPartitionID(grid->num_vertices, grid->num_partitions, vertex);
-    __u32 Partition_idx = 0;
-    __u32 i;
-    __u32 totalPartitions = 0;
+    uint32_t row = getPartitionID(grid->num_vertices, grid->num_partitions, vertex);
+    uint32_t Partition_idx = 0;
+    uint32_t i;
+    uint32_t totalPartitions = 0;
     totalPartitions = grid->num_partitions;
 
     // #pragma omp parallel for default(none) shared(grid,totalPartitions,row) private(i,Partition_idx)
@@ -133,13 +133,13 @@ void   graphGridSetActivePartitionsMap(struct Grid *grid, __u32 vertex)
     }
 }
 
-void   graphGridSetActivePartitions(struct Grid *grid, __u32 vertex)
+void   graphGridSetActivePartitions(struct Grid *grid, uint32_t vertex)
 {
 
-    __u32 row = getPartitionID(grid->num_vertices, grid->num_partitions, vertex);
-    __u32 Partition_idx = 0;
-    __u32 i;
-    __u32 totalPartitions = 0;
+    uint32_t row = getPartitionID(grid->num_vertices, grid->num_partitions, vertex);
+    uint32_t Partition_idx = 0;
+    uint32_t i;
+    uint32_t totalPartitions = 0;
     totalPartitions = grid->num_partitions;
 
     // #pragma omp parallel for default(none) shared(grid,totalPartitions,row) private(i,Partition_idx)
@@ -160,7 +160,7 @@ struct Grid *gridNew(struct EdgeList *edgeList)
 {
 
 
-    __u32 totalPartitions = 0;
+    uint32_t totalPartitions = 0;
 
 
     struct Grid *grid = (struct Grid *) my_malloc( sizeof(struct Grid));
@@ -174,14 +174,14 @@ struct Grid *gridNew(struct EdgeList *edgeList)
     totalPartitions = grid->num_partitions * grid->num_partitions;
 
     grid->partitions = (struct Partition *) my_malloc(totalPartitions * sizeof(struct Partition));
-    grid->activePartitions = (__u32 *) my_malloc(totalPartitions * sizeof(__u32));
-    grid->out_degree = (__u32 *) my_malloc(grid->num_vertices * sizeof(__u32));
-    grid->in_degree = (__u32 *) my_malloc(grid->num_vertices * sizeof(__u32));
+    grid->activePartitions = (uint32_t *) my_malloc(totalPartitions * sizeof(uint32_t));
+    grid->out_degree = (uint32_t *) my_malloc(grid->num_vertices * sizeof(uint32_t));
+    grid->in_degree = (uint32_t *) my_malloc(grid->num_vertices * sizeof(uint32_t));
 
     // grid->activeVertices = newBitmap(grid->num_vertices);
     grid->activePartitionsMap = newBitmap(totalPartitions);
 
-    __u32 i;
+    uint32_t i;
     #pragma omp parallel for default(none) private(i) shared(totalPartitions,grid)
     for (i = 0; i < totalPartitions; ++i)
     {
@@ -244,8 +244,8 @@ void  gridFree(struct Grid *grid)
 
     if(grid)
     {
-        __u32 totalPartitions = grid->num_partitions * grid->num_partitions;
-        __u32 i;
+        uint32_t totalPartitions = grid->num_partitions * grid->num_partitions;
+        uint32_t i;
 
         for (i = 0; i < totalPartitions; ++i)
         {
@@ -275,9 +275,9 @@ void  gridFree(struct Grid *grid)
 struct Grid *graphGridProcessInOutDegrees(struct Grid *grid, struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
-    __u32 dest;
+    uint32_t i;
+    uint32_t src;
+    uint32_t dest;
 
     #pragma omp parallel for default(none) private(i,src,dest) shared(edgeList,grid)
     for(i = 0; i < edgeList->num_edges; i++)
@@ -301,12 +301,12 @@ struct Grid *graphGridProcessInOutDegrees(struct Grid *grid, struct EdgeList *ed
 struct Grid *gridPartitionVertexSizePreprocessing(struct Grid *grid)
 {
 
-    __u32 i;
-    __u32 j;
-    __u32 src;
-    __u32 dest;
-    __u32 num_vertices = 0;
-    __u32 totalPartitions = grid->num_partitions * grid->num_partitions;
+    uint32_t i;
+    uint32_t j;
+    uint32_t src;
+    uint32_t dest;
+    uint32_t num_vertices = 0;
+    uint32_t totalPartitions = grid->num_partitions * grid->num_partitions;
 
     // #pragma omp parallel for default(none) private(i) shared(totalPartitions,grid)
     #pragma omp parallel for default(none) private(i,src,dest,num_vertices) shared(totalPartitions,grid) schedule(dynamic,1024)
@@ -336,17 +336,17 @@ struct Grid *gridPartitionVertexSizePreprocessing(struct Grid *grid)
 struct Grid *gridPartitionEdgeListSizePreprocessing(struct Grid *grid, struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
-    __u32 dest;
-    __u32 Partition_idx;
+    uint32_t i;
+    uint32_t src;
+    uint32_t dest;
+    uint32_t Partition_idx;
 
-    __u32 num_partitions = grid->num_partitions;
-    __u32 num_vertices = grid->num_vertices;
+    uint32_t num_partitions = grid->num_partitions;
+    uint32_t num_vertices = grid->num_vertices;
 
 
-    __u32 row;
-    __u32 col;
+    uint32_t row;
+    uint32_t col;
 
     #pragma omp parallel for default(none) private(i,row,col,src,dest,Partition_idx) shared(num_vertices, num_partitions,edgeList,grid)
     for(i = 0; i < edgeList->num_edges; i++)
@@ -377,17 +377,17 @@ struct Grid *gridPartitionEdgeListSizePreprocessing(struct Grid *grid, struct Ed
 struct Grid *gridPartitionEdgePopulation(struct Grid *grid, struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
-    __u32 dest;
-    __u32 Partition_idx;
-    __u32 Edge_idx;
+    uint32_t i;
+    uint32_t src;
+    uint32_t dest;
+    uint32_t Partition_idx;
+    uint32_t Edge_idx;
 
-    __u32 num_partitions = grid->num_partitions;
-    __u32 num_vertices = grid->num_vertices;
+    uint32_t num_partitions = grid->num_partitions;
+    uint32_t num_vertices = grid->num_vertices;
 
-    __u32 row;
-    __u32 col;
+    uint32_t row;
+    uint32_t col;
 
 
 
@@ -423,8 +423,8 @@ struct Grid *gridPartitionEdgePopulation(struct Grid *grid, struct EdgeList *edg
 struct Grid *gridPartitionsMemoryAllocations(struct Grid *grid)
 {
 
-    __u32 i;
-    __u32 totalPartitions = grid->num_partitions * grid->num_partitions;
+    uint32_t i;
+    uint32_t totalPartitions = grid->num_partitions * grid->num_partitions;
 
     #pragma omp parallel for default(none) private(i) shared(totalPartitions,grid)
     for ( i = 0; i < totalPartitions; ++i)
@@ -441,11 +441,11 @@ struct Grid *gridPartitionsMemoryAllocations(struct Grid *grid)
 
 }
 
-__u32 gridCalculatePartitions(struct EdgeList *edgeList)
+uint32_t gridCalculatePartitions(struct EdgeList *edgeList)
 {
     //epfl everything graph
-    __u32 num_vertices  = edgeList->num_vertices;
-    __u32 num_Paritions = (num_vertices * 8 / 1024) / 20;
+    uint32_t num_vertices  = edgeList->num_vertices;
+    uint32_t num_Paritions = (num_vertices * 8 / 1024) / 20;
     if(num_Paritions > 512)
         num_Paritions = 256;
     if(num_Paritions == 0 )
@@ -457,10 +457,10 @@ __u32 gridCalculatePartitions(struct EdgeList *edgeList)
 
 
 
-inline __u32 getPartitionID(__u32 vertices, __u32 partitions, __u32 vertex_id)
+inline uint32_t getPartitionID(uint32_t vertices, uint32_t partitions, uint32_t vertex_id)
 {
 
-    __u32 partition_size = vertices / partitions;
+    uint32_t partition_size = vertices / partitions;
 
     if (vertices % partitions == 0)
     {
@@ -470,7 +470,7 @@ inline __u32 getPartitionID(__u32 vertices, __u32 partitions, __u32 vertex_id)
 
     partition_size += 1;
 
-    __u32 split_point = vertices % partitions * partition_size;
+    uint32_t split_point = vertices % partitions * partition_size;
 
     return (vertex_id < split_point) ? vertex_id / partition_size : (vertex_id - split_point) / (partition_size - 1) + (vertices % partitions);
 }

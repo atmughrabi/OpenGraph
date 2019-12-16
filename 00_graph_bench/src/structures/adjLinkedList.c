@@ -15,14 +15,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "adjLinkedList.h"
 #include "myMalloc.h"
 #include "graphConfig.h"
 
 // A utility function to create a new adjacency list node
-struct AdjLinkedListNode *newAdjLinkedListOutNode(__u32 dest)
+struct AdjLinkedListNode *newAdjLinkedListOutNode(uint32_t dest)
 {
 
     struct AdjLinkedListNode *newNode = (struct AdjLinkedListNode *) my_malloc(sizeof(struct AdjLinkedListNode));
@@ -40,7 +40,7 @@ struct AdjLinkedListNode *newAdjLinkedListOutNode(__u32 dest)
 }
 
 
-struct AdjLinkedListNode *newAdjLinkedListInNode( __u32 src)
+struct AdjLinkedListNode *newAdjLinkedListInNode( uint32_t src)
 {
 
     struct AdjLinkedListNode *newNode = (struct AdjLinkedListNode *) my_malloc(sizeof(struct AdjLinkedListNode));

@@ -1,7 +1,7 @@
 #ifndef ADJARRAYLIST_H
 #define ADJARRAYLIST_H
 
-#include <linux/types.h>
+#include <stdint.h>
 #include "graphConfig.h"
 #include "edgeList.h"
 
@@ -12,11 +12,11 @@
 struct  AdjArrayList
 {
 
-    __u32 out_degree;
+    uint32_t out_degree;
     struct EdgeList *outNodes;
 
 #if DIRECTED
-    __u32 in_degree;
+    uint32_t in_degree;
     struct EdgeList *inNodes;
 #endif
 };

@@ -69,7 +69,7 @@ int main()
 
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct GraphCSR *graphCSR = NULL;
-    __u32 root = 6;
+    uint32_t root = 6;
 
     // printf("Filename : %s \n",fnameb);
 

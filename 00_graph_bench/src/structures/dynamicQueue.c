@@ -16,13 +16,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "dynamicQueue.h"
 #include "myMalloc.h"
 
 // A utility function to create a new linked list node.
-struct QNode *newQNode(__u32 k)
+struct QNode *newQNode(uint32_t k)
 {
     struct QNode *temp = (struct QNode *)  my_malloc(sizeof(struct QNode));
 
@@ -43,7 +43,7 @@ struct DynamicQueue *newDynamicQueue()
 }
 
 // The function to add a key k to q
-void enDynamicQueue(struct DynamicQueue *q, __u32 k)
+void enDynamicQueue(struct DynamicQueue *q, uint32_t k)
 {
     // Create a new LL node
     struct QNode *temp = newQNode(k);
@@ -96,7 +96,7 @@ struct QNode *frontDynamicQueue(struct DynamicQueue *q)
 }
 
 
-__u8 isEmptyDynamicQueue (struct DynamicQueue *q)
+uint8_t isEmptyDynamicQueue (struct DynamicQueue *q)
 {
 
     if((q->front == NULL) && (q->rear == NULL))

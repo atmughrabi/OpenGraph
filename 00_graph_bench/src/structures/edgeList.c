@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <err.h>
 #include <string.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 
@@ -33,7 +33,7 @@
 
 
 
-__u32 maxTwoIntegers(__u32 num1, __u32 num2)
+uint32_t maxTwoIntegers(uint32_t num1, uint32_t num2)
 {
 
     if(num1 >= num2)
@@ -48,7 +48,7 @@ void writeEdgeListToTXTFile(struct EdgeList *edgeList, const char *fname)
 {
 
     FILE *fp;
-    __u32 i;
+    uint32_t i;
 
 
     char *fname_txt = (char *) malloc((strlen(fname) + 10) * sizeof(char));
@@ -78,19 +78,19 @@ void writeEdgeListToTXTFile(struct EdgeList *edgeList, const char *fname)
 }
 
 // read edge file to edge_array in memory
-struct EdgeList *newEdgeList( __u32 num_edges)
+struct EdgeList *newEdgeList( uint32_t num_edges)
 {
 
 
     struct EdgeList *newEdgeList = (struct EdgeList *) my_malloc(sizeof(struct EdgeList));
-    newEdgeList->edges_array_src = (__u32 *) my_malloc(num_edges * sizeof(__u32));
-    newEdgeList->edges_array_dest = (__u32 *) my_malloc(num_edges * sizeof(__u32));
+    newEdgeList->edges_array_src = (uint32_t *) my_malloc(num_edges * sizeof(uint32_t));
+    newEdgeList->edges_array_dest = (uint32_t *) my_malloc(num_edges * sizeof(uint32_t));
 
 #if WEIGHTED
-    newEdgeList->edges_array_weight = (__u32 *) my_malloc(num_edges * sizeof(__u32));
+    newEdgeList->edges_array_weight = (uint32_t *) my_malloc(num_edges * sizeof(uint32_t));
 #endif
 
-    __u32 i;
+    uint32_t i;
     #pragma omp parallel for
     for(i = 0; i < num_edges; i++)
     {
@@ -118,11 +118,11 @@ struct EdgeList *removeDulpicatesSelfLoopEdges( struct EdgeList *edgeList)
 {
 
     struct EdgeList *tempEdgeList = newEdgeList(edgeList->num_edges);
-    __u32 tempSrc = 0;
-    __u32 tempDest = 0;
-    __u32 tempWeight = 0;
-    __u32 j = 0;
-    __u32 i = 0;
+    uint32_t tempSrc = 0;
+    uint32_t tempDest = 0;
+    uint32_t tempWeight = 0;
+    uint32_t j = 0;
+    uint32_t i = 0;
 
 
     do
@@ -194,15 +194,15 @@ void freeEdgeList( struct EdgeList *edgeList)
 }
 
 
-char *readEdgeListstxt(const char *fname, __u32 weighted)
+char *readEdgeListstxt(const char *fname, uint32_t weighted)
 {
 
     FILE *pText, *pBinary;
-    __u32 size = 0, i;
-    __u32 src = 0, dest = 0;
+    uint32_t size = 0, i;
+    uint32_t src = 0, dest = 0;
 
 #if WEIGHTED
-    __u32 weight = 1;
+    uint32_t weight = 1;
 #endif
 
     char *fname_txt = (char *) malloc((strlen(fname) + 10) * sizeof(char));
@@ -284,16 +284,16 @@ char *readEdgeListstxt(const char *fname, __u32 weighted)
 
 
 
-struct EdgeList *readEdgeListsbin(const char *fname, __u8 inverse, __u32 symmetric, __u32 weighted)
+struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t symmetric, uint32_t weighted)
 {
 
 
     int fd = open(fname, O_RDONLY);
     struct stat fs;
     char *buf_addr;
-    __u32  *buf_pointer;
-    __u32  src = 0, dest = 0;
-    __u32 offset;
+    uint32_t  *buf_pointer;
+    uint32_t  src = 0, dest = 0;
+    uint32_t offset;
 
     if (fd == -1)
     {
@@ -318,7 +318,7 @@ struct EdgeList *readEdgeListsbin(const char *fname, __u8 inverse, __u32 symmetr
     }
 
 
-    buf_pointer = (__u32 *) buf_addr;
+    buf_pointer = (uint32_t *) buf_addr;
 
 #if WEIGHTED
     if(weighted)
@@ -330,7 +330,7 @@ struct EdgeList *readEdgeListsbin(const char *fname, __u8 inverse, __u32 symmetr
     offset = 2;
 #endif
 
-    __u32 num_edges = (__u64)fs.st_size / ((offset) * sizeof(__u32));
+    uint32_t num_edges = (uint64_t)fs.st_size / ((offset) * sizeof(uint32_t));
     struct EdgeList *edgeList;
 
 #if DIRECTED
@@ -353,11 +353,11 @@ struct EdgeList *readEdgeListsbin(const char *fname, __u8 inverse, __u32 symmetr
     }
 #endif
 
-    __u32 i;
-    __u32 num_vertices = 0;
+    uint32_t i;
+    uint32_t num_vertices = 0;
 
 #if WEIGHTED
-    __u32 max_weight = 0;
+    uint32_t max_weight = 0;
 #endif
 
     // #pragma omp parallel for reduction(max:num_vertices)
@@ -504,17 +504,17 @@ struct EdgeList *readEdgeListsbin(const char *fname, __u8 inverse, __u32 symmetr
 }
 
 
-struct EdgeList *readEdgeListsMem( struct EdgeList *edgeListmem,  __u8 inverse, __u32 symmetric, __u32 weighted)
+struct EdgeList *readEdgeListsMem( struct EdgeList *edgeListmem,  uint8_t inverse, uint32_t symmetric, uint32_t weighted)
 {
 
 
-    __u32 num_edges = edgeListmem->num_edges;
-    __u32  src = 0, dest = 0, weight = 1;;
+    uint32_t num_edges = edgeListmem->num_edges;
+    uint32_t  src = 0, dest = 0, weight = 1;;
     struct EdgeList *edgeList;
 
     edgeList = newEdgeList((num_edges));
 
-    __u32 i;
+    uint32_t i;
 
     // #pragma omp parallel for
     for(i = 0; i < num_edges; i++)
@@ -623,7 +623,7 @@ void edgeListPrint(struct EdgeList *edgeList)
     printf("number of vertices (V) : %u \n", edgeList->num_vertices);
     printf("number of edges    (E) : %u \n", edgeList->num_edges);
 
-    __u32 i;
+    uint32_t i;
     for(i = 0; i < edgeList->num_edges; i++)
     {
 #if WEIGHTED

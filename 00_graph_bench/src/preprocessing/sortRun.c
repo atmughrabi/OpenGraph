@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "countsort.h"
 #include "radixsort.h"
@@ -24,7 +24,7 @@
 #include "sortRun.h"
 
 // -o [sorting algorithm] 0 radix-src 1 radix-src-dest 2 count-src 3 count-src-dst;
-struct EdgeList *sortRunAlgorithms(struct EdgeList *edgeList, __u32 sort)
+struct EdgeList *sortRunAlgorithms(struct EdgeList *edgeList, uint32_t sort)
 {
 
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));

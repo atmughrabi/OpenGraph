@@ -1,7 +1,7 @@
 #ifndef GRAPHGRID_H
 #define GRAPHGRID_H
 
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "graphConfig.h"
 #include "edgeList.h"
@@ -11,11 +11,11 @@
 // A structure to represent an adjacency list
 struct  GraphGrid {
 
-	__u32 num_edges;
-	__u32 num_vertices;
+	uint32_t num_edges;
+	uint32_t num_vertices;
 	
 	#if WEIGHTED
-	__u32 max_weight;
+	uint32_t max_weight;
 	#endif
 
 	

@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 #include "timer.h"
@@ -34,7 +34,7 @@
 
 
 // A utility function that creates a graphAdjLinkedList of V vertices
-struct GraphAdjLinkedList *graphAdjLinkedListGraphNew(__u32 V)
+struct GraphAdjLinkedList *graphAdjLinkedListGraphNew(uint32_t V)
 {
 
     struct GraphAdjLinkedList *graphAdjLinkedList = (struct GraphAdjLinkedList *) my_malloc( sizeof(struct GraphAdjLinkedList));
@@ -42,7 +42,7 @@ struct GraphAdjLinkedList *graphAdjLinkedListGraphNew(__u32 V)
     graphAdjLinkedList->vertices = (struct AdjLinkedList *) my_malloc( V * sizeof(struct AdjLinkedList));
 
 
-    __u32 i;
+    uint32_t i;
     #pragma omp parallel for
     for(i = 0; i < V; i++)
     {
@@ -79,7 +79,7 @@ struct GraphAdjLinkedList *graphAdjLinkedListEdgeListNew(struct EdgeList *edgeLi
 
 
 
-    __u32 i;
+    uint32_t i;
     #pragma omp parallel for
     for(i = 0; i < graphAdjLinkedList->num_vertices; i++)
     {
@@ -158,7 +158,7 @@ void graphAdjLinkedListPrint(struct GraphAdjLinkedList *graphAdjLinkedList)
 void graphAdjLinkedListFree(struct GraphAdjLinkedList *graphAdjLinkedList)
 {
 
-    __u32 v;
+    uint32_t v;
     struct AdjLinkedListNode *pCrawl;
     struct AdjLinkedListNode *pFree;
 
@@ -201,7 +201,7 @@ void graphAdjLinkedListFree(struct GraphAdjLinkedList *graphAdjLinkedList)
 
 }
 
-void adjLinkedListAddEdge(struct GraphAdjLinkedList *graphAdjLinkedList, struct EdgeList *edge, __u32 i, omp_lock_t *vertex_lock)
+void adjLinkedListAddEdge(struct GraphAdjLinkedList *graphAdjLinkedList, struct EdgeList *edge, uint32_t i, omp_lock_t *vertex_lock)
 {
 
     // omp_set_lock(&(vertex_lock[edge->edges_array_src[i]]));

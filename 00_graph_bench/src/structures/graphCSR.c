@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <err.h>
 #include <string.h>
 
@@ -101,7 +101,7 @@ void graphCSRPrint(struct GraphCSR *graphCSR)
 }
 
 
-struct GraphCSR *graphCSRNew(__u32 V, __u32 E, __u8 inverse)
+struct GraphCSR *graphCSRNew(uint32_t V, uint32_t E, uint8_t inverse)
 {
 
     struct GraphCSR *graphCSR = (struct GraphCSR *) my_malloc( sizeof(struct GraphCSR));
@@ -121,7 +121,7 @@ struct GraphCSR *graphCSRNew(__u32 V, __u32 E, __u8 inverse)
 }
 
 
-struct GraphCSR *graphCSRAssignEdgeList (struct GraphCSR *graphCSR, struct EdgeList *edgeList, __u8 inverse)
+struct GraphCSR *graphCSRAssignEdgeList (struct GraphCSR *graphCSR, struct EdgeList *edgeList, uint8_t inverse)
 {
 
 
@@ -221,7 +221,7 @@ void writeToBinFileGraphCSR (const char *fname, struct GraphCSR *graphCSR)
 
 
     FILE  *pBinary;
-    __u32 vertex_id;
+    uint32_t vertex_id;
 
     char *fname_txt = (char *) malloc((strlen(fname) + 10) * sizeof(char));
     char *fname_bin = (char *) malloc((strlen(fname) + 10) * sizeof(char));
@@ -292,10 +292,10 @@ struct GraphCSR *readFromBinFileGraphCSR (const char *fname)
 {
 
     FILE  *pBinary;
-    __u32 vertex_id;
-    __u32 num_vertices;
-    __u32 num_edges;
-    __u32 max_weight;
+    uint32_t vertex_id;
+    uint32_t num_vertices;
+    uint32_t num_edges;
+    uint32_t max_weight;
     size_t ret;
 
     pBinary = fopen(fname, "rb");

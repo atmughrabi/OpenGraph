@@ -111,8 +111,8 @@ main (int argc, char **argv)
     printf(" -----------------------------------------------------\n");
 
 
-    __u32 missmatch = 0;
-    __u32 total_missmatch = 0;
+    uint32_t missmatch = 0;
+    uint32_t total_missmatch = 0;
     void *ref_data;
     void *cmp_data;
 

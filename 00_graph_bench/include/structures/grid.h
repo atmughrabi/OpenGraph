@@ -1,7 +1,7 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include <linux/types.h>
+#include <stdint.h>
 #include "bitmap.h"
 #include "graphConfig.h"
 #include "edgeList.h"
@@ -13,10 +13,10 @@
 struct  Partition
 {
 
-    // __u32 vertex_start;
-    // __u32 vertex_end;
-    __u32 num_edges;
-    __u32 num_vertices;
+    // uint32_t vertex_start;
+    // uint32_t vertex_end;
+    uint32_t num_edges;
+    uint32_t num_vertices;
     struct EdgeList *edgeList;
 
 };
@@ -26,13 +26,13 @@ struct  Partition
 struct  Grid
 {
 
-    __u32 num_edges;
-    __u32 num_vertices;
-    __u32 num_partitions;
+    uint32_t num_edges;
+    uint32_t num_vertices;
+    uint32_t num_partitions;
     struct Partition *partitions;
-    __u32 *activePartitions;
-    __u32 *out_degree;
-    __u32 *in_degree;
+    uint32_t *activePartitions;
+    uint32_t *out_degree;
+    uint32_t *in_degree;
     struct Bitmap *activePartitionsMap;
     // struct Bitmap* activeVertices;
 };
@@ -45,16 +45,16 @@ void gridPrintMessageWithtime(const char *msg, double time);
 
 struct Grid *gridPartitionEdgeListSizePreprocessing(struct Grid *grid, struct EdgeList *edgeList);
 struct Grid *gridPartitionVertexSizePreprocessing(struct Grid *grid);
-__u32 gridCalculatePartitions(struct EdgeList *edgeList);
+uint32_t gridCalculatePartitions(struct EdgeList *edgeList);
 struct Grid *gridPartitionsMemoryAllocations(struct Grid *grid);
 struct Grid *gridPartitionEdgePopulation(struct Grid *grid, struct EdgeList *edgeList);
 struct Grid *graphGridProcessInOutDegrees(struct Grid *grid, struct EdgeList *edgeList);
-void   graphGridSetActivePartitions(struct Grid *grid, __u32 vertex);
+void   graphGridSetActivePartitions(struct Grid *grid, uint32_t vertex);
 void   graphGridResetActivePartitions(struct Grid *grid);
 
 void   graphGridResetActivePartitionsMap(struct Grid *grid);
-void   graphGridSetActivePartitionsMap(struct Grid *grid, __u32 vertex);
+void   graphGridSetActivePartitionsMap(struct Grid *grid, uint32_t vertex);
 
-__u32 getPartitionID(__u32 vertices, __u32 partitions, __u32 vertex_id);
+uint32_t getPartitionID(uint32_t vertices, uint32_t partitions, uint32_t vertex_id);
 
 #endif

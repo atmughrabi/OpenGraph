@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <string.h>
 #include <omp.h>
 
@@ -47,11 +47,11 @@ void collectStats(struct Arguments *arguments)
     struct GraphCSR *graphStats = graphCSRPreProcessingStep (arguments);
 
 
-    __u32 *histogram_in = (__u32 *) my_malloc(sizeof(__u32) * arguments->binSize);
-    __u32 *histogram_out = (__u32 *) my_malloc(sizeof(__u32) * arguments->binSize);
+    uint32_t *histogram_in = (uint32_t *) my_malloc(sizeof(uint32_t) * arguments->binSize);
+    uint32_t *histogram_out = (uint32_t *) my_malloc(sizeof(uint32_t) * arguments->binSize);
 
 
-    __u32 i = 0;
+    uint32_t i = 0;
     #pragma omp parallel for
     for(i = 0 ; i < arguments->binSize; i++)
     {
@@ -110,11 +110,11 @@ void collectStats(struct Arguments *arguments)
 }
 
 
-void countHistogram(struct GraphCSR *graphStats, __u32 *histogram, __u32 binSize, __u32 inout_degree)
+void countHistogram(struct GraphCSR *graphStats, uint32_t *histogram, uint32_t binSize, uint32_t inout_degree)
 {
 
-    __u32 v;
-    __u32 index;
+    uint32_t v;
+    uint32_t index;
 
     #pragma omp parallel for
     for(v = 0; v < graphStats->num_vertices; v++)
@@ -137,10 +137,10 @@ void countHistogram(struct GraphCSR *graphStats, __u32 *histogram, __u32 binSize
 }
 
 
-void printHistogram(const char *fname_stats, __u32 *histogram, __u32 binSize)
+void printHistogram(const char *fname_stats, uint32_t *histogram, uint32_t binSize)
 {
 
-    __u32 index;
+    uint32_t index;
     FILE *fptr;
     fptr = fopen(fname_stats, "w");
     for(index = 0; index < binSize; index++)
@@ -151,15 +151,15 @@ void printHistogram(const char *fname_stats, __u32 *histogram, __u32 binSize)
 }
 
 
-void printSparseMatrixList(const char *fname_stats, struct GraphCSR *graphStats, __u32 binSize)
+void printSparseMatrixList(const char *fname_stats, struct GraphCSR *graphStats, uint32_t binSize)
 {
 
 
-    __u32 *SparseMatrix = (__u32 *) my_malloc(sizeof(__u32) * binSize * binSize);
+    uint32_t *SparseMatrix = (uint32_t *) my_malloc(sizeof(uint32_t) * binSize * binSize);
 
 
-    __u32 x;
-    __u32 y;
+    uint32_t x;
+    uint32_t y;
     #pragma omp parallel for private(y) shared(SparseMatrix)
     for(x = 0; x < binSize; x++)
     {
@@ -170,13 +170,13 @@ void printSparseMatrixList(const char *fname_stats, struct GraphCSR *graphStats,
     }
 
 
-    __u32 i;
+    uint32_t i;
 
     #pragma omp parallel for
     for(i = 0; i < graphStats->num_edges; i++)
     {
-        __u32 src;
-        __u32 dest;
+        uint32_t src;
+        uint32_t dest;
         src = graphStats->sorted_edges_array->edges_array_src[i] / ((graphStats->num_vertices / binSize) + 1);
         dest = graphStats->sorted_edges_array->edges_array_dest[i] / ((graphStats->num_vertices / binSize) + 1);
 

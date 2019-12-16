@@ -1,52 +1,52 @@
 #ifndef ARRAYSTACK_H
 #define ARRAYSTACK_H
 
-#include <linux/types.h>
+#include <stdint.h>
 #include "bitmap.h"
 
 struct  ArrayStack
 {
-    __u32 head;
-    __u32 tail;
-    __u32 tail_next;
-    __u32 size;
-    __u32 *Stack;
+    uint32_t head;
+    uint32_t tail;
+    uint32_t tail_next;
+    uint32_t size;
+    uint32_t *Stack;
     struct Bitmap *q_bitmap;
     struct Bitmap *q_bitmap_next;
 
 };
 
 
-struct ArrayStack *newArrayStack 	(__u32 size);
+struct ArrayStack *newArrayStack 	(uint32_t size);
 void 	freeArrayStack				(struct ArrayStack *q);
 void resetArrayStack(struct ArrayStack *q);
 
-void pushArrayStack 					(struct ArrayStack *q, __u32 k);
-void pushArrayStackWithBitmap 		(struct ArrayStack *q, __u32 k);
-void pushArrayStackAtomic 			(struct ArrayStack *q, __u32 k);
-void pushArrayStackWithBitmapAtomic 	(struct ArrayStack *q, __u32 k);
+void pushArrayStack 					(struct ArrayStack *q, uint32_t k);
+void pushArrayStackWithBitmap 		(struct ArrayStack *q, uint32_t k);
+void pushArrayStackAtomic 			(struct ArrayStack *q, uint32_t k);
+void pushArrayStackWithBitmapAtomic 	(struct ArrayStack *q, uint32_t k);
 
 
-__u32 	popArrayStack	(struct ArrayStack *q);
-__u32 	frontArrayStack (struct ArrayStack *q);
-__u8  isEmptyArrayStack (struct ArrayStack *q);
-__u8  ispushArrayStack 	(struct ArrayStack *q, __u32 k);
+uint32_t 	popArrayStack	(struct ArrayStack *q);
+uint32_t 	frontArrayStack (struct ArrayStack *q);
+uint8_t  isEmptyArrayStack (struct ArrayStack *q);
+uint8_t  ispushArrayStack 	(struct ArrayStack *q, uint32_t k);
 
-void pushArrayStackDelayed 	(struct ArrayStack *q, __u32 k);
-void pushArrayStackDelayedWithBitmapAtomic (struct ArrayStack *q, __u32 k);
-void pushArrayStackDelayedWithBitmap (struct ArrayStack *q, __u32 k);
+void pushArrayStackDelayed 	(struct ArrayStack *q, uint32_t k);
+void pushArrayStackDelayedWithBitmapAtomic (struct ArrayStack *q, uint32_t k);
+void pushArrayStackDelayedWithBitmap (struct ArrayStack *q, uint32_t k);
 
 void slideWindowArrayStack (struct ArrayStack *q);
 void slideWindowArrayStackBitmap (struct ArrayStack *q);
 
-__u8 isEmptyArrayStackNext (struct ArrayStack *q);
-__u8 isEmptyArrayStackCurr (struct ArrayStack *q);
+uint8_t isEmptyArrayStackNext (struct ArrayStack *q);
+uint8_t isEmptyArrayStackCurr (struct ArrayStack *q);
 
-__u32 sizeArrayStackCurr(struct ArrayStack *q);
-__u32 sizeArrayStackNext(struct ArrayStack *q);
+uint32_t sizeArrayStackCurr(struct ArrayStack *q);
+uint32_t sizeArrayStackNext(struct ArrayStack *q);
 
-__u32 sizeArrayStack(struct ArrayStack *q);
-__u8  ispushArrayStackNext 	(struct ArrayStack *q, __u32 k);
+uint32_t sizeArrayStack(struct ArrayStack *q);
+uint8_t  ispushArrayStackNext 	(struct ArrayStack *q, uint32_t k);
 
 void arrayStackGenerateBitmap(struct ArrayStack *q);
 void flushArrayStackToShared(struct ArrayStack *local_q, struct ArrayStack *shared_q);

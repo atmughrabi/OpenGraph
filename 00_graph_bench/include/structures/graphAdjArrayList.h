@@ -1,7 +1,7 @@
 #ifndef GRAPHADJARRAYLIST_H
 #define GRAPHADJARRAYLIST_H
 
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "graphConfig.h"
 #include "edgeList.h"
@@ -15,11 +15,11 @@
 // in GraphAdjArrayList)
 struct  GraphAdjArrayList
 {
-    __u32 num_vertices;
-    __u32 num_edges;
+    uint32_t num_vertices;
+    uint32_t num_edges;
 
 #if WEIGHTED
-    __u32 max_weight;
+    uint32_t max_weight;
 #endif
 
     struct AdjArrayList *vertices;
@@ -28,7 +28,7 @@ struct  GraphAdjArrayList
 
 // A utility function that creates a GraphAdjArrayList of V vertices
 void graphAdjArrayListPrintMessageWithtime(const char *msg, double time);
-struct GraphAdjArrayList *graphAdjArrayListGraphNew(__u32 V);
+struct GraphAdjArrayList *graphAdjArrayListGraphNew(uint32_t V);
 struct GraphAdjArrayList *graphAdjArrayListEdgeListNew(struct EdgeList *edgeList);
 struct GraphAdjArrayList *graphAdjArrayListEdgeListNewWithInverse(struct EdgeList *edgeList, struct EdgeList *inverseEdgeList);
 void graphAdjArrayListPrint(struct GraphAdjArrayList *graphAdjArrayList);

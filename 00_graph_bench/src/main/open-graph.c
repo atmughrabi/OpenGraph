@@ -19,7 +19,7 @@
 #include <argp.h>
 #include <stdbool.h>
 #include <omp.h>
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "myMalloc.h"
 #include "timer.h"
@@ -268,9 +268,9 @@ main (int argc, char **argv)
 
     if(arguments.xflag) // if stats flag is on collect stats or serialize your graph
     {
-        // __u32 binSize = arguments.iterations;
-        // __u32 inout_degree = arguments.pushpull;
-        // __u32 inout_lmode = arguments.lmode;
+        // uint32_t binSize = arguments.iterations;
+        // uint32_t inout_degree = arguments.pushpull;
+        // uint32_t inout_lmode = arguments.lmode;
         // collectStats(binSize, arguments.fnameb, arguments.sort, inout_lmode, arguments.symmetric, arguments.weighted, inout_degree);
         writeSerializedGraphDataStructure(&arguments);
     }

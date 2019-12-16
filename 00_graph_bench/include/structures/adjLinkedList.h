@@ -1,7 +1,7 @@
 #ifndef ADJLINKEDLIST_H
 #define ADJLINKEDLIST_H
 
-#include <linux/types.h>
+#include <stdint.h>
 #include "graphConfig.h"
 #include "edgeList.h"
 
@@ -10,11 +10,11 @@
 struct  AdjLinkedListNode
 {
 
-    __u32 dest;
-    // __u32 src;
+    uint32_t dest;
+    // uint32_t src;
 
 #if WEIGHTED
-    __u32 weight;
+    uint32_t weight;
 #endif
 
     struct AdjLinkedListNode *next;
@@ -25,12 +25,12 @@ struct  AdjLinkedListNode
 struct  AdjLinkedList
 {
 
-    __u8 visited;
-    __u32 out_degree;
+    uint8_t visited;
+    uint32_t out_degree;
     struct AdjLinkedListNode *outNodes;
 
 #if DIRECTED
-    __u32 in_degree;
+    uint32_t in_degree;
     struct AdjLinkedListNode *inNodes;
 #endif
 
@@ -38,7 +38,7 @@ struct  AdjLinkedList
 
 
 // A utility function to create a new adjacency list node
-struct AdjLinkedListNode *newAdjLinkedListOutNode(__u32 dest);
-struct AdjLinkedListNode *newAdjLinkedListInNode( __u32 src);
+struct AdjLinkedListNode *newAdjLinkedListOutNode(uint32_t dest);
+struct AdjLinkedListNode *newAdjLinkedListInNode( uint32_t src);
 
 #endif

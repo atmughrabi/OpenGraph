@@ -1,7 +1,7 @@
 #ifndef INCREMENTALAGGREGATION_H
 #define INCREMENTALAGGREGATION_H
 
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "graphConfig.h"
 #include "arrayQueue.h"
@@ -13,13 +13,13 @@
 
 struct __attribute__((__packed__)) MyPair
 {
-    __u32 degree;
-    __u32 child;
+    uint32_t degree;
+    uint32_t child;
 };
 
 
 union Atom {
-    __u64 atomicPair;
+    uint64_t atomicPair;
     struct MyPair pair;
 };
 // typedef struct pair { void *a[2]; } pair;
@@ -41,19 +41,19 @@ union Atom {
 
 struct IncrementalAggregationStats
 {
-    __u32 *vertices;
-    __u32 *degrees;
-    __u32 num_clusters;
+    uint32_t *vertices;
+    uint32_t *degrees;
+    uint32_t num_clusters;
     //dendogram
-    __u32 *atomDegree;
-    __u32 *atomChild;
+    uint32_t *atomDegree;
+    uint32_t *atomChild;
     union Atom *atom;
 
-    __u32 *sibling;
-    __u32 *dest;
-    __u32 *weightSum;
-    __u32 *labels;
-    __u32 num_vertices;
+    uint32_t *sibling;
+    uint32_t *dest;
+    uint32_t *weightSum;
+    uint32_t *labels;
+    uint32_t num_vertices;
     double totalQ;
     double time_total;
 };
@@ -70,12 +70,12 @@ void freeIncrementalAggregationStats(struct IncrementalAggregationStats *stats);
 // ********************************************************************************************
 
 struct IncrementalAggregationStats *incrementalAggregationGraphCSR(struct GraphCSR *graph);
-void findBestDestination(struct ArrayQueue *Neighbors, struct ArrayQueue *reachableSet, float *deltaQ, __u32 *u, __u32 degreeVout, __u32 v, struct IncrementalAggregationStats *stats, struct GraphCSR *graph);
-void traversDendrogramReachableSetDFS(__u32 v, union Atom *atom, __u32 *sibling, struct ArrayQueue *reachableSet);
+void findBestDestination(struct ArrayQueue *Neighbors, struct ArrayQueue *reachableSet, float *deltaQ, uint32_t *u, uint32_t degreeVout, uint32_t v, struct IncrementalAggregationStats *stats, struct GraphCSR *graph);
+void traversDendrogramReachableSetDFS(uint32_t v, union Atom *atom, uint32_t *sibling, struct ArrayQueue *reachableSet);
 void printSet(struct ArrayQueue *Set);
-void returnReachableSetOfNodesFromDendrogram(__u32 v, union Atom *atom, __u32 *sibling, struct ArrayQueue *reachableSet);
+void returnReachableSetOfNodesFromDendrogram(uint32_t v, union Atom *atom, uint32_t *sibling, struct ArrayQueue *reachableSet);
 
-__u32 *returnLabelsOfNodesFromDendrogram(struct ArrayQueue *reachableSet, union Atom *atom, __u32 *sibling, __u32 num_vertices);
-void traversDendrogramLabelsDFS(__u32 *newLablesCounter, __u32 *newLables, __u32 v, union Atom *atom, __u32 *sibling);
+uint32_t *returnLabelsOfNodesFromDendrogram(struct ArrayQueue *reachableSet, union Atom *atom, uint32_t *sibling, uint32_t num_vertices);
+void traversDendrogramLabelsDFS(uint32_t *newLablesCounter, uint32_t *newLables, uint32_t v, union Atom *atom, uint32_t *sibling);
 
 #endif

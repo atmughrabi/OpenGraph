@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 #include "radixsort.h"
@@ -43,20 +43,20 @@
 //   for i in indexes(part)
 //     bucket = compute_bucket(a[i])
 //     out[Cnt[part][bucket]++] = a[i]
-void radixSortCountSortEdgesBySource (struct EdgeList** sorted_edges_array, struct EdgeList** edgeList, __u32 radix, __u32 buckets, __u32* buckets_count){
+void radixSortCountSortEdgesBySource (struct EdgeList** sorted_edges_array, struct EdgeList** edgeList, uint32_t radix, uint32_t buckets, uint32_t* buckets_count){
 
 	struct EdgeList* temp_edges_array = NULL; 
-    __u32 num_edges = (*edgeList)->num_edges;
-    __u32 t = 0;
-    __u32 o = 0;
-    __u32 u = 0;
-    __u32 i = 0;
-    __u32 j = 0;
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 t_id = 0;
-    __u32 offset_start = 0;
-    __u32 offset_end = 0;
-    __u32 base = 0;
+    uint32_t num_edges = (*edgeList)->num_edges;
+    uint32_t t = 0;
+    uint32_t o = 0;
+    uint32_t u = 0;
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+    uint32_t base = 0;
 
     #pragma omp parallel default(none) shared(sorted_edges_array,edgeList,radix,buckets,buckets_count,num_edges) firstprivate(t_id, P, offset_end,offset_start,base,i,j,t,u,o) 
     {
@@ -125,20 +125,20 @@ void radixSortCountSortEdgesBySource (struct EdgeList** sorted_edges_array, stru
     
 }
 
-void radixSortCountSortEdgesByDestination (struct EdgeList** sorted_edges_array, struct EdgeList** edgeList, __u32 radix, __u32 buckets, __u32* buckets_count){
+void radixSortCountSortEdgesByDestination (struct EdgeList** sorted_edges_array, struct EdgeList** edgeList, uint32_t radix, uint32_t buckets, uint32_t* buckets_count){
 
     struct EdgeList* temp_edges_array = NULL; 
-    __u32 num_edges = (*edgeList)->num_edges;
-    __u32 t = 0;
-    __u32 o = 0;
-    __u32 u = 0;
-    __u32 i = 0;
-    __u32 j = 0;
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 t_id = 0;
-    __u32 offset_start = 0;
-    __u32 offset_end = 0;
-    __u32 base = 0;
+    uint32_t num_edges = (*edgeList)->num_edges;
+    uint32_t t = 0;
+    uint32_t o = 0;
+    uint32_t u = 0;
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+    uint32_t base = 0;
 
     #pragma omp parallel default(none) shared(sorted_edges_array,edgeList,radix,buckets,buckets_count,num_edges) firstprivate(t_id, P, offset_end,offset_start,base,i,j,t,u,o) 
     {
@@ -220,21 +220,21 @@ struct EdgeList* radixSortEdgesBySource (struct EdgeList* edgeList){
     // of passing digit number, exp is passed. exp is 10^i
     // where i is current digit number
 
-    __u32 radix = 4;  // 32/8 8 bit radix needs 4 iterations
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 buckets = 256; // 2^radix = 256 buckets
-    __u32 num_edges = edgeList->num_edges;
-    __u32* buckets_count = NULL;
+    uint32_t radix = 4;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t buckets = 256; // 2^radix = 256 buckets
+    uint32_t num_edges = edgeList->num_edges;
+    uint32_t* buckets_count = NULL;
 
     // omp_set_num_threads(P);
    
-    __u32 j = 0; //1,2,3 iteration
+    uint32_t j = 0; //1,2,3 iteration
 
     struct EdgeList* sorted_edges_array = newEdgeList(num_edges);
 
     sorted_edges_array->num_vertices = edgeList->num_vertices;
 
-    buckets_count = (__u32*) my_malloc(P * buckets * sizeof(__u32));
+    buckets_count = (uint32_t*) my_malloc(P * buckets * sizeof(uint32_t));
     
 
     for(j=0 ; j < radix ; j++){
@@ -260,21 +260,21 @@ struct EdgeList* radixSortEdgesBySourceAndDestination (struct EdgeList* edgeList
     // of passing digit number, exp is passed. exp is 10^i
     // where i is current digit number
 
-    __u32 radix = 4;  // 32/8 8 bit radix needs 4 iterations
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 buckets = 256; // 2^radix = 256 buckets
-    __u32 num_edges = edgeList->num_edges;
-    __u32* buckets_count = NULL;
+    uint32_t radix = 4;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t buckets = 256; // 2^radix = 256 buckets
+    uint32_t num_edges = edgeList->num_edges;
+    uint32_t* buckets_count = NULL;
 
     // omp_set_num_threads(P);
    
-    __u32 j = 0; //1,2,3 iteration
+    uint32_t j = 0; //1,2,3 iteration
 
     struct EdgeList* sorted_edges_array = newEdgeList(num_edges);
 
     sorted_edges_array->num_vertices = edgeList->num_vertices;
    
-    buckets_count = (__u32*) my_malloc(P * buckets * sizeof(__u32));
+    buckets_count = (uint32_t*) my_malloc(P * buckets * sizeof(uint32_t));
    
 
     for(j=0 ; j < radix ; j++){

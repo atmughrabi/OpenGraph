@@ -18,7 +18,7 @@
 #include <string.h>
 #include <math.h>
 #include <omp.h>
-#include <linux/types.h>
+#include <stdint.h>
 
 
 #include "timer.h"
@@ -39,16 +39,16 @@ struct EdgeList *reorderGraphListPageRank(struct GraphCSR *graph)
 {
 
 
-    __u32 v;
+    uint32_t v;
     double epsilon = 1e-6;
-    __u32 iterations = 100;
+    uint32_t iterations = 100;
     struct PageRankStats  *stats = NULL;
-    __u32 *labelsInverse;
-    __u32 *labels;
+    uint32_t *labelsInverse;
+    uint32_t *labels;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
-    labels = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    labelsInverse = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    labels = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    labelsInverse = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     struct EdgeList *edgeList = NULL;
 
 
@@ -113,14 +113,14 @@ struct EdgeList *reorderGraphListPageRank(struct GraphCSR *graph)
 struct EdgeList *reorderGraphListEpochPageRank(struct GraphCSR *graph)
 {
 
-    __u32 v;
-    __u32 *labelsInverse;
-    __u32 *labels;
+    uint32_t v;
+    uint32_t *labelsInverse;
+    uint32_t *labels;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
 
     struct EdgeList *edgeList = NULL;
-    labels = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    labels = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
 
     printf(" -----------------------------------------------------\n");
@@ -160,14 +160,14 @@ struct EdgeList *reorderGraphListEpochPageRank(struct GraphCSR *graph)
 struct EdgeList *reorderGraphListEpochBFS(struct GraphCSR *graph)
 {
 
-    __u32 v;
-    __u32 *labelsInverse;
-    __u32 *labels;
+    uint32_t v;
+    uint32_t *labelsInverse;
+    uint32_t *labels;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
 
     struct EdgeList *edgeList = NULL;
-    labels = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    labels = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
 
     printf(" -----------------------------------------------------\n");
@@ -208,13 +208,13 @@ struct EdgeList *reorderGraphListEpochBFS(struct GraphCSR *graph)
 struct EdgeList *reorderGraphListEpochRabbit(struct GraphCSR *graph)
 {
 
-    // __u32 v;
-    // __u32 *labels;
+    // uint32_t v;
+    // uint32_t *labels;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
 
     struct EdgeList *edgeList = NULL;
-    // labels = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    // labels = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
 
     printf(" -----------------------------------------------------\n");
@@ -253,20 +253,20 @@ struct EdgeList *reorderGraphListEpochRabbit(struct GraphCSR *graph)
 }
 
 
-void radixSortCountSortEdgesByRanks (__u32 **pageRanksFP, __u32 **pageRanksFPTemp, __u32 **labels, __u32 **labelsTemp, __u32 radix, __u32 buckets, __u32 *buckets_count, __u32 num_vertices)
+void radixSortCountSortEdgesByRanks (uint32_t **pageRanksFP, uint32_t **pageRanksFPTemp, uint32_t **labels, uint32_t **labelsTemp, uint32_t radix, uint32_t buckets, uint32_t *buckets_count, uint32_t num_vertices)
 {
 
-    __u32 *tempPointer = NULL;
-    __u32 t = 0;
-    __u32 o = 0;
-    __u32 u = 0;
-    __u32 i = 0;
-    __u32 j = 0;
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 t_id = 0;
-    __u32 offset_start = 0;
-    __u32 offset_end = 0;
-    __u32 base = 0;
+    uint32_t *tempPointer = NULL;
+    uint32_t t = 0;
+    uint32_t o = 0;
+    uint32_t u = 0;
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+    uint32_t base = 0;
 
     #pragma omp parallel default(none) shared(pageRanksFP, pageRanksFPTemp,radix,labels,labelsTemp,buckets,buckets_count, num_vertices) firstprivate(t_id, P, offset_end,offset_start,base,i,j,t,u,o)
     {
@@ -345,7 +345,7 @@ void radixSortCountSortEdgesByRanks (__u32 **pageRanksFP, __u32 **pageRanksFPTem
 
 }
 
-__u32 *radixSortEdgesByPageRank (float *pageRanks, __u32 *labels, __u32 num_vertices)
+uint32_t *radixSortEdgesByPageRank (float *pageRanks, uint32_t *labels, uint32_t num_vertices)
 {
 
 
@@ -356,31 +356,31 @@ __u32 *radixSortEdgesByPageRank (float *pageRanks, __u32 *labels, __u32 num_vert
     // Do counting sort for every digit. Note that instead
     // of passing digit number, exp is passed. exp is 10^i
     // where i is current digit number
-    __u32 v;
-    __u32 radix = 4;  // 32/8 8 bit radix needs 4 iterations
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 buckets = 256; // 2^radix = 256 buckets
-    __u32 *buckets_count = NULL;
+    uint32_t v;
+    uint32_t radix = 4;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t buckets = 256; // 2^radix = 256 buckets
+    uint32_t *buckets_count = NULL;
 
     // omp_set_num_threads(P);
 
-    __u32 j = 0; //1,2,3 iteration
+    uint32_t j = 0; //1,2,3 iteration
 
-    __u32 *pageRanksFP = NULL;
-    __u32 *pageRanksFPTemp = NULL;
-    __u32 *labelsTemp = NULL;
+    uint32_t *pageRanksFP = NULL;
+    uint32_t *pageRanksFPTemp = NULL;
+    uint32_t *labelsTemp = NULL;
 
 
-    buckets_count = (__u32 *) my_malloc(P * buckets * sizeof(__u32));
-    pageRanksFP = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
-    pageRanksFPTemp = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
-    labelsTemp = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
+    buckets_count = (uint32_t *) my_malloc(P * buckets * sizeof(uint32_t));
+    pageRanksFP = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    pageRanksFPTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    labelsTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
 
     #pragma omp parallel for
     for(v = 0; v < num_vertices; v++)
     {
-        pageRanksFP[v] = FLOAT_2_U(*(__u32 *)&pageRanks[v]);
+        pageRanksFP[v] = FLOAT_2_U(*(uint32_t *)&pageRanks[v]);
     }
 
     for(j = 0 ; j < radix ; j++)
@@ -403,7 +403,7 @@ __u32 *radixSortEdgesByPageRank (float *pageRanks, __u32 *labels, __u32 num_vert
 
 }
 
-__u32 *radixSortEdgesByDegree (__u32 *degrees, __u32 *labels, __u32 num_vertices)
+uint32_t *radixSortEdgesByDegree (uint32_t *degrees, uint32_t *labels, uint32_t num_vertices)
 {
 
 
@@ -414,20 +414,20 @@ __u32 *radixSortEdgesByDegree (__u32 *degrees, __u32 *labels, __u32 num_vertices
     // Do counting sort for every digit. Note that instead
     // of passing digit number, exp is passed. exp is 10^i
     // where i is current digit number
-    __u32 radix = 4;  // 32/8 8 bit radix needs 4 iterations
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 buckets = 256; // 2^radix = 256 buckets
-    __u32 *buckets_count = NULL;
+    uint32_t radix = 4;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t buckets = 256; // 2^radix = 256 buckets
+    uint32_t *buckets_count = NULL;
 
     // omp_set_num_threads(P);
 
-    __u32 j = 0; //1,2,3 iteration
-    __u32 *degreesTemp = NULL;
-    __u32 *labelsTemp = NULL;
+    uint32_t j = 0; //1,2,3 iteration
+    uint32_t *degreesTemp = NULL;
+    uint32_t *labelsTemp = NULL;
 
-    buckets_count = (__u32 *) my_malloc(P * buckets * sizeof(__u32));
-    degreesTemp = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
-    labelsTemp = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
+    buckets_count = (uint32_t *) my_malloc(P * buckets * sizeof(uint32_t));
+    degreesTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    labelsTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
 
     for(j = 0 ; j < radix ; j++)
@@ -544,13 +544,13 @@ struct EdgeList *reorderGraphProcessPageRank(struct EdgeList *edgeList, struct A
 }
 
 
-struct EdgeList *reorderGraphProcessDegree( __u32 sort, struct EdgeList *edgeList, __u32 lmode)
+struct EdgeList *reorderGraphProcessDegree( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
 {
 
 
-    __u32 *degrees;
+    uint32_t *degrees;
 
-    degrees = (__u32 *) my_malloc(edgeList->num_vertices * sizeof(__u32));
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
 
     degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
@@ -561,13 +561,13 @@ struct EdgeList *reorderGraphProcessDegree( __u32 sort, struct EdgeList *edgeLis
 
 }
 
-__u32 reorderGraphProcessVertexSize( struct EdgeList *edgeList)
+uint32_t reorderGraphProcessVertexSize( struct EdgeList *edgeList)
 {
 
-    __u32 i;
-    __u32 src;
-    __u32 dest;
-    __u32 num_vertices = 0;
+    uint32_t i;
+    uint32_t src;
+    uint32_t dest;
+    uint32_t num_vertices = 0;
 
     #pragma omp parallel for default(none) private(i,src,dest) shared(edgeList) reduction(max: num_vertices)
     for(i = 0; i < edgeList->num_edges; i++)
@@ -583,12 +583,12 @@ __u32 reorderGraphProcessVertexSize( struct EdgeList *edgeList)
 }
 
 
-__u32 *reorderGraphProcessInOutDegrees(__u32 *degrees, struct EdgeList *edgeList, __u32 lmode)
+uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t lmode)
 {
 
-    __u32 i;
-    __u32 src;
-    __u32 dest;
+    uint32_t i;
+    uint32_t src;
+    uint32_t dest;
 
     #pragma omp parallel for default(none) private(i,src,dest) shared(edgeList,degrees,lmode)
     for(i = 0; i < edgeList->num_edges; i++)
@@ -672,17 +672,17 @@ struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments
 }
 
 
-struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, __u32 *degrees, __u32 lmode)
+struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *degrees, uint32_t lmode)
 {
 
-    __u32 v;
-    __u32 *labelsInverse;
-    __u32 *labels;
+    uint32_t v;
+    uint32_t *labelsInverse;
+    uint32_t *labels;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
 
-    labels = (__u32 *) my_malloc(edgeList->num_vertices * sizeof(__u32));
-    labelsInverse = (__u32 *) my_malloc(edgeList->num_vertices * sizeof(__u32));
+    labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    labelsInverse = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
 
     printf(" -----------------------------------------------------\n");
@@ -757,16 +757,16 @@ struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, __u32 *degree
     return edgeList;
 }
 
-struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, __u32 *labels)
+struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels)
 {
 
-    __u32 i;
+    uint32_t i;
 
     #pragma omp parallel for
     for(i = 0; i < edgeList->num_edges; i++)
     {
-        __u32 src;
-        __u32 dest;
+        uint32_t src;
+        uint32_t dest;
         src = edgeList->edges_array_src[i];
         dest = edgeList->edges_array_dest[i];
 
@@ -782,17 +782,17 @@ struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, __u32 *labels)
 }
 
 
-struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *fnameb, __u32 size)
+struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *fnameb, uint32_t size)
 {
 
     FILE *pText;
-    __u32 i;
-    __u32 dest = 0;
-    __u32 x = 0;
+    uint32_t i;
+    uint32_t dest = 0;
+    uint32_t x = 0;
 
-    __u32 *labels;
+    uint32_t *labels;
 
-    labels = (__u32 *) my_malloc(edgeList->num_vertices * sizeof(__u32));
+    labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
 
     char *fname_txt = (char *) malloc((strlen(fnameb) + 10) * sizeof(char));
@@ -833,11 +833,11 @@ struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *
 }
 
 
-void writeLabelsToFile(const char *fnameb, __u32 *labels, __u32 size)
+void writeLabelsToFile(const char *fnameb, uint32_t *labels, uint32_t size)
 {
 
     FILE *fptr;
-    __u32 x;
+    uint32_t x;
     fptr = fopen(fnameb, "w");
     for(x = 0; x < size; x++)
     {

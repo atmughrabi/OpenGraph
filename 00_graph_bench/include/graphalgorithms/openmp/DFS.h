@@ -1,7 +1,7 @@
 #ifndef DFS_H
 #define DFS_H
 
-#include <linux/types.h>
+#include <stdint.h>
 
 #include "graphConfig.h"
 #include "arrayStack.h"
@@ -19,10 +19,10 @@
 
 struct DFSStats
 {
-    __u32 *distances;
+    uint32_t *distances;
     int *parents;
-    __u32  processed_nodes;
-    __u32  num_vertices;
+    uint32_t  processed_nodes;
+    uint32_t  num_vertices;
     double time_total;
 };
 
@@ -38,9 +38,9 @@ void freeDFSStats(struct DFSStats *stats);
 // ***************					CSR DataStructure							 **************
 // ********************************************************************************************
 
-struct DFSStats  *depthFirstSearchGraphCSR(__u32 source, struct GraphCSR *graph);
-struct DFSStats  *depthFirstSearchGraphCSRBase(__u32 source, struct GraphCSR *graph);
-struct DFSStats  *pDepthFirstSearchGraphCSR(__u32 source, struct GraphCSR *graph);
-void parallelDepthFirstSearchGraphCSRTask(__u32 source, struct GraphCSR *graph, struct DFSStats *stats);
+struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph);
+struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR *graph);
+struct DFSStats  *pDepthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph);
+void parallelDepthFirstSearchGraphCSRTask(uint32_t source, struct GraphCSR *graph, struct DFSStats *stats);
 
 #endif

@@ -40,10 +40,10 @@
 // ********************************************************************************************
 // ***************                  Stats DataStructure                          **************
 // ********************************************************************************************
-struct SSSPStats *newSSSPStatsGeneral(__u32 num_vertices, __u32 delta)
+struct SSSPStats *newSSSPStatsGeneral(uint32_t num_vertices, uint32_t delta)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct SSSPStats *stats = (struct SSSPStats *) malloc(sizeof(struct SSSPStats));
 
@@ -55,9 +55,9 @@ struct SSSPStats *newSSSPStatsGeneral(__u32 num_vertices, __u32 delta)
     stats->time_total = 0.0;
     stats->num_vertices = num_vertices;
 
-    stats->distances  = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
-    stats->parents = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
-    stats->buckets_map = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    stats->parents = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    stats->buckets_map = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
     #pragma omp parallel for
     for(v = 0; v < num_vertices; v++)
@@ -72,10 +72,10 @@ struct SSSPStats *newSSSPStatsGeneral(__u32 num_vertices, __u32 delta)
 }
 
 
-struct SSSPStats *newSSSPStatsGraphCSR(struct GraphCSR *graph, __u32 delta)
+struct SSSPStats *newSSSPStatsGraphCSR(struct GraphCSR *graph, uint32_t delta)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct SSSPStats *stats = (struct SSSPStats *) malloc(sizeof(struct SSSPStats));
 
@@ -87,9 +87,9 @@ struct SSSPStats *newSSSPStatsGraphCSR(struct GraphCSR *graph, __u32 delta)
     stats->time_total = 0.0;
     stats->num_vertices = graph->num_vertices;
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->parents = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->buckets_map = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->parents = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->buckets_map = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
@@ -103,10 +103,10 @@ struct SSSPStats *newSSSPStatsGraphCSR(struct GraphCSR *graph, __u32 delta)
 
 }
 
-struct SSSPStats *newSSSPStatsGraphGrid(struct GraphGrid *graph, __u32 delta)
+struct SSSPStats *newSSSPStatsGraphGrid(struct GraphGrid *graph, uint32_t delta)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct SSSPStats *stats = (struct SSSPStats *) malloc(sizeof(struct SSSPStats));
 
@@ -118,9 +118,9 @@ struct SSSPStats *newSSSPStatsGraphGrid(struct GraphGrid *graph, __u32 delta)
     stats->time_total = 0.0;
     stats->num_vertices = graph->num_vertices;
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->parents = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->buckets_map = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->parents = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->buckets_map = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
@@ -133,10 +133,10 @@ struct SSSPStats *newSSSPStatsGraphGrid(struct GraphGrid *graph, __u32 delta)
     return stats;
 }
 
-struct SSSPStats *newSSSPStatsGraphAdjArrayList(struct GraphAdjArrayList *graph, __u32 delta)
+struct SSSPStats *newSSSPStatsGraphAdjArrayList(struct GraphAdjArrayList *graph, uint32_t delta)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct SSSPStats *stats = (struct SSSPStats *) malloc(sizeof(struct SSSPStats));
 
@@ -148,9 +148,9 @@ struct SSSPStats *newSSSPStatsGraphAdjArrayList(struct GraphAdjArrayList *graph,
     stats->time_total = 0.0;
     stats->num_vertices = graph->num_vertices;
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->parents = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->buckets_map = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->parents = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->buckets_map = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
@@ -163,10 +163,10 @@ struct SSSPStats *newSSSPStatsGraphAdjArrayList(struct GraphAdjArrayList *graph,
     return stats;
 }
 
-struct SSSPStats *newSSSPStatsGraphAdjLinkedList(struct GraphAdjLinkedList *graph, __u32 delta)
+struct SSSPStats *newSSSPStatsGraphAdjLinkedList(struct GraphAdjLinkedList *graph, uint32_t delta)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct SSSPStats *stats = (struct SSSPStats *) malloc(sizeof(struct SSSPStats));
 
@@ -178,9 +178,9 @@ struct SSSPStats *newSSSPStatsGraphAdjLinkedList(struct GraphAdjLinkedList *grap
     stats->time_total = 0.0;
     stats->num_vertices = graph->num_vertices;
 
-    stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->parents = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->buckets_map = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->parents = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->buckets_map = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
@@ -215,11 +215,11 @@ void freeSSSPStats(struct SSSPStats *stats)
 // ***************                  Auxiliary functions                          **************
 // ********************************************************************************************
 
-__u32 SSSPAtomicMin(__u32 *dist, __u32 newValue)
+uint32_t SSSPAtomicMin(uint32_t *dist, uint32_t newValue)
 {
 
-    __u32 oldValue;
-    __u32 flag = 0;
+    uint32_t oldValue;
+    uint32_t flag = 0;
 
     do
     {
@@ -242,10 +242,10 @@ __u32 SSSPAtomicMin(__u32 *dist, __u32 newValue)
     return 1;
 }
 
-__u32 SSSPCompareDistanceArrays(struct SSSPStats *stats1, struct SSSPStats *stats2)
+uint32_t SSSPCompareDistanceArrays(struct SSSPStats *stats1, struct SSSPStats *stats2)
 {
 
-    __u32 v = 0;
+    uint32_t v = 0;
 
 
     for(v = 0 ; v < stats1->num_vertices ; v++)
@@ -266,16 +266,16 @@ __u32 SSSPCompareDistanceArrays(struct SSSPStats *stats1, struct SSSPStats *stat
 
 }
 
-int SSSPAtomicRelax(__u32 src, __u32 dest, __u32 weight, struct SSSPStats *stats)
+int SSSPAtomicRelax(uint32_t src, uint32_t dest, uint32_t weight, struct SSSPStats *stats)
 {
-    __u32 oldParent, newParent;
-    __u32 oldDistanceV = UINT_MAX / 2;
-    __u32 oldDistanceU = UINT_MAX / 2;
-    __u32 newDistance = UINT_MAX / 2;
-    __u32 oldBucket = UINT_MAX / 2;
-    __u32 newBucket = UINT_MAX / 2;
-    __u32 flagu = 0;
-    __u32 flagv = 0;
+    uint32_t oldParent, newParent;
+    uint32_t oldDistanceV = UINT_MAX / 2;
+    uint32_t oldDistanceU = UINT_MAX / 2;
+    uint32_t newDistance = UINT_MAX / 2;
+    uint32_t oldBucket = UINT_MAX / 2;
+    uint32_t newBucket = UINT_MAX / 2;
+    uint32_t flagu = 0;
+    uint32_t flagv = 0;
 
 
     do
@@ -344,12 +344,12 @@ int SSSPAtomicRelax(__u32 src, __u32 dest, __u32 weight, struct SSSPStats *stats
 
 
 
-int SSSPRelax(__u32 src, __u32 dest, __u32 weight, struct SSSPStats *stats)
+int SSSPRelax(uint32_t src, uint32_t dest, uint32_t weight, struct SSSPStats *stats)
 {
 
 
-    __u32 newDistance = stats->distances[src] + weight;
-    __u32 bucket = UINT_MAX / 2;
+    uint32_t newDistance = stats->distances[src] + weight;
+    uint32_t bucket = UINT_MAX / 2;
 
 
     if( stats->distances[dest] > newDistance )
@@ -380,7 +380,7 @@ int SSSPRelax(__u32 src, __u32 dest, __u32 weight, struct SSSPStats *stats)
 
 void SSSPPrintStats(struct SSSPStats *stats)
 {
-    __u32 v;
+    uint32_t v;
 
     for(v = 0; v < stats->num_vertices; v++)
     {
@@ -400,10 +400,10 @@ void SSSPPrintStats(struct SSSPStats *stats)
 
 void SSSPPrintStatsDetails(struct SSSPStats *stats)
 {
-    __u32 v;
-    __u32 minDistance = UINT_MAX / 2;
-    __u32 maxDistance = 0;
-    __u32 numberOfDiscoverNodes = 0;
+    uint32_t v;
+    uint32_t minDistance = UINT_MAX / 2;
+    uint32_t maxDistance = 0;
+    uint32_t numberOfDiscoverNodes = 0;
 
 
     #pragma omp parallel for reduction(max:maxDistance) reduction(+:numberOfDiscoverNodes) reduction(min:minDistance)
@@ -439,20 +439,20 @@ void SSSPPrintStatsDetails(struct SSSPStats *stats)
 // ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
-void SSSPSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlus, struct GraphCSR **graphMinus, __u32 delta)
+void SSSPSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlus, struct GraphCSR **graphMinus, uint32_t delta)
 {
 
     // The first subset, Ef, contains all edges (vi, vj) such that i < j; the second, Eb, contains edges (vi, vj) such that i > j.
 
     //calculate the size of each edge array
-    __u32 edgesPlusCounter = 0;
-    __u32 edgesMinusCounter = 0;
-    // __u32 numVerticesPlusCounter = 0;
-    // __u32 numVerticesMinusCounter = 0;
-    __u32 e;
-    __u32 weight;
-    // __u32 src;
-    // __u32 dest;
+    uint32_t edgesPlusCounter = 0;
+    uint32_t edgesMinusCounter = 0;
+    // uint32_t numVerticesPlusCounter = 0;
+    // uint32_t numVerticesMinusCounter = 0;
+    uint32_t e;
+    uint32_t weight;
+    // uint32_t src;
+    // uint32_t dest;
 
     #pragma omp parallel for private(e,weight) shared(graph,delta) reduction(+:edgesPlusCounter,edgesMinusCounter)
     for(e = 0 ; e < graph->num_edges ; e++)
@@ -488,15 +488,15 @@ void SSSPSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlus, stru
     struct EdgeList *edgesMinusInverse = newEdgeList(edgesMinusCounter);
 #endif
 
-    __u32 edgesPlus_idx = 0;
-    __u32 edgesMinus_idx = 0;
+    uint32_t edgesPlus_idx = 0;
+    uint32_t edgesMinus_idx = 0;
 
     #pragma omp parallel for private(e,weight) shared(edgesMinus_idx,edgesPlus_idx, delta,edgesPlus,edgesMinus,graph)
     for(e = 0 ; e < graph->num_edges ; e++)
     {
 
         weight =  graph->sorted_edges_array->edges_array_weight[e];
-        __u32 index = 0;
+        uint32_t index = 0;
 
         if(weight > delta)
         {
@@ -558,7 +558,7 @@ int test_13(int x)
     return x;
 }
 
-struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, struct GraphCSR *graph, __u32 delta)
+struct SSSPStats *SSSPGraphCSR(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph, uint32_t delta)
 {
 
     struct SSSPStats *stats = NULL;
@@ -581,11 +581,11 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 
 }
 
-// struct SSSPStats *SSSPDataDrivenPullGraphCSR(__u32 source,  __u32 iterations, struct GraphCSR *graph, __u32 delta)
+// struct SSSPStats *SSSPDataDrivenPullGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta)
 // {
 
-//     __u32 v;
-//     __u32 iter = 0;
+//     uint32_t v;
+//     uint32_t iter = 0;
 //     iterations = graph->num_vertices - 1;
 
 
@@ -604,12 +604,12 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 
 //     struct Bitmap *bitmapSetCurr = newBitmap(graph->num_vertices);
 
-//     __u32 activeVertices = 0;
+//     uint32_t activeVertices = 0;
 
 
-//     stats->distances  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-//     stats->parents = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-//     stats->buckets_map = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+//     stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+//     stats->parents = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+//     stats->buckets_map = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
 
 //     struct GraphCSR *graphHeavy = NULL;
@@ -676,13 +676,13 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 
 //     activeVertices = 1;
 
-//     __u32 degree = graph->vertices[source].out_degree;
-//     __u32 edge_idx = graph->vertices[source].edges_idx;
+//     uint32_t degree = graph->vertices[source].out_degree;
+//     uint32_t edge_idx = graph->vertices[source].edges_idx;
 
 //     for(v = edge_idx ; v < (edge_idx + degree) ; v++)
 //     {
 
-//         __u32 t = graph->sorted_edges_array[v].dest;
+//         uint32_t t = graph->sorted_edges_array[v].dest;
 //         stats->buckets_map[t] = stats->bucket_current;
 //         stats->parents[t] = source;
 //         setBitAtomic(bitmapSetCurr, t);
@@ -711,17 +711,17 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 //         {
 //             Start(timer_inner);
 //             stats->bucket_counter = 0;
-//             // __u32 buckets_total_local =
+//             // uint32_t buckets_total_local =
 //             // process light edges
 //             #pragma omp parallel for private(v) shared(bitmapSetCurr, graphLight, stats) reduction(+ : activeVertices)
 //             for(v = 0; v < graphLight->num_vertices; v++)
 //             {
 
-//                 __u32 minDistance = UINT_MAX / 2;
-//                 __u32 degree;
-//                 __u32 j, u, w;
-//                 __u32 edge_idx;
-//                 __u32 src = UINT_MAX;
+//                 uint32_t minDistance = UINT_MAX / 2;
+//                 uint32_t degree;
+//                 uint32_t j, u, w;
+//                 uint32_t edge_idx;
+//                 uint32_t src = UINT_MAX;
 //                 struct Edge *edge = (struct Edge *) my_malloc(sizeof(struct Edge));
 
 //                 if(__sync_bool_compare_and_swap(&(stats->buckets_map[v]), stats->bucket_current, (UINT_MAX / 2)))
@@ -769,8 +769,8 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 //                                 u = graph->sorted_edges_array[j].dest;
 //                                 w = graph->sorted_edges_array[j].weight;
 
-//                                 __u32 oldBucket = stats->buckets_map[u];
-//                                 __u32 newBucket = stats->bucket_current;
+//                                 uint32_t oldBucket = stats->buckets_map[u];
+//                                 uint32_t newBucket = stats->bucket_current;
 
 //                                 if(__sync_bool_compare_and_swap(&(stats->buckets_map[u]), oldBucket, newBucket))
 //                                 {
@@ -799,11 +799,11 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 //         for(v = 0; v < graphHeavy->num_vertices; v++)
 //         {
 
-//             __u32 minDistance = UINT_MAX / 2;
-//             __u32 degree;
-//             __u32 j, u, w;
-//             __u32 edge_idx;
-//             __u32 src = UINT_MAX;
+//             uint32_t minDistance = UINT_MAX / 2;
+//             uint32_t degree;
+//             uint32_t j, u, w;
+//             uint32_t edge_idx;
+//             uint32_t src = UINT_MAX;
 //             struct Edge *edge = (struct Edge *) my_malloc(sizeof(struct Edge));
 
 //             if(getBit(bitmapSetCurr, v))
@@ -845,8 +845,8 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 //                         //      u = graph->sorted_edges_array[j].dest;
 //                         //      w = graph->sorted_edges_array[j].weight;
 
-//                         //      __u32 oldBucket = stats->buckets_map[u];
-//                         //      __u32 newBucket;
+//                         //      uint32_t oldBucket = stats->buckets_map[u];
+//                         //      uint32_t newBucket;
 
 //                         //      if(stats->bucket_counter)
 //                         //       newBucket = stats->bucket_current;
@@ -899,11 +899,11 @@ struct SSSPStats *SSSPGraphCSR(__u32 source,  __u32 iterations, __u32 pushpull, 
 
 
 
-struct SSSPStats *SSSPDataDrivenPushGraphCSR(__u32 source,  __u32 iterations, struct GraphCSR *graph, __u32 delta)
+struct SSSPStats *SSSPDataDrivenPushGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta)
 {
 
-    __u32 v;
-    __u32 iter = 0;
+    uint32_t v;
+    uint32_t iter = 0;
 
     iterations = graph->num_vertices - 1;
 
@@ -926,7 +926,7 @@ struct SSSPStats *SSSPDataDrivenPushGraphCSR(__u32 source,  __u32 iterations, st
 
     struct Bitmap *bitmapSetCurr = newBitmap(graph->num_vertices);
 
-    __u32 activeVertices = 0;
+    uint32_t activeVertices = 0;
 
 
 
@@ -996,7 +996,7 @@ struct SSSPStats *SSSPDataDrivenPushGraphCSR(__u32 source,  __u32 iterations, st
         {
             Start(timer_inner);
             stats->bucket_counter = 0;
-            // __u32 buckets_total_local =
+            // uint32_t buckets_total_local =
             // process light edges
             #pragma omp parallel for private(v) shared(bitmapSetCurr, graphLight, stats) reduction(+ : activeVertices)
             for(v = 0; v < graphLight->num_vertices; v++)
@@ -1014,14 +1014,14 @@ struct SSSPStats *SSSPDataDrivenPushGraphCSR(__u32 source,  __u32 iterations, st
 
                     // stats->buckets_map[v] = UINT_MAX/2;
 
-                    __u32 degree = graphLight->vertices->out_degree[v];
-                    __u32 edge_idx = graphLight->vertices->edges_idx[v];
-                    __u32 j;
+                    uint32_t degree = graphLight->vertices->out_degree[v];
+                    uint32_t edge_idx = graphLight->vertices->edges_idx[v];
+                    uint32_t j;
                     for(j = edge_idx ; j < (edge_idx + degree) ; j++)
                     {
-                        __u32 src = graphLight->sorted_edges_array->edges_array_src[j];
-                        __u32 dest = graphLight->sorted_edges_array->edges_array_dest[j];
-                        __u32 weight = graphLight->sorted_edges_array->edges_array_weight[j];
+                        uint32_t src = graphLight->sorted_edges_array->edges_array_src[j];
+                        uint32_t dest = graphLight->sorted_edges_array->edges_array_dest[j];
+                        uint32_t weight = graphLight->sorted_edges_array->edges_array_weight[j];
 
                         if(numThreads == 1)
                             activeVertices += SSSPRelax(src, dest, weight, stats);
@@ -1046,16 +1046,16 @@ struct SSSPStats *SSSPDataDrivenPushGraphCSR(__u32 source,  __u32 iterations, st
             if(getBit(bitmapSetCurr, v))
             {
 
-                __u32 degree = graphHeavy->vertices->out_degree[v];
-                __u32 edge_idx = graphHeavy->vertices->edges_idx[v];
-                __u32 j;
+                uint32_t degree = graphHeavy->vertices->out_degree[v];
+                uint32_t edge_idx = graphHeavy->vertices->edges_idx[v];
+                uint32_t j;
 
 
                 for(j = edge_idx ; j < (edge_idx + degree) ; j++)
                 {
-                    __u32 src = graphHeavy->sorted_edges_array->edges_array_src[j];
-                    __u32 dest = graphHeavy->sorted_edges_array->edges_array_dest[j];
-                    __u32 weight = graphHeavy->sorted_edges_array->edges_array_weight[j];
+                    uint32_t src = graphHeavy->sorted_edges_array->edges_array_src[j];
+                    uint32_t dest = graphHeavy->sorted_edges_array->edges_array_dest[j];
+                    uint32_t weight = graphHeavy->sorted_edges_array->edges_array_weight[j];
 
                     if(numThreads == 1)
                         activeVertices += SSSPRelax(src, dest, weight, stats);

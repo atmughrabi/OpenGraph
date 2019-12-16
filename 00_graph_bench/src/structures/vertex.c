@@ -15,24 +15,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/types.h>
+#include <stdint.h>
 #include <omp.h>
 
 #include "graphCSR.h"
 #include "vertex.h"
 #include "myMalloc.h"
 
-struct Vertex *newVertexArray(__u32 num_vertices)
+struct Vertex *newVertexArray(uint32_t num_vertices)
 {
 
 
     struct Vertex *vertex_array = (struct Vertex *) my_malloc(sizeof(struct Vertex));
 
-    vertex_array->out_degree = (__u32 *) my_malloc( num_vertices * sizeof(__u32));
-    vertex_array->in_degree = (__u32 *) my_malloc( num_vertices * sizeof(__u32));
-    vertex_array->edges_idx = (__u32 *) my_malloc( num_vertices * sizeof(__u32));
+    vertex_array->out_degree = (uint32_t *) my_malloc( num_vertices * sizeof(uint32_t));
+    vertex_array->in_degree = (uint32_t *) my_malloc( num_vertices * sizeof(uint32_t));
+    vertex_array->edges_idx = (uint32_t *) my_malloc( num_vertices * sizeof(uint32_t));
 
-    __u32 i;
+    uint32_t i;
 
     for(i = 0; i < num_vertices; i++)
     {
@@ -47,11 +47,11 @@ struct Vertex *newVertexArray(__u32 num_vertices)
 
 }
 
-struct GraphCSR *mapVertices (struct GraphCSR *graph, __u8 inverse)
+struct GraphCSR *mapVertices (struct GraphCSR *graph, uint8_t inverse)
 {
 
-    __u32 i;
-    __u32 vertex_id;
+    uint32_t i;
+    uint32_t vertex_id;
 
     struct Vertex *vertices;
     struct EdgeList *sorted_edges_array;
@@ -94,12 +94,12 @@ struct GraphCSR *mapVertices (struct GraphCSR *graph, __u8 inverse)
 
 }
 
-void partitionEdgeListOffsetStartEnd(struct GraphCSR *graph, struct EdgeList *sorted_edges_array, __u32 *offset_start, __u32 *offset_end)
+void partitionEdgeListOffsetStartEnd(struct GraphCSR *graph, struct EdgeList *sorted_edges_array, uint32_t *offset_start, uint32_t *offset_end)
 {
 
-    __u32 i;
-    __u32 j;
-    __u32 P = numThreads;
+    uint32_t i;
+    uint32_t j;
+    uint32_t P = numThreads;
 
     if(P >  graph->num_edges && graph->num_edges != 0)
         P = graph->num_edges;
@@ -182,18 +182,18 @@ void partitionEdgeListOffsetStartEnd(struct GraphCSR *graph, struct EdgeList *so
 
 }
 
-struct GraphCSR *mapVerticesWithInOutDegree (struct GraphCSR *graph, __u8 inverse)
+struct GraphCSR *mapVerticesWithInOutDegree (struct GraphCSR *graph, uint8_t inverse)
 {
 
-    __u32 i;
-    __u32 vertex_id;
-    // __u32 vertex_id_dest;
-    __u32 P = numThreads;
+    uint32_t i;
+    uint32_t vertex_id;
+    // uint32_t vertex_id_dest;
+    uint32_t P = numThreads;
     struct Vertex *vertices;
     struct EdgeList *sorted_edges_array;
 
-    __u32 *offset_start_arr = (__u32 *) my_malloc( P * sizeof(__u32));
-    __u32 *offset_end_arr = (__u32 *) my_malloc( P * sizeof(__u32));
+    uint32_t *offset_start_arr = (uint32_t *) my_malloc( P * sizeof(uint32_t));
+    uint32_t *offset_end_arr = (uint32_t *) my_malloc( P * sizeof(uint32_t));
 
     // for(vertex_id = 0; vertex_id < graph->num_vertices; vertex_id++){
 
@@ -223,9 +223,9 @@ struct GraphCSR *mapVerticesWithInOutDegree (struct GraphCSR *graph, __u8 invers
     partitionEdgeListOffsetStartEnd(graph, sorted_edges_array, offset_start_arr, offset_end_arr);
 
 
-    __u32 t_id = 0;
-    __u32 offset_start = 0;
-    __u32 offset_end = 0;
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
 
 
 
@@ -299,13 +299,13 @@ struct GraphCSR *mapVerticesWithInOutDegree (struct GraphCSR *graph, __u8 invers
 
 }
 
-void vertexArrayMaxOutdegree(struct Vertex *vertex_array, __u32 num_vertices)
+void vertexArrayMaxOutdegree(struct Vertex *vertex_array, uint32_t num_vertices)
 {
 
 
-    __u32 i;
-    __u32 out_degree = 0;
-    __u32 index = 0;
+    uint32_t i;
+    uint32_t out_degree = 0;
+    uint32_t index = 0;
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Node", "*max_out_degree", "in_degree");
     printf(" -----------------------------------------------------\n");
@@ -329,13 +329,13 @@ void vertexArrayMaxOutdegree(struct Vertex *vertex_array, __u32 num_vertices)
 
 }
 
-void vertexArrayMaxInDegree(struct Vertex *vertex_array, __u32 num_vertices)
+void vertexArrayMaxInDegree(struct Vertex *vertex_array, uint32_t num_vertices)
 {
 
 
-    __u32 i;
-    __u32 in_degree = 0;
-    __u32 index = 0;
+    uint32_t i;
+    uint32_t in_degree = 0;
+    uint32_t index = 0;
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Node", "out_degree", "*max_in_degree");
     printf(" -----------------------------------------------------\n");
@@ -357,11 +357,11 @@ void vertexArrayMaxInDegree(struct Vertex *vertex_array, __u32 num_vertices)
 
 }
 
-void printVertexArray(struct Vertex *vertex_array, __u32 num_vertices)
+void printVertexArray(struct Vertex *vertex_array, uint32_t num_vertices)
 {
 
 
-    __u32 i;
+    uint32_t i;
 
     printf("| %-15s | %-15s | %-15s |\n", "Node", "out_degree", "in_degree");
 

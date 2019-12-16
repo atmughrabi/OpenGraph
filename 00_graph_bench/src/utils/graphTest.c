@@ -49,15 +49,15 @@
 #include "graphTest.h"
 
 
-__u32 equalFloat(float a, float b, float epsilon)
+uint32_t equalFloat(float a, float b, float epsilon)
 {
     return fabs(a - b) < epsilon;
 }
 
-__u32 compareFloatArrays(float *arr1, float *arr2, __u32 arr1_size, __u32 arr2_size)
+uint32_t compareFloatArrays(float *arr1, float *arr2, uint32_t arr1_size, uint32_t arr2_size)
 {
-    __u32 i = 0;
-    __u32 missmatch = 0;
+    uint32_t i = 0;
+    uint32_t missmatch = 0;
     float epsilon = 1e-3f;
 
     if(arr1_size != arr2_size)
@@ -74,17 +74,17 @@ __u32 compareFloatArrays(float *arr1, float *arr2, __u32 arr1_size, __u32 arr2_s
     return missmatch;
 }
 
-__u32 compareRealRanks(__u32 *arr1, __u32 *arr2, __u32 arr1_size, __u32 arr2_size)
+uint32_t compareRealRanks(uint32_t *arr1, uint32_t *arr2, uint32_t arr1_size, uint32_t arr2_size)
 {
-    __u32 i = 0;
-    __u32 missmatch = 0;
-    __u32 rank_diff = 0;
+    uint32_t i = 0;
+    uint32_t missmatch = 0;
+    uint32_t rank_diff = 0;
 
     if(arr1_size != arr2_size)
         return 1;
 
-    __u32 *labels1 = (__u32 *) my_malloc(arr1_size * sizeof(__u32));
-    __u32 *labels2 = (__u32 *) my_malloc(arr2_size * sizeof(__u32));
+    uint32_t *labels1 = (uint32_t *) my_malloc(arr1_size * sizeof(uint32_t));
+    uint32_t *labels2 = (uint32_t *) my_malloc(arr2_size * sizeof(uint32_t));
 
     for(i = 0; i < arr1_size; i++)
     {
@@ -108,10 +108,10 @@ __u32 compareRealRanks(__u32 *arr1, __u32 *arr2, __u32 arr1_size, __u32 arr2_siz
     return (missmatch / arr1_size);
 }
 
-__u32 compareDistanceArrays(__u32 *arr1, __u32 *arr2, __u32 arr1_size, __u32 arr2_size)
+uint32_t compareDistanceArrays(uint32_t *arr1, uint32_t *arr2, uint32_t arr1_size, uint32_t arr2_size)
 {
-    __u32 i = 0;
-    __u32 missmatch = 0;
+    uint32_t i = 0;
+    uint32_t missmatch = 0;
 
     if(arr1_size != arr2_size)
         return 1;
@@ -126,10 +126,10 @@ __u32 compareDistanceArrays(__u32 *arr1, __u32 *arr2, __u32 arr1_size, __u32 arr
     return missmatch;
 }
 
-__u32 cmpGraphAlgorithmsTestStats(void *ref_stats, void *cmp_stats, __u32 algorithm)
+uint32_t cmpGraphAlgorithmsTestStats(void *ref_stats, void *cmp_stats, uint32_t algorithm)
 {
 
-    __u32 missmatch = 0;
+    uint32_t missmatch = 0;
 
     switch (algorithm)
     {

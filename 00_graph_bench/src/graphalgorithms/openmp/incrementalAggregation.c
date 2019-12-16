@@ -41,7 +41,7 @@
 struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphCSR(struct GraphCSR *graph)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct IncrementalAggregationStats *stats = (struct IncrementalAggregationStats *) malloc(sizeof(struct IncrementalAggregationStats));
 
@@ -49,18 +49,18 @@ struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphCSR(struc
     stats->num_clusters = 0;
     stats->atom = (union Atom *) my_malloc(graph->num_vertices * sizeof(union Atom));;
 
-    stats->vertices = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->degrees = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->vertices = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->degrees = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->weightSum  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->weightSum  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->atomDegree = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->atomChild = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->atomDegree = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->atomChild = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     // union Atom *atom = (union Atom *) my_malloc(graph->num_vertices * sizeof(union Atom));
 
-    stats->sibling = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->dest = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->sibling = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->dest = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
@@ -73,25 +73,25 @@ struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphCSR(struc
 struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphGrid(struct GraphGrid *graph)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct IncrementalAggregationStats *stats = (struct IncrementalAggregationStats *) malloc(sizeof(struct IncrementalAggregationStats));
 
     stats->totalQ = 0.0;
     stats->num_clusters = 0;
 
-    stats->vertices = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->degrees = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->vertices = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->degrees = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->weightSum  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->weightSum  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->atomDegree = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->atomChild = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->atomDegree = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->atomChild = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     // union Atom *atom = (union Atom *) my_malloc(graph->num_vertices * sizeof(union Atom));
 
-    stats->sibling = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->dest = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->sibling = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->dest = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
@@ -106,25 +106,25 @@ struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphGrid(stru
 struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphAdjArrayList(struct GraphAdjArrayList *graph)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct IncrementalAggregationStats *stats = (struct IncrementalAggregationStats *) malloc(sizeof(struct IncrementalAggregationStats));
 
     stats->totalQ = 0.0;
     stats->num_clusters = 0;
 
-    stats->vertices = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->degrees = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->vertices = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->degrees = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->weightSum  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->weightSum  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->atomDegree = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->atomChild = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->atomDegree = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->atomChild = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     // union Atom *atom = (union Atom *) my_malloc(graph->num_vertices * sizeof(union Atom));
 
-    stats->sibling = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->dest = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->sibling = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->dest = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
@@ -138,7 +138,7 @@ struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphAdjArrayL
 struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphAdjLinkedList(struct GraphAdjLinkedList *graph)
 {
 
-    __u32 v;
+    uint32_t v;
 
     struct IncrementalAggregationStats *stats = (struct IncrementalAggregationStats *) malloc(sizeof(struct IncrementalAggregationStats));
 
@@ -146,18 +146,18 @@ struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphAdjLinked
     stats->totalQ = 0.0;
     stats->num_clusters = 0;
 
-    stats->vertices = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->degrees = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->vertices = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->degrees = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->weightSum  = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->weightSum  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
-    stats->atomDegree = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->atomChild = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->atomDegree = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->atomChild = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
 
     // union Atom *atom = (union Atom *) my_malloc(graph->num_vertices * sizeof(union Atom));
 
-    stats->sibling = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
-    stats->dest = (__u32 *) my_malloc(graph->num_vertices * sizeof(__u32));
+    stats->sibling = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->dest = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
@@ -204,7 +204,7 @@ void freeIncrementalAggregationStats(struct IncrementalAggregationStats *stats)
 struct IncrementalAggregationStats *incrementalAggregationGraphCSR( struct GraphCSR *graph)
 {
 
-    __u32 v;
+    uint32_t v;
 
     float deltaQ = -1.0;
     struct IncrementalAggregationStats *stats = newIncrementalAggregationStatsGraphCSR(graph);
@@ -250,13 +250,13 @@ struct IncrementalAggregationStats *incrementalAggregationGraphCSR( struct Graph
         #pragma omp for schedule (dynamic,1024)
         for(v = 0 ; v < graph->num_vertices; v++)
         {
-            __u32 u;
-            __u32 n;
+            uint32_t u;
+            uint32_t n;
             deltaQ = -1.0;
             u = stats->vertices[v];
             n = u;
 
-            __u32 degreeU = UINT_MAX;
+            uint32_t degreeU = UINT_MAX;
 
             //atomic swap
             degreeU =  __sync_val_compare_and_swap(&(stats->atom[u].pair.degree), stats->atom[u].pair.degree, UINT_MAX );
@@ -322,20 +322,20 @@ struct IncrementalAggregationStats *incrementalAggregationGraphCSR( struct Graph
 }
 
 
-void findBestDestination(struct ArrayQueue *Neighbors, struct ArrayQueue *reachableSet, float *deltaQ, __u32 *u, __u32 degreeVout, __u32 v, struct IncrementalAggregationStats *stats, struct GraphCSR *graph)
+void findBestDestination(struct ArrayQueue *Neighbors, struct ArrayQueue *reachableSet, float *deltaQ, uint32_t *u, uint32_t degreeVout, uint32_t v, struct IncrementalAggregationStats *stats, struct GraphCSR *graph)
 {
 
 
-    __u32 j;
-    __u32 k;
-    __u32 t;
+    uint32_t j;
+    uint32_t k;
+    uint32_t t;
 
-    __u32 tempV;
-    __u32 tempU;
-    __u32 degreeTemp;
-    __u32 edgeTemp;
+    uint32_t tempV;
+    uint32_t tempU;
+    uint32_t degreeTemp;
+    uint32_t edgeTemp;
 
-    __u32 edgeWeightUV = 0;
+    uint32_t edgeWeightUV = 0;
 
     float deltaQtemp = 0.0;
     float numEdgesm = 1.0 / ((graph->num_edges));
@@ -383,8 +383,8 @@ void findBestDestination(struct ArrayQueue *Neighbors, struct ArrayQueue *reacha
 
     for(j = Neighbors->head ; j < Neighbors->tail; j++)
     {
-        __u32 i = Neighbors->queue[j];
-        __u32 degreeUout = 0;
+        uint32_t i = Neighbors->queue[j];
+        uint32_t degreeUout = 0;
         degreeUout = stats->atom[stats->dest[i]].pair.degree;
 
         if(degreeUout != UINT_MAX)
@@ -406,7 +406,7 @@ void findBestDestination(struct ArrayQueue *Neighbors, struct ArrayQueue *reacha
 
 
 
-void returnReachableSetOfNodesFromDendrogram(__u32 v, union Atom *atom, __u32 *sibling, struct ArrayQueue *reachableSet)
+void returnReachableSetOfNodesFromDendrogram(uint32_t v, union Atom *atom, uint32_t *sibling, struct ArrayQueue *reachableSet)
 {
 
     traversDendrogramReachableSetDFS(v, atom, sibling, reachableSet);
@@ -414,7 +414,7 @@ void returnReachableSetOfNodesFromDendrogram(__u32 v, union Atom *atom, __u32 *s
 }
 
 
-void traversDendrogramReachableSetDFS(__u32 v, union Atom *atom, __u32 *sibling, struct ArrayQueue *reachableSet)
+void traversDendrogramReachableSetDFS(uint32_t v, union Atom *atom, uint32_t *sibling, struct ArrayQueue *reachableSet)
 {
 
     if(atom[v].pair.child != UINT_MAX)
@@ -430,12 +430,12 @@ void traversDendrogramReachableSetDFS(__u32 v, union Atom *atom, __u32 *sibling,
 }
 
 
-__u32 *returnLabelsOfNodesFromDendrogram(struct ArrayQueue *reachableSet, union Atom *atom, __u32 *sibling, __u32 num_vertices)
+uint32_t *returnLabelsOfNodesFromDendrogram(struct ArrayQueue *reachableSet, union Atom *atom, uint32_t *sibling, uint32_t num_vertices)
 {
 
-    __u32 i;
-    __u32 newLablesCounter = 0;
-    __u32 *newLables = (__u32 *) my_malloc(num_vertices * sizeof(__u32));
+    uint32_t i;
+    uint32_t newLablesCounter = 0;
+    uint32_t *newLables = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
     for(i = reachableSet->head ; i < reachableSet->tail; i++)
     {
@@ -449,7 +449,7 @@ __u32 *returnLabelsOfNodesFromDendrogram(struct ArrayQueue *reachableSet, union 
 }
 
 
-void traversDendrogramLabelsDFS(__u32 *newLablesCounter, __u32 *newLables, __u32 v, union Atom *atom, __u32 *sibling)
+void traversDendrogramLabelsDFS(uint32_t *newLablesCounter, uint32_t *newLables, uint32_t v, union Atom *atom, uint32_t *sibling)
 {
 
     if(v == UINT_MAX)
@@ -465,7 +465,7 @@ void traversDendrogramLabelsDFS(__u32 *newLablesCounter, __u32 *newLables, __u32
 
 void printSet(struct ArrayQueue *Set)
 {
-    __u32 i;
+    uint32_t i;
     printf("S : ");
     for(i = Set->head ; i < Set->tail; i++)
     {

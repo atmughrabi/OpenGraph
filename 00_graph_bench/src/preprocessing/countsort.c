@@ -31,20 +31,20 @@ struct EdgeList  *countSortEdgesBySource (struct EdgeList *edgeList)
 
 
 
-    __u32 key = 0;
-    __u32 pos = 0;
-    __u32 num_vertices = edgeList->num_vertices;
-    __u32 num_edges = edgeList->num_edges;
-    __u32 i = 0;
-    __u32 j = 0;
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 t_id = 0;
-    __u32 offset_start = 0;
-    __u32 offset_end = 0;
-    __u32 base = 0;
+    uint32_t key = 0;
+    uint32_t pos = 0;
+    uint32_t num_vertices = edgeList->num_vertices;
+    uint32_t num_edges = edgeList->num_edges;
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+    uint32_t base = 0;
 
 
-    __u32 *vertex_count = (__u32 *) my_malloc( P * num_vertices * sizeof(__u32));
+    uint32_t *vertex_count = (uint32_t *) my_malloc( P * num_vertices * sizeof(uint32_t));
 
 
 
@@ -129,20 +129,20 @@ struct EdgeList  *countSortEdgesBySource (struct EdgeList *edgeList)
 struct EdgeList *countSortEdgesByDestination (struct EdgeList *edgeList)
 {
 
-    __u32 key = 0;
-    __u32 pos = 0;
-    __u32 num_vertices = edgeList->num_vertices;
-    __u32 num_edges = edgeList->num_edges;
-    __u32 i = 0;
-    __u32 j = 0;
-    __u32 P = numThreads;  // 32/8 8 bit radix needs 4 iterations
-    __u32 t_id = 0;
-    __u32 offset_start = 0;
-    __u32 offset_end = 0;
-    __u32 base = 0;
+    uint32_t key = 0;
+    uint32_t pos = 0;
+    uint32_t num_vertices = edgeList->num_vertices;
+    uint32_t num_edges = edgeList->num_edges;
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+    uint32_t base = 0;
 
 
-    __u32 *vertex_count = (__u32 *) my_malloc( P * num_vertices * sizeof(__u32));
+    uint32_t *vertex_count = (uint32_t *) my_malloc( P * num_vertices * sizeof(uint32_t));
 
 
 
