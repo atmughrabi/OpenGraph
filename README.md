@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/atmughrabi/OpenGraph.svg?token=L3reAtGHdEVVPvzcVqQ6&branch=master)](https://travis-ci.com/atmughrabi/OpenGraph)
-[![](https://tokei.rs/b1/github/atmughrabi/OpenGraph)](https://github.com/atmughrabi/OpenGraph)
+[![](https://tokei.rs/b1/github/atmughrabi/OpenGraph?category=code)](https://github.com/atmughrabi/OpenGraph)
 [<p align="center"><img src="./02_slides/fig/logo.png" width="650" ></p>](#opengraph-benchmark-suite)
 
 # OpenGraph Benchmark Suite
