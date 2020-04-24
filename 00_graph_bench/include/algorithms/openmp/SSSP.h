@@ -50,7 +50,7 @@ void durstenfeldShuffle(uint32_t *vertices, uint32_t size);
 // ***************                  GRID DataStructure                           **************
 // ********************************************************************************************
 
-struct SSSPStats * SSSPGraphGrid(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphGrid *graph, uint32_t delta);
+struct SSSPStats *SSSPGraphGrid(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphGrid *graph, uint32_t delta);
 
 struct SSSPStats *SSSPPullRowGraphGrid(uint32_t source,  uint32_t iterations, struct GraphGrid *graph, uint32_t delta);
 struct SSSPStats *SSSPPushColumnGraphGrid(uint32_t source,  uint32_t iterations, struct GraphGrid *graph, uint32_t delta);
@@ -65,13 +65,14 @@ struct SSSPStats *SSSPGraphCSR(uint32_t source,  uint32_t iterations, uint32_t p
 
 struct SSSPStats *SSSPDataDrivenPullGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta);
 struct SSSPStats *SSSPDataDrivenPushGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta);
+struct SSSPStats *SSSPDataDrivenSplitPushGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta);
 void SSSPSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlus, struct GraphCSR **graphMinus, uint32_t delta);
 
 // ********************************************************************************************
 // ***************                  ArrayList DataStructure                      **************
 // ********************************************************************************************
 
-struct SSSPStats * SSSPGraphAdjArrayList(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphAdjArrayList *graph, uint32_t delta);
+struct SSSPStats *SSSPGraphAdjArrayList(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphAdjArrayList *graph, uint32_t delta);
 
 struct SSSPStats *SSSPDataDrivenPullGraphAdjArrayList(uint32_t source,  uint32_t iterations, struct GraphAdjArrayList *graph, uint32_t delta);
 struct SSSPStats *SSSPDataDrivenPushGraphAdjArrayList(uint32_t source,  uint32_t iterations, struct GraphAdjArrayList *graph, uint32_t delta);
@@ -80,7 +81,7 @@ struct SSSPStats *SSSPDataDrivenPushGraphAdjArrayList(uint32_t source,  uint32_t
 // ***************                  LinkedList DataStructure                     **************
 // ********************************************************************************************
 
-struct SSSPStats * SSSPGraphAdjLinkedList(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphAdjLinkedList *graph, uint32_t delta);
+struct SSSPStats *SSSPGraphAdjLinkedList(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphAdjLinkedList *graph, uint32_t delta);
 
 struct SSSPStats *SSSPPullGraphAdjLinkedList(uint32_t source,  uint32_t iterations, struct GraphAdjLinkedList *graph, uint32_t delta);
 struct SSSPStats *SSSPPushGraphAdjLinkedList(uint32_t source,  uint32_t iterations, struct GraphAdjLinkedList *graph, uint32_t delta);

@@ -623,7 +623,9 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
 
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
+#if WEIGHTED
     uint32_t *edges_array_weight = NULL;
+#endif
 
 #if DIRECTED
     vertices = graph->inverse_vertices;
@@ -725,8 +727,9 @@ struct SPMVStats *SPMVPushGraphCSR( uint32_t iterations, struct GraphCSR *graph)
 
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
+#if WEIGHTED
     uint32_t *edges_array_weight = NULL;
-
+#endif
 
     vertices = graph->vertices;
     sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
@@ -826,7 +829,9 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
 
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
+#if WEIGHTED
     uint32_t *edges_array_weight = NULL;
+#endif
 
 #if DIRECTED
     vertices = graph->inverse_vertices;
@@ -947,7 +952,9 @@ struct SPMVStats *SPMVPushFixedPointGraphCSR( uint32_t iterations, struct GraphC
 
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
+#if WEIGHTED
     uint32_t *edges_array_weight = NULL;
+#endif
 
     vertices = graph->vertices;
     sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
@@ -1294,7 +1301,7 @@ struct SPMVStats *SPMVPullFixedPointGraphAdjArrayList( uint32_t iterations, stru
     {
         Start(timer_inner);
 
-         #pragma omp parallel for private(v,degree,Nodes) schedule(dynamic, 1024)
+        #pragma omp parallel for private(v,degree,Nodes) schedule(dynamic, 1024)
         for(v = 0; v < graph->num_vertices; v++)
         {
             uint32_t j;
@@ -1313,7 +1320,7 @@ struct SPMVStats *SPMVPullFixedPointGraphAdjArrayList( uint32_t iterations, stru
             for(j = 0 ; j < (degree) ; j++)
             {
                 src = Nodes->edges_array_dest[j];
-               
+
 
 #if WEIGHTED
                 weight = DoubleToFixed64(Nodes->edges_array_weight[j]);
@@ -1322,10 +1329,10 @@ struct SPMVStats *SPMVPullFixedPointGraphAdjArrayList( uint32_t iterations, stru
                 vector_output[dest] +=  MULFixed64V1(weight, vector_input[src]); // stats->pageRanks[v]/graph->vertices[v].out_degree;
 
             }
-          
+
         }
 
-       
+
 
         Stop(timer_inner);
         printf("| %-21u | %-27f | \n", stats->iterations, Seconds(timer_inner));
@@ -1734,7 +1741,7 @@ struct SPMVStats *SPMVPullFixedPointGraphAdjLinkedList( uint32_t iterations, str
             for(j = 0 ; j < (degree) ; j++)
             {
                 src =  Nodes->dest;
-               
+
 #if WEIGHTED
                 weight = DoubleToFixed64(Nodes->weight);
 #endif
@@ -1743,7 +1750,7 @@ struct SPMVStats *SPMVPullFixedPointGraphAdjLinkedList( uint32_t iterations, str
                 vector_output[dest] +=  MULFixed64V1(weight, vector_input[src]); // stats->pageRanks[v]/graph->vertices[v].out_degree;
 
             }
-          
+
         }
 
 

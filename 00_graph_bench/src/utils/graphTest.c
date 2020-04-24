@@ -58,7 +58,7 @@ uint32_t compareFloatArrays(float *arr1, float *arr2, uint32_t arr1_size, uint32
 {
     uint32_t i = 0;
     uint32_t missmatch = 0;
-    double epsilon = 1e-8f;
+    double epsilon = 1e-4f;
 
     if(arr1_size != arr2_size)
         return 1;
@@ -144,8 +144,8 @@ uint32_t cmpGraphAlgorithmsTestStats(void *ref_stats, void *cmp_stats, uint32_t 
     {
         struct PageRankStats *ref_stats_tmp = (struct PageRankStats * )ref_stats;
         struct PageRankStats *cmp_stats_tmp = (struct PageRankStats * )cmp_stats;
-        missmatch += compareRealRanks(ref_stats_tmp->realRanks, cmp_stats_tmp->realRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
-        // missmatch += compareFloatArrays(ref_stats_tmp->pageRanks, cmp_stats_tmp->pageRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
+        // missmatch += compareRealRanks(ref_stats_tmp->realRanks, cmp_stats_tmp->realRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
+        missmatch += compareFloatArrays(ref_stats_tmp->pageRanks, cmp_stats_tmp->pageRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
 
     }
     break;

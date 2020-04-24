@@ -295,7 +295,9 @@ struct GraphCSR *readFromBinFileGraphCSR (const char *fname)
     uint32_t vertex_id;
     uint32_t num_vertices;
     uint32_t num_edges;
+#if WEIGHTED
     uint32_t max_weight;
+#endif
     size_t ret;
 
     pBinary = fopen(fname, "rb");
@@ -319,7 +321,10 @@ struct GraphCSR *readFromBinFileGraphCSR (const char *fname)
     struct GraphCSR *graphCSR = graphCSRNew(num_vertices, num_edges, 0);
 #endif
 
+
+#if WEIGHTED
     graphCSR->max_weight = max_weight;
+#endif
 
     struct EdgeList *sorted_edges_array = newEdgeList(num_edges);
     sorted_edges_array->num_vertices = num_vertices;

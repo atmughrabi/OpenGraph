@@ -96,12 +96,12 @@ main (int argc, char **argv)
     arguments.weighted = 0;
     arguments.delta = 1;
     arguments.numThreads = 4;
-    arguments.fnameb = "../04_test_graphs/Gnutella/graph.wbin";
+    arguments.fnameb = "../01_test_graphs/Gnutella/graph.wbin";
     arguments.fnameb_format = 1;
     arguments.convert_format = 1;
 
     void *graph = NULL;
-    
+
     numThreads =  arguments.numThreads;
 
     struct Timer *timer = (struct Timer *) my_malloc(sizeof(struct Timer));
@@ -125,7 +125,7 @@ main (int argc, char **argv)
     void *ref_data;
     void *cmp_data;
 
-  
+
     for(arguments.algorithm = 0 ; arguments.algorithm < 8; arguments.algorithm++)
     {
         for(arguments.datastructure = 0 ; arguments.datastructure < 4; arguments.datastructure++)
@@ -158,7 +158,7 @@ main (int argc, char **argv)
                 arguments.root = generateRandomRootGeneral(graph, &arguments); // random root each trial
                 ref_data = runGraphAlgorithmsTest(graph, &arguments); // ref stats should mach oother algo
 
-                for(arguments.pushpull = 0 ; arguments.pushpull < 13; arguments.pushpull++)
+                for(arguments.pushpull = 0 ; arguments.pushpull < 9; arguments.pushpull++)
                 {
 
                     cmp_data = runGraphAlgorithmsTest(graph, &arguments);

@@ -1,4 +1,18 @@
-// By mohannad Ibrahim
+// -----------------------------------------------------------------------------
+//
+//      "00_AccelGraph"
+//
+// -----------------------------------------------------------------------------
+// Copyright (c) 2014-2019 All rights reserved
+// -----------------------------------------------------------------------------
+// Author : Mohannad Ibrahim/Abdullah Mughrabi
+// Email  : atmughra@ncsu.edu||atmughrabi@gmail.com
+// File   : bellmanFord.c
+// Create : 2019-09-28 15:19:50
+// Revise : 2019-09-28 15:34:29
+// Editor : Abdullah Mughrabi
+// -----------------------------------------------------------------------------
+
 #ifndef QUANTIZATION_H
 #define QUANTIZATION_H
 

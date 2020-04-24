@@ -14,7 +14,7 @@ export APP_TEST          =  test_open-graph
 export APP_DIR              = .
 
 export BENCHMARKS_DIR    	= ../01_test_graphs
-# export BENCHMARKS_DIR    	= ../../01_GraphDatasets
+export BENCHMARKS_DIR    	= ../../01_GraphDatasets
 
 #dir root/managed_folders
 export SRC_DIR           	= src
@@ -69,7 +69,7 @@ export GRAPH_NAME = amazon
 # export GRAPH_NAME = KONECT-wikipedia_link_en
 
 # LAW https://sparse.tamu.edu/MM/LAW/
-# export GRAPH_NAME = amazon-2008
+export GRAPH_NAME = amazon-2008
 # export GRAPH_NAME = arabic-2005
 # export GRAPH_NAME = cnr-2000
 # export GRAPH_NAME = dblp-2010
@@ -115,7 +115,7 @@ export PULL_PUSH 		= 0
 export SORT_TYPE 		= 0
 export REORDER 		    = 0
 export DATA_STRUCTURES  = 0
-export ALGORITHMS 		= 1
+export ALGORITHMS 		= 2
 
 export ROOT 			= 164
 export TOLERANCE 		= 1e-8

@@ -120,7 +120,9 @@ struct EdgeList *removeDulpicatesSelfLoopEdges( struct EdgeList *edgeList)
     struct EdgeList *tempEdgeList = newEdgeList(edgeList->num_edges);
     uint32_t tempSrc = 0;
     uint32_t tempDest = 0;
+#if WEIGHTED
     uint32_t tempWeight = 0;
+#endif
     uint32_t j = 0;
     uint32_t i = 0;
 
@@ -136,7 +138,7 @@ struct EdgeList *removeDulpicatesSelfLoopEdges( struct EdgeList *edgeList)
     }
     while(tempSrc == tempDest);
 
-        tempEdgeList->edges_array_src[j] = tempSrc;
+    tempEdgeList->edges_array_src[j] = tempSrc;
     tempEdgeList->edges_array_dest[j] = tempDest;
 #if WEIGHTED
     tempEdgeList->edges_array_weight[j] = tempWeight;
@@ -510,7 +512,10 @@ struct EdgeList *readEdgeListsMem( struct EdgeList *edgeListmem,  uint8_t invers
 
 
     uint32_t num_edges = edgeListmem->num_edges;
-    uint32_t  src = 0, dest = 0, weight = 1;;
+    uint32_t  src = 0, dest = 0;
+#if WEIGHTED
+    uint32_t weight = 1;
+#endif
     struct EdgeList *edgeList;
 
     edgeList = newEdgeList((num_edges));

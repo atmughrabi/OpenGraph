@@ -46,12 +46,12 @@ int numThreads;
 mt19937state *mt19937var;
 
 const char *argp_program_version =
-    "AccelGraph_CAPI v3.0";
+    "OpenGraph v2.0";
 const char *argp_program_bug_address =
     "<atmughra@ncsu.edu>|<atmughrabi@gmail.com>";
 /* Program documentation. */
 static char doc[] =
-    "\nAccelGraph is an open source graph processing framework, it is designed to be a benchmarking suite for various graph processing algorithms on FPGAs.\n";
+    "\nOpenGraph is an open source graph processing framework, it is designed to be a benchmarking suite for various graph processing algorithms using pure C.\n";
 
 /* A description of the arguments we accept. */
 static char args_doc[] = "-f <graph file> -d [data structure] -a [algorithm] -r [root] -n [num threads] [-h -c -s -w]";
@@ -109,7 +109,7 @@ static struct argp_option options[] =
     },
     {
         "light-reorder",     'l', "[ORDER:0]\n",      0,
-        "\nRelabels the graph for better cache performance. [default:0]-no-reordering [1]-page-rank-order [2]-in-degree [3]-out-degree [4]-in/out degree [5]-Rabbit [6]-Epoch-pageRank [7]-Epoch-BFS [8]-LoadFromFile\n"
+        "\n [*BUGGY] Relabels the graph for better cache performance. [default:0]-no-reordering [1]-page-rank-order [2]-in-degree [3]-out-degree [4]-in/out degree [5]-Rabbit [6]-Epoch-pageRank [7]-Epoch-BFS [8]-LoadFromFile\n"
     },
     {
         "convert-format",    'c', "[TEXT|BIN|CSR:1]\n",      0,
@@ -145,11 +145,11 @@ static struct argp_option options[] =
     },
     {
         "afu-config",            'm', "[DEFAULT:0x1]\n",      0,
-        "\nAFU-Control buffers(read/write/prefetcher) arbitration 0x01 round robin 0x10 fixed priority.\n"
+        "\nCAPI FPGA integration: AFU-Control buffers(read/write/prefetcher) arbitration 0x01 round robin 0x10 fixed priority.\n"
     },
     {
         "cu-config",             'q', "[DEFAULT:0x01]\n",      0,
-        "\nCU configurations for requests cached/non cached/prefetcher active or not check README for more explanation.\n"
+        "\nCAPI FPGA integration: CU configurations for requests cached/non cached/prefetcher active or not check README for more explanation.\n"
     },
     { 0 }
 };

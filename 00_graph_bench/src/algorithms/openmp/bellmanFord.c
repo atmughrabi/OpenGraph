@@ -484,7 +484,10 @@ struct BellmanFordStats *bellmanFordPullRowGraphGrid(uint32_t source,  uint32_t 
 
                     uint32_t src = partition->edgeList->edges_array_src[k];
                     uint32_t dest = partition->edgeList->edges_array_dest[k];
-                    uint32_t weight = partition->edgeList->edges_array_weight[k];
+                    uint32_t weight  = 1;
+#if WEIGHTED
+                    weight = partition->edgeList->edges_array_weight[k];
+#endif
 
                     if(getBit(bitmapCurr, src))
                     {
@@ -604,7 +607,10 @@ struct BellmanFordStats *bellmanFordPushColumnGraphGrid(uint32_t source,  uint32
 
                     uint32_t src = partition->edgeList->edges_array_src[k];
                     uint32_t dest = partition->edgeList->edges_array_dest[k];
-                    uint32_t weight = partition->edgeList->edges_array_weight[k];
+                    uint32_t weight  = 1;
+#if WEIGHTED
+                    weight = partition->edgeList->edges_array_weight[k];
+#endif
 
                     if(getBit(bitmapCurr, src))
                     {
@@ -708,7 +714,9 @@ void bellmanFordSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlu
 
             edgesPlus->edges_array_src[localEdgesPlus_idx] = graph->sorted_edges_array->edges_array_src[e];
             edgesPlus->edges_array_dest[localEdgesPlus_idx] = graph->sorted_edges_array->edges_array_dest[e];
+#if WEIGHTED
             edgesPlus->edges_array_weight[localEdgesPlus_idx] = graph->sorted_edges_array->edges_array_weight[e];
+#endif
         }
         else if (src > dest)
         {
@@ -716,7 +724,9 @@ void bellmanFordSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlu
 
             edgesMinus->edges_array_src[localEdgesMinus_idx] = graph->sorted_edges_array->edges_array_src[e];
             edgesMinus->edges_array_dest[localEdgesMinus_idx] = graph->sorted_edges_array->edges_array_dest[e];
+#if WEIGHTED
             edgesMinus->edges_array_weight[localEdgesMinus_idx] = graph->sorted_edges_array->edges_array_weight[e];
+#endif
 
         }
     }
@@ -879,8 +889,10 @@ struct BellmanFordStats *bellmanFordDataDrivenPullGraphCSR(uint32_t source,  uin
                 for(j = edge_idx ; j < (edge_idx + degree) ; j++)
                 {
                     u = sorted_edges_array->edges_array_dest[j];
+                    w = 1;
+#if WEIGHTED
                     w = sorted_edges_array->edges_array_weight[j];
-
+#endif
 
                     if (minDistance > (stats->distances[u] + w))
                     {
@@ -1023,7 +1035,10 @@ struct BellmanFordStats *bellmanFordDataDrivenPushGraphCSR(uint32_t source,  uin
                 {
                     uint32_t src = graph->sorted_edges_array->edges_array_src[j];
                     uint32_t dest = graph->sorted_edges_array->edges_array_dest[j];
-                    uint32_t weight = graph->sorted_edges_array->edges_array_weight[j];
+                    uint32_t weight  = 1;
+#if WEIGHTED
+                    weight = graph->sorted_edges_array->edges_array_weight[j];
+#endif
 
                     if(numThreads == 1)
                         activeVertices += bellmanFordRelax(src, dest, weight, stats, bitmapNext);
@@ -1193,7 +1208,10 @@ struct BellmanFordStats *bellmanFordRandomizedDataDrivenPushGraphCSR(uint32_t so
 
                     uint32_t src = graphPlus->sorted_edges_array->edges_array_src[j];
                     uint32_t dest = graphPlus->sorted_edges_array->edges_array_dest[j];
-                    uint32_t weight = graphPlus->sorted_edges_array->edges_array_weight[j];
+                    uint32_t weight  = 1;
+#if WEIGHTED
+                    weight = graphPlus->sorted_edges_array->edges_array_weight[j];
+#endif
 
                     if(numThreads == 1)
                         activeVertices += bellmanFordRelax(src, dest, weight, stats, bitmapNext);
@@ -1220,7 +1238,11 @@ struct BellmanFordStats *bellmanFordRandomizedDataDrivenPushGraphCSR(uint32_t so
 
                     uint32_t src = graphMinus->sorted_edges_array->edges_array_src[j];
                     uint32_t dest = graphMinus->sorted_edges_array->edges_array_dest[j];
-                    uint32_t weight = graphMinus->sorted_edges_array->edges_array_weight[j];
+                    uint32_t weight  = 1;
+#if WEIGHTED
+                    weight = graphMinus->sorted_edges_array->edges_array_weight[j];
+#endif
+
 
                     if(numThreads == 1)
                         activeVertices += bellmanFordRelax(src, dest, weight, stats, bitmapNext);
@@ -1287,7 +1309,7 @@ struct BellmanFordStats *bellmanFordGraphAdjArrayList(uint32_t source,  uint32_t
         stats = bellmanFordDataDrivenPushGraphAdjArrayList(source, iterations, graph);
         break;
     }
-   
+
     return stats;
 }
 
@@ -1393,7 +1415,10 @@ struct BellmanFordStats *bellmanFordDataDrivenPullGraphAdjArrayList(uint32_t sou
                 for(j = 0 ; j < (degree) ; j++)
                 {
                     u = nodes->edges_array_dest[j];
+                    w  = 1;
+#if WEIGHTED
                     w = nodes->edges_array_weight[j];
+#endif
                     // printf("w %u \n",w );
                     if (minDistance > (stats->distances[u] + w))
                     {
@@ -1412,7 +1437,10 @@ struct BellmanFordStats *bellmanFordDataDrivenPullGraphAdjArrayList(uint32_t sou
                     for(j = 0 ; j < (degree) ; j++)
                     {
                         u = nodes->edges_array_dest[j];
+                        w  = 1;
+#if WEIGHTED
                         w = nodes->edges_array_weight[j];
+#endif
 
                         if(!getBit(bitmapNext, u))
                         {
@@ -1534,7 +1562,10 @@ struct BellmanFordStats *bellmanFordDataDrivenPushGraphAdjArrayList(uint32_t sou
 
                     uint32_t src = nodes->edges_array_src[j];
                     uint32_t dest = nodes->edges_array_dest[j];
-                    uint32_t weight = nodes->edges_array_weight[j];
+                    uint32_t weight  = 1;
+#if WEIGHTED
+                    weight = nodes->edges_array_weight[j];
+#endif
 
                     if(numThreads == 1)
                         activeVertices += bellmanFordRelax(src, dest, weight, stats, bitmapNext);
@@ -1598,7 +1629,7 @@ struct BellmanFordStats *bellmanFordGraphAdjLinkedList(uint32_t source,  uint32_
         stats = bellmanFordPushGraphAdjLinkedList(source, iterations, graph);
         break;
     }
-    
+
     return stats;
 
 }
@@ -1701,7 +1732,10 @@ struct BellmanFordStats *bellmanFordPullGraphAdjLinkedList(uint32_t source,  uin
                 for(j = 0 ; j < (degree) ; j++)
                 {
                     u = nodes->dest;
+                    w = 1;
+#if WEIGHTED
                     w = nodes->weight;
+#endif
                     nodes = nodes->next;
 
                     if (minDistance > (stats->distances[u] + w))
@@ -1720,7 +1754,10 @@ struct BellmanFordStats *bellmanFordPullGraphAdjLinkedList(uint32_t source,  uin
                     for(j = 0 ; j < (degree) ; j++)
                     {
                         u = nodes->dest;
+                        w = 1;
+#if WEIGHTED
                         w = nodes->weight;
+#endif
                         nodes = nodes->next;
 
                         if(!getBit(bitmapNext, u))
@@ -1845,7 +1882,10 @@ struct BellmanFordStats *bellmanFordPushGraphAdjLinkedList(uint32_t source,  uin
                 for(j = 0 ; j < (degree) ; j++)
                 {
                     uint32_t   u = nodes->dest;
-                    uint32_t   w = nodes->weight;
+                    uint32_t w = 1;
+#if WEIGHTED
+                    w = nodes->weight;
+#endif
                     nodes = nodes->next;
 
                     if(numThreads == 1)
