@@ -9,26 +9,27 @@
 
 
 // A structure to represent an adjacency list
-struct  GraphGrid {
+struct  GraphGrid
+{
 
-	uint32_t num_edges;
-	uint32_t num_vertices;
-	
-	#if WEIGHTED
-	uint32_t max_weight;
-	#endif
+    uint32_t num_edges;
+    uint32_t num_vertices;
 
-	
-	struct Grid* grid;
-	
+#if WEIGHTED
+    uint32_t max_weight;
+#endif
+
+
+    struct Grid *grid;
+
 
 };
 
 void  graphGridReset(struct GraphGrid *graphGrid);
 void  graphGridPrint(struct GraphGrid *graphGrid);
-struct GraphGrid * graphGridNew(struct EdgeList* edgeList);
+struct GraphGrid *graphGridNew(struct EdgeList *edgeList);
 void   graphGridFree(struct GraphGrid *graphGrid);
-void   graphGridPrintMessageWithtime(const char * msg, double time);
-struct GraphGrid* graphGridPreProcessingStep (struct Arguments *arguments);
+void   graphGridPrintMessageWithtime(const char *msg, double time);
+struct GraphGrid *graphGridPreProcessingStep (struct Arguments *arguments);
 
 #endif

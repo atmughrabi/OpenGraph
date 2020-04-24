@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
 //
-//      "OpenGraph"
+//      "00_AccelGraph"
 //
 // -----------------------------------------------------------------------------
 // Copyright (c) 2014-2019 All rights reserved
@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "mt19937.h"
 #include "graphConfig.h"
@@ -36,6 +37,7 @@
 #include "triangleCount.h"
 
 #include "reorder.h"
+#include "graphStats.h"
 #include "graphRun.h"
 
 
@@ -45,7 +47,7 @@ void generateGraphPrintMessageWithtime(const char *msg, double time)
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", msg);
     printf(" -----------------------------------------------------\n");
-    printf("| %-51f | \n", time);
+    printf("| %-51lf | \n", time);
     printf(" -----------------------------------------------------\n");
 
 }
@@ -157,13 +159,15 @@ void *generateGraphDataStructure(struct Arguments *arguments)
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     void *graph = NULL;
 
-    if(arguments->algorithm == 7){ // Triangle counting depends on order
+    if(arguments->algorithm == 7)  // Triangle counting depends on order
+    {
 
         arguments->sort = 1;
         arguments->lmode = 3;
     }
 
-    if(arguments->algorithm == 8){ // Triangle counting depends on order
+    if(arguments->algorithm == 8)  // Triangle counting depends on order
+    {
 
         arguments->sort = 1;
         arguments->lmode = 8;
@@ -241,15 +245,12 @@ void *generateGraphDataStructure(struct Arguments *arguments)
 
 void runGraphAlgorithms(void *graph, struct Arguments *arguments)
 {
-    // struct BellmanFordStats
-    // struct PageRankStats
-    // struct BFSStats
-    // struct DFSStats
-    // struct IncrementalAggregationStats
-    // struct SSSPStats
+
+    // print total average stats to an external file fnameb.stats numthreads avg trial time
 
     double time_total = 0.0f;
     uint32_t  trials = arguments->trials;
+
 
     while(trials)
     {
@@ -266,6 +267,14 @@ void runGraphAlgorithms(void *graph, struct Arguments *arguments)
         {
             struct PageRankStats *stats = runPageRankAlgorithm(graph,  arguments->datastructure,  arguments->epsilon,  arguments->iterations,  arguments->pushpull);
             time_total += stats->time_total;
+
+            if(arguments->Sflag) // output page rank error statistics
+            {
+                struct PageRankStats *ref_stats = runPageRankAlgorithm(graph,  arguments->datastructure,  arguments->epsilon,  arguments->iterations,  0);
+                collectStatsPageRank(arguments, ref_stats, stats, trials);
+                freePageRankStats(ref_stats);
+            }
+
             freePageRankStats(stats);
         }
         break;
@@ -333,6 +342,16 @@ void runGraphAlgorithms(void *graph, struct Arguments *arguments)
 
     generateGraphPrintMessageWithtime("*     -----> Trials Avg Time (Seconds) <-----", (time_total / (double)arguments->trials));
 
+    if(arguments->verbosity > 0)
+    {
+        char *fname_txt = (char *) malloc((strlen(arguments->fnameb) + 50) * sizeof(char));
+        sprintf(fname_txt, "%s_%d_%d_%d_%d.%s", arguments->fnameb, arguments->algorithm, arguments->datastructure, arguments->trials, arguments->pushpull, "perf");
+        FILE *fptr;
+        fptr = fopen(fname_txt, "a+");
+        fprintf(fptr, "%u %lf \n", arguments->numThreads, (time_total / (double)arguments->trials));
+        fclose(fptr);
+        free(fname_txt);
+    }
 }
 
 uint32_t generateRandomRootGraphCSR(struct GraphCSR *graph)

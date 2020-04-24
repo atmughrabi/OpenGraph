@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
 //
-//      "OpenGraph"
+//      "00_AccelGraph"
 //
 // -----------------------------------------------------------------------------
 // Copyright (c) 2014-2019 All rights reserved
@@ -100,6 +100,14 @@ void partitionEdgeListOffsetStartEnd(struct GraphCSR *graph, struct EdgeList *so
     uint32_t i;
     uint32_t j;
     uint32_t P = numThreads;
+
+     for(i = 0 ; i < P ; i++)
+    {
+
+        offset_start[i] = graph->num_edges;
+        offset_end[i] = graph->num_edges;
+
+    }
 
     if(P >  graph->num_edges && graph->num_edges != 0)
         P = graph->num_edges;
@@ -293,6 +301,7 @@ struct GraphCSR *mapVerticesWithInOutDegree (struct GraphCSR *graph, uint8_t inv
     // for(vertex_id = 0; vertex_id < graph->num_vertices; vertex_id++){
 
     //     printf("<--v %u out_degree %u\n",vertex_id, graph->vertices->out_degree[vertex_id] );
+        
     // }
 
     return graph;
@@ -320,7 +329,8 @@ void vertexArrayMaxOutdegree(struct Vertex *vertex_array, uint32_t num_vertices)
         if(vertex_array->out_degree[i] == out_degree)
             index = i;
 
-
+        // printf("| %-15u | %-15u | %-15u | \n", i,  vertex_array->out_degree[i], vertex_array->in_degree[i]);
+ 
     }
 
 
@@ -348,6 +358,8 @@ void vertexArrayMaxInDegree(struct Vertex *vertex_array, uint32_t num_vertices)
         if(vertex_array->out_degree[i] == in_degree)
             index = i;
 
+         // printf("| %-15u | %-15u | %-15u | \n", i,  vertex_array->in_degree[i], vertex_array->out_degree[i]);
+ 
 
     }
 

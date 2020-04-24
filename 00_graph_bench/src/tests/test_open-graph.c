@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
 //
-//      "OpenGraph"
+//      "00_AccelGraph"
 //
 // -----------------------------------------------------------------------------
 // Copyright (c) 2014-2019 All rights reserved
@@ -59,8 +59,17 @@
 #include <assert.h>
 #include "graphTest.h"
 
+uint64_t afu_config;
+uint64_t cu_config;
 int numThreads;
 mt19937state *mt19937var;
+
+// "   mm                        ""#             mmm                       #     \n"
+// "   ##    mmm    mmm    mmm     #           m"   "  m mm   mmm   mmmm   # mm  \n"
+// "  #  #  #"  "  #"  "  #"  #    #           #   mm  #"  " "   #  #" "#  #"  # \n"
+// "  #mm#  #      #      #""""    #     """   #    #  #     m"""#  #   #  #   # \n"
+// " #    # "#mm"  "#mm"  "#mm"    "mm          "mmm"  #     "mm"#  ##m#"  #   # \n"
+// "                                                                #            \n"
 
 
 int
@@ -87,12 +96,12 @@ main (int argc, char **argv)
     arguments.weighted = 0;
     arguments.delta = 1;
     arguments.numThreads = 4;
-    arguments.fnameb = "../03_test_graphs/Gnutella/graph.wbin";
+    arguments.fnameb = "../04_test_graphs/Gnutella/graph.wbin";
     arguments.fnameb_format = 1;
     arguments.convert_format = 1;
 
     void *graph = NULL;
-
+    
     numThreads =  arguments.numThreads;
 
     struct Timer *timer = (struct Timer *) my_malloc(sizeof(struct Timer));
@@ -149,7 +158,7 @@ main (int argc, char **argv)
                 arguments.root = generateRandomRootGeneral(graph, &arguments); // random root each trial
                 ref_data = runGraphAlgorithmsTest(graph, &arguments); // ref stats should mach oother algo
 
-                for(arguments.pushpull = 0 ; arguments.pushpull < 10; arguments.pushpull++)
+                for(arguments.pushpull = 0 ; arguments.pushpull < 13; arguments.pushpull++)
                 {
 
                     cmp_data = runGraphAlgorithmsTest(graph, &arguments);

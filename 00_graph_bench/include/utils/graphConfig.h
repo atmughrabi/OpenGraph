@@ -8,6 +8,11 @@
 #define WEIGHTED 1
 #define DIRECTED 1
 
+extern  uint64_t afu_config;
+extern  uint64_t cu_config;
+extern  uint64_t afu_config_2;
+extern  uint64_t cu_config_2;
+
 extern int numThreads;
 extern mt19937state *mt19937var;
 
@@ -17,9 +22,10 @@ struct Arguments
     int wflag;
     int xflag;
     int sflag;
+    int Sflag;
     int dflag;
     uint32_t binSize;
-    uint32_t inout_degree;
+    uint32_t verbosity;
     uint32_t iterations;
     uint32_t trials;
     double epsilon;
@@ -36,6 +42,10 @@ struct Arguments
     char *fnameb;
     uint32_t fnameb_format;
     uint32_t convert_format;
+    uint64_t afu_config;
+    uint64_t cu_config;
+    uint64_t afu_config_2;
+    uint64_t cu_config_2;
 };
 
 #endif

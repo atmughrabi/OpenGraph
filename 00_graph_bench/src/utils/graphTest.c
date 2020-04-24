@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
 //
-//      "OpenGraph"
+//      "00_AccelGraph"
 //
 // -----------------------------------------------------------------------------
 // Copyright (c) 2014-2019 All rights reserved
@@ -49,7 +49,7 @@
 #include "graphTest.h"
 
 
-uint32_t equalFloat(float a, float b, float epsilon)
+uint32_t equalFloat(float a, float b, double epsilon)
 {
     return fabs(a - b) < epsilon;
 }
@@ -58,7 +58,7 @@ uint32_t compareFloatArrays(float *arr1, float *arr2, uint32_t arr1_size, uint32
 {
     uint32_t i = 0;
     uint32_t missmatch = 0;
-    float epsilon = 1e-3f;
+    double epsilon = 1e-8f;
 
     if(arr1_size != arr2_size)
         return 1;
@@ -78,7 +78,7 @@ uint32_t compareRealRanks(uint32_t *arr1, uint32_t *arr2, uint32_t arr1_size, ui
 {
     uint32_t i = 0;
     uint32_t missmatch = 0;
-    uint32_t rank_diff = 0;
+    // uint32_t rank_diff = 0;
 
     if(arr1_size != arr2_size)
         return 1;
@@ -88,8 +88,8 @@ uint32_t compareRealRanks(uint32_t *arr1, uint32_t *arr2, uint32_t arr1_size, ui
 
     for(i = 0; i < arr1_size; i++)
     {
-        labels1[arr1[i]] = i;
-        labels2[arr2[i]] = i;
+        labels1[arr1[i]] = i+1;
+        labels2[arr2[i]] = i+1;
     }
 
 
@@ -98,14 +98,14 @@ uint32_t compareRealRanks(uint32_t *arr1, uint32_t *arr2, uint32_t arr1_size, ui
 
         if(labels1[i] != labels2[i])
         {
-            rank_diff = (labels1[i] > labels2[i]) ? (labels1[i] - labels2[i]) : (labels2[i] - labels1[i]);
-            missmatch += rank_diff;
+            // rank_diff = (labels1[i] > labels2[i]) ? (labels1[i] - labels2[i]) : (labels2[i] - labels1[i]);
+            missmatch ++;
         }
     }
 
     free(labels1);
     free(labels2);
-    return (missmatch / arr1_size);
+    return (missmatch);
 }
 
 uint32_t compareDistanceArrays(uint32_t *arr1, uint32_t *arr2, uint32_t arr1_size, uint32_t arr2_size)
@@ -144,8 +144,8 @@ uint32_t cmpGraphAlgorithmsTestStats(void *ref_stats, void *cmp_stats, uint32_t 
     {
         struct PageRankStats *ref_stats_tmp = (struct PageRankStats * )ref_stats;
         struct PageRankStats *cmp_stats_tmp = (struct PageRankStats * )cmp_stats;
-        // missmatch += compareRealRanks(ref_stats_tmp->realRanks, cmp_stats_tmp->realRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
-        missmatch += compareFloatArrays(ref_stats_tmp->pageRanks, cmp_stats_tmp->pageRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
+        missmatch += compareRealRanks(ref_stats_tmp->realRanks, cmp_stats_tmp->realRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
+        // missmatch += compareFloatArrays(ref_stats_tmp->pageRanks, cmp_stats_tmp->pageRanks, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
 
     }
     break;
