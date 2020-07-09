@@ -13,7 +13,6 @@ struct  ArrayQueue
     uint32_t *queue;
     struct Bitmap *q_bitmap;
     struct Bitmap *q_bitmap_next;
-
 };
 
 

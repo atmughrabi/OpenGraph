@@ -24,6 +24,7 @@
 #include "boolean.h"
 #include "arrayQueue.h"
 #include "bitmap.h"
+#include "worklist.h"
 
 #include "graphConfig.h"
 
@@ -216,47 +217,6 @@ void addAtomicDouble(double *num, double value)
         lnewV = (uint64_t *)&newV;
     }
     while(!__sync_bool_compare_and_swap((uint64_t *)num, *(loldV), *(lnewV)));
-
-}
-
-
-void swapWorkLists (uint8_t **workList1, uint8_t **workList2)
-{
-
-
-    uint8_t *workList_temp = *workList1;
-    *workList1 = *workList2;
-    *workList2 = workList_temp;
-
-}
-
-void resetWorkList(uint8_t *workList, uint32_t size)
-{
-
-    uint32_t i;
-
-    #pragma omp parallel for
-    for(i = 0; i < size ; i++)
-    {
-        workList[i] = 0;
-
-    }
-
-
-}
-
-void setWorkList(uint8_t *workList,  uint32_t size)
-{
-
-    uint32_t i;
-
-    #pragma omp parallel for
-    for(i = 0; i < size ; i++)
-    {
-        workList[i] = 1;
-
-    }
-
 
 }
 
