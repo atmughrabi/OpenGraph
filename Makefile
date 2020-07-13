@@ -165,6 +165,10 @@ help:
 run:
 	$(MAKE) run $(MAKE_ARGS)
 
+.PHONY: run-cache
+run-cache:
+	$(MAKE) run-cache $(MAKE_ARGS)
+
 .PHONY: run-openmp
 run-openmp:
 	$(MAKE) run-openmp $(MAKE_ARGS)
