@@ -37,7 +37,6 @@ void bottomUpStepGraphCSRKernel( uint32_t *nf, int *parents,  uint32_t *distance
     uint32_t edge_idx;
     uint32_t out_degree;
 
-iter :	  
     for(v = 0 ; v < num_vertices ; v++)
     {
         out_degree = out_degree_pull_csr[v];
