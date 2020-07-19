@@ -352,27 +352,33 @@ run-openmp: app-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -f $(FILE_BIN) $(ARGS)
 
 .PHONY: convert
+convert: INTEGRATION = openmp
 convert: app-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -w -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT)
 
 .PHONY: stats-openmp
+stats-openmp: INTEGRATION = openmp
 stats-openmp: app-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -x -f $(FILE_BIN) -n $(NUM_THREADS) -i $(BIN_SIZE) -o $(SORT_TYPE) -l $(REORDER) -p $(INOUT_STATS)
 
 .PHONY: debug-openmp
+debug-openmp: INTEGRATION = openmp
 debug-openmp: app-openmp
 	gdb -ex=r --args ./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -f $(FILE_BIN) $(ARGS)
 
 .PHONY: debug-memory-openmp
+debug-memory-openmp: INTEGRATION = openmp
 debug-memory-openmp: app-openmp
 	valgrind --leak-check=full --show-leak-kinds=all ./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -f $(FILE_BIN) $(ARGS)
 
 .PHONY: test-verbose
+test-verbose: INTEGRATION = openmp
 test-verbose:
 	$(MAKE) run-test -C $(APP_DIR) | grep -E 'PASS|FAIL'
 
 # test files
 .PHONY: test
+test: INTEGRATION = openmp
 test:
 	@if $(MAKE) run-test -C $(APP_DIR) | grep FAIL > /dev/null; \
 		then exit 1; \

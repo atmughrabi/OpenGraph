@@ -1024,7 +1024,14 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     free(riDividedOnDiClause2);
 
 #ifdef CACHE_HARNESS
+      printf("\n===================== cache Stats (cold_cache Stats) ======================\n");
     printStats(cache->cache);
+      printf("\n===================== cache Stats (warm_cache Stats) ======================\n");
+    printStats(cache->doubleTag);
+      printf("\n===================== cache Stats (hot_cache Stats) ======================\n");
+    printStats(cache->hot_cache);
+      printf("\n===================== cache Stats (ref_cache Stats) ======================\n");
+    printStats(cache->ref_cache);
     freeDoubleTaggedCache(cache);
 #endif
 

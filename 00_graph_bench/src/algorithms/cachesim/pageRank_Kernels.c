@@ -15,9 +15,15 @@
 #include "cache.h"
 #include "pageRank_Kernels.h"
 
-// you should add these to  as an extern "_sys_constants.h"
-unsigned ACCELGRAPH = 0x300;
-unsigned ACCELGRAPH_PAGERANK = 0x310;
+float movingAvg(float *ptrArrNumbers, double *ptrSum, int pos, int len, float nextNum)
+{
+  //Subtract the oldest number from the prev sum, add the new number
+  *ptrSum = *ptrSum - ptrArrNumbers[pos] + nextNum;
+  //Assign the nextNum to the position in the array
+  ptrArrNumbers[pos] = nextNum;
+  //return the average
+  return *ptrSum / len;
+}
 
 // ********************************************************************************************
 // ***************          GRID DataStructure               **************
@@ -173,49 +179,52 @@ void pageRankPullGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
     for(v = 0; v < num_vertices; v++)
     {
 
-#ifdef PREFETCH
-        if((v + 1) < num_vertices)
-        {
-            edge_idx = edges_idx[v + 1];
-            for(j = edge_idx ; j < (edge_idx + out_degree[v + 1]) ; j++)
-            {
-                u = sorted_edges_array[j];
-                if(checkPrefetch(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u])))
-                {
-                    Prefetch(cache->cache, (uint64_t) & (riDividedOnDiClause[u]), 's', u);
-                }
-            }
-            if(checkPrefetch(cache->doubleTag, (uint64_t) & (pageRanksNext[v + 1])))
-            {
-                Prefetch(cache->cache, (uint64_t) & (pageRanksNext[v + 1]), 'r', (v + 1));
-            }
-        }
-#endif
-
         float nodeIncomingPR = 0.0f;
         degree = out_degree[v];
         edge_idx = edges_idx[v];
 
-        // Access(cache->cache, (uint64_t) & (out_degree[v]), 'r', v);
-        // Access(cache->cache, (uint64_t) & (edges_idx[v]), 'r', v);
+        // Access(cache->ref_cache, (uint64_t) & (out_degree[v]), 'r', v);
+        // Access(cache->ref_cache, (uint64_t) & (edges_idx[v]), 'r', v);
 
         for(j = edge_idx ; j <  (edge_idx + degree) ; j++)
         {
             u = sorted_edges_array[j];
 
-            Access(cache->cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
+            // Access(cache->cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
+            // Access(cache->ref_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
 
             nodeIncomingPR += riDividedOnDiClause[u]; // pageRanks[v]/graph->vertices[v].out_degree;
 
-            Access(cache->cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
-            Access(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            if(checkPrefetch(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u])) && checkPrefetch(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u])))
+            {
+                if(riDividedOnDiClause[u] > 0.015){ // keep in PSL cache
+                    Access(cache->cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                }
+                else if(riDividedOnDiClause[u] > 0.0015){ // put in warm cache
+                    Access(cache->cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                    Access(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                }
+                else { // put in hot cache
+                    Access(cache->cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                    Access(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                }
 
+            } else  if(!checkPrefetch(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u])) && checkPrefetch(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
+                Access(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            } else  if(checkPrefetch(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u])) && !checkPrefetch(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
+                Access(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            } else  if(!checkPrefetch(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u])) && !checkPrefetch(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
+                Access(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            }
+
+            Access(cache->ref_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            // Access(cache->doubleTag, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
         }
 
         pageRanksNext[v] = nodeIncomingPR;
         Access(cache->cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
         Access(cache->cache, (uint64_t) & (pageRanksNext[v]), 'w', v);
-        Access(cache->doubleTag, (uint64_t) & (pageRanksNext[v]), 'r', v);
+        // Access(cache->doubleTag, (uint64_t) & (pageRanksNext[v]), 'r', v);
     }
 
 

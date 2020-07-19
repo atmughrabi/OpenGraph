@@ -7,6 +7,14 @@
 #define L1_SIZE 262144
 #define L1_ASSOC 8
 
+// #define BLOCKSIZE 64
+// #define L1_SIZE 32768
+// #define L1_ASSOC 8
+
+// #define BLOCKSIZE 64
+// #define L1_SIZE 1048576
+// #define L1_ASSOC 16
+
 // typedef uint64_t ulong;
 typedef unsigned char uchar;
 typedef uint32_t uint;
@@ -31,6 +39,7 @@ struct Cache
 
     ulong size, lineSize, assoc, sets, log2Sets, log2Blk, tagMask, numLines, evictions;
     ulong reads, readMisses, readsPrefetch, readMissesPrefetch, writes, writeMisses, writeBacks;
+    ulong access_counter;
 
     struct CacheLine **cacheLines;
 
@@ -40,6 +49,9 @@ struct Cache
     //counters for graph performance on the cache
     uint *verticesMiss;
     uint *verticesHit;
+    uint *vertices_base_reuse;
+    uint *vertices_total_reuse;
+    uint *vertices_accesses;
     uint  numVertices;
 
 };
@@ -47,8 +59,11 @@ struct Cache
 
 struct DoubleTaggedCache
 {
-    struct Cache *cache;
-    struct Cache *doubleTag;
+    struct Cache *cache; // psl_cache
+    struct Cache *doubleTag; // double tag
+    // struct Cache *warm_cache; // hot_cache
+    struct Cache *hot_cache; // hot_cache
+    struct Cache *ref_cache; // psl_cache
 };
 
 ///cacheline helper functions
@@ -95,5 +110,6 @@ void freeCache(struct Cache *cache);
 
 struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices);
 void freeDoubleTaggedCache(struct DoubleTaggedCache *cache);
+void cache_graph_stats(struct Cache *cache, uint node);
 
 #endif

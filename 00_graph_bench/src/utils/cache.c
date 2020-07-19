@@ -124,7 +124,10 @@ struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_ass
     struct DoubleTaggedCache *cache = (struct DoubleTaggedCache *) my_malloc(sizeof(struct DoubleTaggedCache));
 
     cache->cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
-    cache->doubleTag = newCache( l1_size, l1_assoc, blocksize, num_vertices);
+    cache->doubleTag = newCache( l1_size / 2, 16, 4, num_vertices);
+    cache->hot_cache = newCache( l1_size / 2, 8, 4, num_vertices);
+
+    cache->ref_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
 
     return cache;
 
@@ -132,12 +135,13 @@ struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_ass
 
 void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
 {
-    
+
     if(cache)
     {
         freeCache(cache->cache);
+        freeCache(cache->ref_cache);
         freeCache(cache->doubleTag);
-
+        freeCache(cache->hot_cache);
         free(cache);
 
     }
@@ -157,12 +161,18 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
 
     cache->verticesMiss = (uint *)my_malloc(sizeof(uint) * num_vertices);
     cache->verticesHit = (uint *)my_malloc(sizeof(uint) * num_vertices);
+    cache->vertices_base_reuse = (uint *)my_malloc(sizeof(uint) * num_vertices);
+    cache->vertices_total_reuse = (uint *)my_malloc(sizeof(uint) * num_vertices);
+    cache->vertices_accesses = (uint *)my_malloc(sizeof(uint) * num_vertices);
 
 
     for(i = 0; i < num_vertices; i++)
     {
         cache->verticesMiss[i] = 0;
         cache->verticesHit[i] = 0;
+        cache->vertices_base_reuse[i] = 0;
+        cache->vertices_total_reuse[i] = 0;
+        cache->vertices_accesses[i] = 0;
     }
 
     return cache;
@@ -211,6 +221,7 @@ void initCache(struct Cache *cache, int s, int a, int b )
     cache->numLines   = (ulong)(s / b);
     cache->log2Sets   = (ulong)(log2(cache->sets));
     cache->log2Blk    = (ulong)(log2(b));
+    cache->access_counter    = 0;
 
     //*******************//
     //initialize your counters here//
@@ -236,12 +247,36 @@ void initCache(struct Cache *cache, int s, int a, int b )
     }
 }
 
+void cache_graph_stats(struct Cache *cache, uint node)
+{
+    uint first_Access = 0;
+
+    cache->vertices_accesses[node]++;
+    cache->access_counter++;
+
+    if(cache->vertices_base_reuse[node] == 0)
+        first_Access = 1;
+
+    if(first_Access)
+    {
+        cache->vertices_total_reuse[node] = 1;
+        cache->vertices_base_reuse[node] = cache->access_counter;
+    }
+    else
+    {
+        cache->vertices_total_reuse[node] += cache->access_counter - cache->vertices_base_reuse[node];
+        cache->vertices_base_reuse[node] = cache->access_counter;
+    }
+}
+
 void Access(struct Cache *cache, ulong addr, uchar op, uint node)
 {
+
+    cache_graph_stats(cache, node);
     cache->currentCycle++;/*per cache global counter to maintain LRU order
 
-
       among cache ways, updated on every cache access*/
+
 
     cache->currentCycle_cache++;
 
@@ -293,6 +328,8 @@ uint32_t checkPrefetch(struct Cache *cache, ulong addr)
 
     if(line == NULL)
         return 1;
+
+    // updateLRU(cache, findLine(cache, addr));
     // else
     // {
     //     struct CacheLine *lineLRU = getLRU(cache, addr);
@@ -466,30 +503,48 @@ void printStats(struct Cache *cache)
     printf(" -----------------------------------------------------\n\n");
 
 
-    // ulong  numVerticesMiss = 0;
-    // ulong  totalVerticesMiss = 0;
+    ulong  numVerticesMiss = 0;
+    ulong  totalVerticesMiss = 0;
+    double  avgVerticesreuse = 0;
+    ulong   accVerticesAccess = 0;
+    ulong   minReuse = 0;
     // uint  maxVerticesMiss = 0;
     // uint  maxNode = 0;
 
-    // uint i;
-    // for(i = 0; i < cache->numVertices; i++)
-    // {
-    //     if(cache->verticesMiss[i] > 100)
-    //     {
-    //         numVerticesMiss++;
-    //         totalVerticesMiss += cache->verticesMiss[i];
-    //     }
-    // }
+    uint i;
+    for(i = 0; i < cache->numVertices; i++)
+    {
+        if(cache->verticesMiss[i] > 5)
+        {
+            numVerticesMiss++;
+            totalVerticesMiss += cache->verticesMiss[i];
+        }
+
+        if(cache->vertices_accesses[i])
+        {
+
+            // printf("%u. Average reuse:             re %u acc %u\n", i,cache->vertices_total_reuse[i],cache->vertices_accesses[i]);
+
+            avgVerticesreuse += cache->vertices_total_reuse[i] / cache->vertices_accesses[i];
+            accVerticesAccess++;
+        }
+
+    }
 
 
-    // float MissNodesRatioReadMisses = (((double)numVerticesMiss / cache->numVertices) * 100.0);
-    // float ratioReadMissesMissNodes = (((double)totalVerticesMiss / getRM(cache)) * 100.0);
 
-    // printf("============ Graph Stats (Nodes cause highest miss stats) ============\n");
-    // printf("01. number of nodes:                          %lu\n", numVerticesMiss);
-    // printf("02. number of read misses:                    %lu\n", totalVerticesMiss);
-    // printf("03. ratio from total nodes :                  %.2f%%\n", MissNodesRatioReadMisses);
-    // printf("04. ratio from total read misses:             %.2f%%\n", ratioReadMissesMissNodes);
+    avgVerticesreuse /= accVerticesAccess;
+
+    float MissNodesRatioReadMisses = (((double)numVerticesMiss / cache->numVertices) * 100.0);
+    float ratioReadMissesMissNodes = (((double)totalVerticesMiss / getRM(cache)) * 100.0);
+
+    printf("============ Graph Stats (Nodes cause highest miss stats) ============\n");
+    printf("01. number of nodes:                          %lu\n", numVerticesMiss);
+    printf("02. number of read misses:                    %lu\n", totalVerticesMiss);
+    printf("03. ratio from total nodes :                  %.2f%%\n", MissNodesRatioReadMisses);
+    printf("04. ratio from total read misses:             %.2f%%\n", ratioReadMissesMissNodes);
+    printf("===================== Graph Stats (Other Stats) ======================\n");
+    printf("05. Average reuse:             %.2f%%\n", avgVerticesreuse);
 
 
 

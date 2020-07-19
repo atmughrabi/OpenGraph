@@ -16,7 +16,7 @@ export APP_DIR              = .
 
 export BENCHMARKS_DIR_LOCAL ?= 01_test_graphs
 
-export BENCHMARKS_DIR    	= ../$(BENCHMARKS_DIR_LOCAL)
+export BENCHMARKS_DIR    	?= ../$(BENCHMARKS_DIR_LOCAL)
 # export BENCHMARKS_DIR    	= ../../$(BENCHMARKS_DIR_LOCAL)
 
 #dir root/managed_folders
