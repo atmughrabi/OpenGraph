@@ -334,6 +334,7 @@ stats: stats-law stats-mix
 ##############################################
 
 .PHONY: help
+help: INTEGRATION = openmp
 help: app-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  --help
 
