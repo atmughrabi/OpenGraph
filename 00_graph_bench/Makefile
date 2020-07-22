@@ -386,6 +386,7 @@ test:
 	fi
 
 .PHONY: run-test
+run-test: INTEGRATION = openmp
 run-test: run-test-openmp
 
 .PHONY: run-test-openmp
@@ -393,18 +394,22 @@ run-test-openmp: test-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
 
 .PHONY: debug-test-openmp
+debug-test-openmp: INTEGRATION = openmp
 debug-test-openmp: test-openmp
 	gdb ./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
 
 .PHONY: debug-memory-test-openmp
+debug-memory-test-openmp: INTEGRATION = openmp
 debug-memory-test-openmp: test-openmp
 	valgrind --leak-check=full --show-leak-kinds=all ./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
 # cache performance
 .PHONY: cachegrind-perf-openmp
+cachegrind-perf-openmp: INTEGRATION = openmp
 cachegrind-perf-openmp: app-openmp
 	valgrind --tool=cachegrind ./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -f $(FILE_BIN) $(ARGS)
 
-.PHONY: cache-perf
+.PHONY: cache-perf-openmp
+cache-perf-openmp: INTEGRATION = openmp
 cache-perf-openmp: app-openmp
 	sudo perf record -d ./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -f $(FILE_BIN) $(ARGS)
 
