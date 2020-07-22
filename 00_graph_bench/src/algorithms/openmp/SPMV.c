@@ -394,6 +394,7 @@ struct SPMVStats *SPMVPullRowFixedPointGraphGrid( uint32_t iterations, struct Gr
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
+        vector_output[v] = 0;
         vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
     }
 
@@ -502,6 +503,7 @@ struct SPMVStats *SPMVPushColumnFixedPointGraphGrid( uint32_t iterations, struct
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
+        vector_output[v] = 0;
         vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
     }
 
@@ -817,14 +819,17 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
     uint32_t v;
     uint32_t degree;
     uint32_t edge_idx;
+    uint32_t w;
     double sum = 0.0;
 
     struct SPMVStats *stats = newSPMVStatsGraphCSR(graph);
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
-    uint64_t *vector_input = (uint64_t *) my_malloc(graph->num_vertices * sizeof(uint64_t));
+    uint32_t *vector_input = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     uint64_t *vector_output = (uint64_t *) my_malloc(graph->num_vertices * sizeof(uint64_t));
+
+    uint32_t *edges_array_weight_fixedPoint = (uint32_t *) my_malloc(graph->num_edges * sizeof(uint32_t));
 
 
     struct Vertex *vertices = NULL;
@@ -848,6 +853,17 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
 #endif
 
 
+    #pragma omp parallel for
+    for (w = 0; w < graph->num_edges ; ++w)
+    {
+#if WEIGHTED
+        edges_array_weight_fixedPoint[w] = FloatToFixed32(edges_array_weight[w]);
+#else
+        edges_array_weight_fixedPoint[w] = FloatToFixed32(0.0001f);
+#endif
+    }
+
+
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting SPMV-PULL Fixed-Point");
     printf(" -----------------------------------------------------\n");
@@ -862,12 +878,15 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
             stats->vector_input[v] =  (1.0f / graph->vertices->out_degree[v]);
         else
             stats->vector_input[v] = 0.001f;
+
+
     }
 
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
-        vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
+        vector_output[v] = 0;
+        vector_input[v] = FloatToFixed32(stats->vector_input[v]);
     }
 
     Start(timer);
@@ -881,7 +900,7 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
             uint32_t j;
             uint32_t src;
             uint32_t dest = v;
-            uint64_t weight = DoubleToFixed64(0.0001f);
+            uint32_t weight = FloatToFixed32(0.0001f);
             degree = vertices->out_degree[dest];
             edge_idx = vertices->edges_idx[dest];
 
@@ -889,9 +908,9 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
             {
                 src = sorted_edges_array[j];
 #if WEIGHTED
-                weight = DoubleToFixed64(edges_array_weight[j]);
+                weight = edges_array_weight_fixedPoint[j];
 #endif
-                vector_output[dest] +=   MULFixed64V1(weight, vector_input[src]); // stats->pageRanks[v]/graph->vertices[v].out_degree;
+                vector_output[dest] +=   MULFixed32V1(weight, vector_input[src]); // stats->pageRanks[v]/graph->vertices[v].out_degree;
             }
 
         }
@@ -905,7 +924,7 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
-        stats->vector_output[v] = Fixed64ToDouble(vector_output[v]);
+        stats->vector_output[v] = Fixed32ToFloat(vector_output[v]);
     }
 
 
@@ -930,6 +949,7 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
     free(timer_inner);
     free(vector_output);
     free(vector_input);
+    free(edges_array_weight_fixedPoint);
 
     return stats;
 
@@ -982,6 +1002,7 @@ struct SPMVStats *SPMVPushFixedPointGraphCSR( uint32_t iterations, struct GraphC
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
+        vector_output[v] = 0;
         vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
     }
 
@@ -1293,6 +1314,7 @@ struct SPMVStats *SPMVPullFixedPointGraphAdjArrayList( uint32_t iterations, stru
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
+        vector_output[v] = 0;
         vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
     }
 
@@ -1406,6 +1428,7 @@ struct SPMVStats *SPMVPushFixedPointGraphAdjArrayList( uint32_t iterations, stru
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
+        vector_output[v] = 0;
         vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
     }
 
@@ -1716,6 +1739,7 @@ struct SPMVStats *SPMVPullFixedPointGraphAdjLinkedList( uint32_t iterations, str
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
+        vector_output[v] = 0;
         vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
     }
 
@@ -1824,6 +1848,7 @@ struct SPMVStats *SPMVPushFixedPointGraphAdjLinkedList( uint32_t iterations, str
     #pragma omp parallel for
     for(v = 0; v < graph->num_vertices; v++)
     {
+        vector_output[v] = 0;
         vector_input[v] = DoubleToFixed64(stats->vector_input[v]);
     }
 

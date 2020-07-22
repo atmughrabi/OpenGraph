@@ -15,7 +15,7 @@
 #define SCALEF_8  6 // 1/2^16
 #define SCALEF_16 14 // 1/2^16
 
-#define SCALEF 16 // 1/2^16
+#define SCALEF 10 // 1/2^16
 #define SCALED 32 // 1/2^32
 #define EPSILON 1  // smallest possible increment or decrement you can perform
 #define FRACTION_MASK_32 (0xFFFFFFFF >> (32-SCALEF))
