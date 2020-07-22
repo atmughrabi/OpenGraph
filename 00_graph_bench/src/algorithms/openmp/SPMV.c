@@ -643,7 +643,13 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
 #endif
 #endif
 
+    float *edges_array_weight_float = (float *) my_malloc(graph->num_edges * sizeof(float));
 
+    #pragma omp parallel for
+    for (v = 0; v < graph->num_edges ; ++v)
+    {
+        edges_array_weight_float[v] = 0.0001f;
+    }
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting SPMV-PULL");
     printf(" -----------------------------------------------------\n");
@@ -679,7 +685,7 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
             {
                 src = sorted_edges_array[j];
 #if WEIGHTED
-                weight = edges_array_weight[j];
+                weight = edges_array_weight_float[j];
 #endif
                 stats->vector_output[dest] +=  (weight * stats->vector_input[src]); // stats->pageRanks[v]/graph->vertices[v].out_degree;
             }
@@ -696,8 +702,7 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
     #pragma omp parallel for reduction(+:sum)
     for(v = 0; v < graph->num_vertices; v++)
     {
-
-        sum += ((int)(stats->vector_output[v] * 100 + .5) / 100.0);
+        sum += stats->vector_output[v] ;
     }
 
     Stop(timer);
