@@ -632,15 +632,9 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
 #if DIRECTED
     vertices = graph->inverse_vertices;
     sorted_edges_array = graph->inverse_sorted_edges_array->edges_array_dest;
-#if WEIGHTED
-    edges_array_weight = graph->inverse_sorted_edges_array->edges_array_weight;
-#endif
 #else
     vertices = graph->vertices;
     sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
-#if WEIGHTED
-    edges_array_weight = graph->sorted_edges_array->edges_array_weight;
-#endif
 #endif
 
     float *edges_array_weight_float = (float *) my_malloc(graph->num_edges * sizeof(float));
@@ -717,6 +711,7 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
 
     free(timer);
     free(timer_inner);
+    free(edges_array_weight_float);
     return stats;
 
 }
