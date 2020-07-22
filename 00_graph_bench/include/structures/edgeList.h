@@ -11,8 +11,8 @@ struct  EdgeList
     uint32_t num_edges;
     uint32_t num_vertices;
 #if WEIGHTED
-    uint32_t max_weight;
-    uint32_t *edges_array_weight;
+    float max_weight;
+    float *edges_array_weight;
 #endif
     uint32_t *edges_array_src;
     uint32_t *edges_array_dest;

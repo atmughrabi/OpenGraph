@@ -73,7 +73,7 @@ void graphCSRPrint(struct GraphCSR *graphCSR)
 #if WEIGHTED
     printf("| %-51s | \n", "WEIGHTED");
     printf("| %-51s | \n", "MAX WEIGHT");
-    printf("| %-51u | \n", graphCSR->max_weight);
+    printf("| %-51f | \n", graphCSR->max_weight);
 #else
     printf("| %-51s | \n", "UN-WEIGHTED");
 #endif
@@ -296,7 +296,7 @@ struct GraphCSR *readFromBinFileGraphCSR (const char *fname)
     uint32_t num_vertices;
     uint32_t num_edges;
 #if WEIGHTED
-    uint32_t max_weight;
+    float max_weight;
 #endif
     size_t ret;
 

@@ -18,7 +18,7 @@ struct  GraphAdjLinkedList
     uint32_t num_edges;
   
 #if WEIGHTED
-    uint32_t max_weight;
+    float max_weight;
 #endif
 
     struct AdjLinkedList *vertices;

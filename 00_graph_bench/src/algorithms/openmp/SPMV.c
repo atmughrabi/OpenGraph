@@ -624,26 +624,25 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
     struct Vertex *vertices = NULL;
-    uint32_t *sorted_edges_array = NULL;
+     uint32_t *sorted_edges_array = NULL;
 #if WEIGHTED
-    uint32_t *edges_array_weight = NULL;
+    float *edges_array_weight = NULL;
 #endif
 
 #if DIRECTED
     vertices = graph->inverse_vertices;
     sorted_edges_array = graph->inverse_sorted_edges_array->edges_array_dest;
+#if WEIGHTED
+    edges_array_weight = graph->inverse_sorted_edges_array->edges_array_weight;
+#endif
 #else
     vertices = graph->vertices;
     sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
+#if WEIGHTED
+    edges_array_weight = graph->sorted_edges_array->edges_array_weight;
+#endif
 #endif
 
-    float *edges_array_weight_float = (float *) my_malloc(graph->num_edges * sizeof(float));
-
-    #pragma omp parallel for
-    for (v = 0; v < graph->num_edges ; ++v)
-    {
-        edges_array_weight_float[v] = 0.0001f;
-    }
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting SPMV-PULL");
     printf(" -----------------------------------------------------\n");
@@ -679,7 +678,7 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
             {
                 src = sorted_edges_array[j];
 #if WEIGHTED
-                weight = edges_array_weight_float[j];
+                weight = edges_array_weight[j];
 #endif
                 stats->vector_output[dest] +=  (weight * stats->vector_input[src]); // stats->pageRanks[v]/graph->vertices[v].out_degree;
             }
@@ -696,7 +695,7 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
     #pragma omp parallel for reduction(+:sum)
     for(v = 0; v < graph->num_vertices; v++)
     {
-        sum += stats->vector_output[v] ;
+        sum += ((int)(stats->vector_output[v] * 100 + .5) / 100.0);
     }
 
     Stop(timer);
@@ -711,7 +710,6 @@ struct SPMVStats *SPMVPullGraphCSR( uint32_t iterations, struct GraphCSR *graph)
 
     free(timer);
     free(timer_inner);
-    free(edges_array_weight_float);
     return stats;
 
 }
@@ -730,7 +728,7 @@ struct SPMVStats *SPMVPushGraphCSR( uint32_t iterations, struct GraphCSR *graph)
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
 #if WEIGHTED
-    uint32_t *edges_array_weight = NULL;
+    float *edges_array_weight = NULL;
 #endif
 
     vertices = graph->vertices;
@@ -835,7 +833,7 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
 #if WEIGHTED
-    uint32_t *edges_array_weight = NULL;
+    float *edges_array_weight = NULL;
 #endif
 
 #if DIRECTED
@@ -900,7 +898,7 @@ struct SPMVStats *SPMVPullFixedPointGraphCSR( uint32_t iterations, struct GraphC
             uint32_t j;
             uint32_t src;
             uint32_t dest = v;
-            uint32_t weight = FloatToFixed32(0.0001f);
+            float weight = FloatToFixed32(0.0001f);
             degree = vertices->out_degree[dest];
             edge_idx = vertices->edges_idx[dest];
 
@@ -973,7 +971,7 @@ struct SPMVStats *SPMVPushFixedPointGraphCSR( uint32_t iterations, struct GraphC
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
 #if WEIGHTED
-    uint32_t *edges_array_weight = NULL;
+    float *edges_array_weight = NULL;
 #endif
 
     vertices = graph->vertices;

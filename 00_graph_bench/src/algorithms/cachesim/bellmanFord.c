@@ -200,7 +200,7 @@ uint32_t bellmanFordCompareDistanceArrays(struct BellmanFordStats *stats1, struc
 
 }
 
-int bellmanFordAtomicRelax(uint32_t src, uint32_t dest, uint32_t weight, struct BellmanFordStats *stats, struct Bitmap *bitmapNext)
+int bellmanFordAtomicRelax(uint32_t src, uint32_t dest, float weight, struct BellmanFordStats *stats, struct Bitmap *bitmapNext)
 {
     // uint32_t oldParent, newParent;
     uint32_t oldDistanceV = UINT_MAX / 2;
@@ -270,7 +270,7 @@ int bellmanFordAtomicRelax(uint32_t src, uint32_t dest, uint32_t weight, struct 
 
 
 
-int bellmanFordRelax(uint32_t src, uint32_t dest, uint32_t weight, struct BellmanFordStats *stats, struct Bitmap *bitmapNext)
+int bellmanFordRelax(uint32_t src, uint32_t dest, float weight, struct BellmanFordStats *stats, struct Bitmap *bitmapNext)
 {
 
     uint32_t activeVertices = 0;
@@ -484,7 +484,7 @@ struct BellmanFordStats *bellmanFordPullRowGraphGrid(uint32_t source,  uint32_t 
 
                     uint32_t src = partition->edgeList->edges_array_src[k];
                     uint32_t dest = partition->edgeList->edges_array_dest[k];
-                    uint32_t weight  = 1;
+                    float weight  = 1;
 #if WEIGHTED
                     weight = partition->edgeList->edges_array_weight[k];
 #endif
@@ -607,7 +607,7 @@ struct BellmanFordStats *bellmanFordPushColumnGraphGrid(uint32_t source,  uint32
 
                     uint32_t src = partition->edgeList->edges_array_src[k];
                     uint32_t dest = partition->edgeList->edges_array_dest[k];
-                    uint32_t weight  = 1;
+                    float weight  = 1;
 #if WEIGHTED
                     weight = partition->edgeList->edges_array_weight[k];
 #endif
@@ -1035,7 +1035,7 @@ struct BellmanFordStats *bellmanFordDataDrivenPushGraphCSR(uint32_t source,  uin
                 {
                     uint32_t src = graph->sorted_edges_array->edges_array_src[j];
                     uint32_t dest = graph->sorted_edges_array->edges_array_dest[j];
-                    uint32_t weight  = 1;
+                    float weight  = 1;
 #if WEIGHTED
                     weight = graph->sorted_edges_array->edges_array_weight[j];
 #endif
@@ -1208,7 +1208,7 @@ struct BellmanFordStats *bellmanFordRandomizedDataDrivenPushGraphCSR(uint32_t so
 
                     uint32_t src = graphPlus->sorted_edges_array->edges_array_src[j];
                     uint32_t dest = graphPlus->sorted_edges_array->edges_array_dest[j];
-                    uint32_t weight  = 1;
+                    float weight  = 1;
 #if WEIGHTED
                     weight = graphPlus->sorted_edges_array->edges_array_weight[j];
 #endif
@@ -1238,7 +1238,7 @@ struct BellmanFordStats *bellmanFordRandomizedDataDrivenPushGraphCSR(uint32_t so
 
                     uint32_t src = graphMinus->sorted_edges_array->edges_array_src[j];
                     uint32_t dest = graphMinus->sorted_edges_array->edges_array_dest[j];
-                    uint32_t weight  = 1;
+                    float weight  = 1;
 #if WEIGHTED
                     weight = graphMinus->sorted_edges_array->edges_array_weight[j];
 #endif
@@ -1562,7 +1562,7 @@ struct BellmanFordStats *bellmanFordDataDrivenPushGraphAdjArrayList(uint32_t sou
 
                     uint32_t src = nodes->edges_array_src[j];
                     uint32_t dest = nodes->edges_array_dest[j];
-                    uint32_t weight  = 1;
+                    float weight  = 1;
 #if WEIGHTED
                     weight = nodes->edges_array_weight[j];
 #endif

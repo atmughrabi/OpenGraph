@@ -19,7 +19,7 @@ struct  GraphAdjArrayList
     uint32_t num_edges;
 
 #if WEIGHTED
-    uint32_t max_weight;
+    float max_weight;
 #endif
 
     struct AdjArrayList *vertices;

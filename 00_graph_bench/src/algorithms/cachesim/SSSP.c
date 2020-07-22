@@ -266,7 +266,7 @@ uint32_t SSSPCompareDistanceArrays(struct SSSPStats *stats1, struct SSSPStats *s
 
 }
 
-int SSSPAtomicRelax(uint32_t src, uint32_t dest, uint32_t weight, struct SSSPStats *stats)
+int SSSPAtomicRelax(uint32_t src, uint32_t dest, float weight, struct SSSPStats *stats)
 {
     uint32_t oldParent, newParent;
     uint32_t oldDistanceV = UINT_MAX / 2;
@@ -344,7 +344,7 @@ int SSSPAtomicRelax(uint32_t src, uint32_t dest, uint32_t weight, struct SSSPSta
 
 
 
-int SSSPRelax(uint32_t src, uint32_t dest, uint32_t weight, struct SSSPStats *stats)
+int SSSPRelax(uint32_t src, uint32_t dest, float weight, struct SSSPStats *stats)
 {
 
 
@@ -450,7 +450,7 @@ void SSSPSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlus, stru
     // uint32_t numVerticesPlusCounter = 0;
     // uint32_t numVerticesMinusCounter = 0;
     uint32_t e;
-    uint32_t weight;
+    float weight;
     // uint32_t src;
     // uint32_t dest;
 
@@ -1012,7 +1012,7 @@ struct SSSPStats *SSSPDataDrivenPushGraphCSR(uint32_t source,  uint32_t iteratio
                     {
                         uint32_t src = graph->sorted_edges_array->edges_array_src[j];
                         uint32_t dest = graph->sorted_edges_array->edges_array_dest[j];
-                        uint32_t weight = 1;
+                        float weight = 1;
 #if WEIGHTED
                         weight = graph->sorted_edges_array->edges_array_weight[j];
 #endif
@@ -1181,7 +1181,7 @@ struct SSSPStats *SSSPDataDrivenSplitPushGraphCSR(uint32_t source,  uint32_t ite
                     {
                         uint32_t src = graphLight->sorted_edges_array->edges_array_src[j];
                         uint32_t dest = graphLight->sorted_edges_array->edges_array_dest[j];
-                        uint32_t weight = 1;
+                        float weight = 1;
 #if WEIGHTED
                         weight = graphLight->sorted_edges_array->edges_array_weight[j];
 #endif
@@ -1218,7 +1218,7 @@ struct SSSPStats *SSSPDataDrivenSplitPushGraphCSR(uint32_t source,  uint32_t ite
                 {
                     uint32_t src = graphHeavy->sorted_edges_array->edges_array_src[j];
                     uint32_t dest = graphHeavy->sorted_edges_array->edges_array_dest[j];
-                    uint32_t weight = 1;
+                    float weight = 1;
 #if WEIGHTED
                     weight = graphHeavy->sorted_edges_array->edges_array_weight[j];
 #endif

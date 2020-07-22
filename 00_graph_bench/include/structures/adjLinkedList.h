@@ -14,7 +14,7 @@ struct  AdjLinkedListNode
     // uint32_t src;
 
 #if WEIGHTED
-    uint32_t weight;
+    float weight;
 #endif
 
     struct AdjLinkedListNode *next;

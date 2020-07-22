@@ -87,7 +87,7 @@ struct EdgeList *newEdgeList( uint32_t num_edges)
     newEdgeList->edges_array_dest = (uint32_t *) my_malloc(num_edges * sizeof(uint32_t));
 
 #if WEIGHTED
-    newEdgeList->edges_array_weight = (uint32_t *) my_malloc(num_edges * sizeof(uint32_t));
+    newEdgeList->edges_array_weight = (float *) my_malloc(num_edges * sizeof(float));
 #endif
 
     uint32_t i;
@@ -204,7 +204,7 @@ char *readEdgeListstxt(const char *fname, uint32_t weighted)
     uint32_t src = 0, dest = 0;
 
 #if WEIGHTED
-    uint32_t weight = 1;
+    float weight = 1;
 #endif
 
     char *fname_txt = (char *) malloc((strlen(fname) + 10) * sizeof(char));
@@ -249,11 +249,11 @@ char *readEdgeListstxt(const char *fname, uint32_t weighted)
         {
             i = fscanf(pText, "%u\t%u\n", &src, &dest);
             // weight = (generateRandInt(mt19937var) % 256) + 1;
-            weight = 1;
+            weight = 0.0001f;
         }
         else
         {
-            i = fscanf(pText, "%u\t%u\t%u\n", &src, &dest, &weight);
+            i = fscanf(pText, "%u\t%u\t%f\n", &src, &dest, &weight);
         }
 #else
         i = fscanf(pText, "%u\t%u\n", &src, &dest);
@@ -360,7 +360,7 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
     uint32_t num_vertices = 0;
 
 #if WEIGHTED
-    uint32_t max_weight = 0;
+    float max_weight = 0;
 #endif
 
     // #pragma omp parallel for reduction(max:num_vertices)
@@ -514,7 +514,7 @@ struct EdgeList *readEdgeListsMem( struct EdgeList *edgeListmem,  uint8_t invers
     uint32_t num_edges = edgeListmem->num_edges;
     uint32_t  src = 0, dest = 0;
 #if WEIGHTED
-    uint32_t weight = 1;
+    float weight = 1;
 #endif
     struct EdgeList *edgeList;
 
@@ -633,7 +633,7 @@ void edgeListPrint(struct EdgeList *edgeList)
     for(i = 0; i < edgeList->num_edges; i++)
     {
 #if WEIGHTED
-        printf("%u -> %u w: %d \n", edgeList->edges_array_src[i], edgeList->edges_array_dest[i], edgeList->edges_array_weight[i]);
+        printf("%u -> %u w: %f \n", edgeList->edges_array_src[i], edgeList->edges_array_dest[i], edgeList->edges_array_weight[i]);
 #else
         printf("%u -> %u \n", edgeList->edges_array_src[i], edgeList->edges_array_dest[i]);
 #endif

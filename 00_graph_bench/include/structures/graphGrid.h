@@ -16,7 +16,7 @@ struct  GraphGrid
     uint32_t num_vertices;
 
 #if WEIGHTED
-    uint32_t max_weight;
+    float max_weight;
 #endif
 
 

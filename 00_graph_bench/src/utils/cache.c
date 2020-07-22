@@ -507,7 +507,7 @@ void printStats(struct Cache *cache)
     ulong  totalVerticesMiss = 0;
     double  avgVerticesreuse = 0;
     ulong   accVerticesAccess = 0;
-    ulong   minReuse = 0;
+    // ulong   minReuse = 0;
     // uint  maxVerticesMiss = 0;
     // uint  maxNode = 0;
 
