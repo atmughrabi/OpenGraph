@@ -285,7 +285,8 @@ main (int argc, char **argv)
 
     argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
-    numThreads =  omp_get_max_threads();
+    // numThreads =  omp_get_max_threads();
+    numThreads =  arguments.numThreads;
     afu_config =  arguments.afu_config;
     cu_config  =  arguments.cu_config;
     afu_config_2  =  arguments.afu_config_2;
