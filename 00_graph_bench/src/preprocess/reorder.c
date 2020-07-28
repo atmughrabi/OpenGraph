@@ -358,7 +358,7 @@ struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeLis
     {
         thresholds[i] = thresholds[i - 1] * 2;
     }
-    thresholds[10] = UINT32_MAX;
+    thresholds[num_buckets - 1] = UINT32_MAX;
     // END initialize thresholds
 
     switch(lmode)
@@ -524,23 +524,151 @@ struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *
 {
 
 
-    uint32_t i;
+    // UINT32_MAX
+    uint32_t  i;
     uint32_t *degrees;
+    uint32_t *thresholds;
+    uint32_t  num_buckets = 2;
 
     degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    thresholds = (uint32_t *) my_malloc(num_buckets * sizeof(uint32_t));
 
     for (i = 0; i < edgeList->num_vertices; ++i)
     {
         degrees[i] = 0;
     }
 
-    degrees = reorderGraphGenerateInOutDegrees( degrees, edgeList, lmode);
+    // START initialize thresholds
+    thresholds[0] = (edgeList->avg_degree);
+    thresholds[num_buckets - 1] = UINT32_MAX;
+    // END initialize thresholds
 
-    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
+    switch(lmode)
+    {
+    case 4  :
+        printf("| %-51s | \n", "HUBCluster OUT-DEGREE");
+        break;
+    case 5  :
+        printf("| %-51s | \n", "HUBCluster IN-DEGREE");
+        break;
+    default :
+        printf("| %-51s | \n", "HUBCluster OUT-DEGREE");
+    }
 
+    degrees = reorderGraphGenerateInOutDegrees(degrees, edgeList, lmode);
+
+    edgeList = reorderGraphListHUBCluster(edgeList, degrees, thresholds, num_buckets, lmode);
+
+    free(thresholds);
     free(degrees);
     return edgeList;
 
+}
+
+struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t lmode)
+{
+
+    uint32_t  i = 0;
+    int32_t  j = 0;
+    int32_t  k = 0;
+    void  *iter = 0;
+    uint32_t  v = 0;
+    uint32_t  t = 0;
+    uint32_t  temp_k = 0;
+    uint32_t P = numThreads;
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+
+    uint32_t *start_k = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+    uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    vc_vector **buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
+    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
+
+
+    Start(timer);
+    for (i = 0; i < (P * num_buckets); ++i)
+    {
+        buckets[i] = vc_vector_create(0, sizeof(uint32_t), NULL);
+    }
+
+    #pragma omp parallel default(none) shared(labels,buckets,edgeList,num_buckets,degrees,thresholds,start_k) firstprivate(iter,temp_k,k,offset_start,offset_end,t_id,i,j,v,P,t)
+    {
+        P = omp_get_num_threads();
+        t_id = omp_get_thread_num();
+        offset_start = t_id * (edgeList->num_vertices / P);
+
+        if(t_id == (P - 1))
+        {
+            offset_end = offset_start + (edgeList->num_vertices / P) + (edgeList->num_vertices % P) ;
+        }
+        else
+        {
+            offset_end = offset_start + (edgeList->num_vertices / P);
+        }
+
+        for (v = offset_start; v < offset_end; ++v)
+        {
+            for ( i = 0; i < num_buckets; ++i)
+            {
+                if(degrees[v] <= thresholds[i])
+                {
+                    vc_vector_push_back(buckets[(t_id * num_buckets) + i], &v);
+                    break;
+                }
+            }
+        }
+
+        #pragma omp barrier
+
+        if(t_id == 0)
+        {
+            for ( j = num_buckets - 1; j >= 0; --j)
+            {
+                for (t = 0; t < P; ++t)
+                {
+                    start_k[(t * num_buckets) + j] = temp_k;
+                    temp_k += vc_vector_count(buckets[(t * num_buckets) + j]);
+                }
+            }
+        }
+
+        #pragma omp barrier
+
+        for ( j = num_buckets - 1 ; j >= 0 ; --j)
+        {
+            k = start_k[(t_id * num_buckets) + j];
+            for (   iter = vc_vector_begin(buckets[(t_id * num_buckets) + j]);
+                    iter != vc_vector_end(buckets[(t_id * num_buckets) + j]);
+                    iter = vc_vector_next(buckets[(t_id * num_buckets) + j], iter))
+            {
+                labels[(*(uint32_t *)iter)] = k++;
+            }
+        }
+
+    }
+
+    edgeList = relabelEdgeList(edgeList, labels);
+
+    Stop(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "DBG Reordering/Relabeling Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+
+    for (i = 0; i < (P * num_buckets); ++i)
+    {
+        vc_vector_release(buckets[i]);
+    }
+
+    free(timer);
+    free(buckets);
+    free(start_k);
+    free(labels);
+    return edgeList;
 }
 
 

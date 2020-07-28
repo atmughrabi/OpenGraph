@@ -35,8 +35,8 @@ struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edg
 // ********************************************************************************************
 // ***************                  HUBCluster relabel                           **************
 // ********************************************************************************************
-
 struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);
+struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t lmode);
 
 
 void radixSortCountSortEdges(uint32_t **pageRanksFP, uint32_t **pageRanksFPTemp, uint32_t **labels, uint32_t **labelsTemp, uint32_t radix, uint32_t buckets, uint32_t *buckets_count, uint32_t num_vertices);
