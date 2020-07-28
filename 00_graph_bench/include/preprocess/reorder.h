@@ -9,14 +9,33 @@ struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *
 void writeLabelsToFile(const char *fnameb, uint32_t *labels, uint32_t size);
 struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels);
 struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments *arguments);
+uint32_t *reorderGraphGenerateInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t lmode);
 
+
+// ********************************************************************************************
+// ***************                  Degree relabel                               **************
+// ********************************************************************************************
 struct EdgeList *reorderGraphProcessDegree( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);
 struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *degrees, uint32_t lmode);
-uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t lmode);
 
 
+// ********************************************************************************************
+// ***************                  DBG relabel                                  **************
+// ********************************************************************************************
 struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);
+struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t lmode);
+
+
+// ********************************************************************************************
+// ***************                  HUBSort relabel                              **************
+// ********************************************************************************************
 struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);
+
+
+// ********************************************************************************************
+// ***************                  HUBCluster relabel                           **************
+// ********************************************************************************************
+
 struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);
 
 

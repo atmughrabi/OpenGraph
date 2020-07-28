@@ -29,6 +29,7 @@
 #include "quantization.h"
 #include "mt19937.h"
 
+
 #include "graphCSR.h"
 #include "reorder.h"
 #include "epochReorder.h"
@@ -224,184 +225,23 @@ uint32_t *radixSortEdgesByDegree (uint32_t *degrees, uint32_t *labels, uint32_t 
 
 }
 
+// ********************************************************************************************
+// ***************                  Degree relabel                               **************
+// ********************************************************************************************
 
 struct EdgeList *reorderGraphProcessDegree( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
 {
-
-
     uint32_t *degrees;
 
     degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
-    degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
+    degrees = reorderGraphGenerateInOutDegrees( degrees, edgeList, lmode);
 
     edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
 
+    free(degrees);
     return edgeList;
-
 }
-
-struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
-{
-
-
-    uint32_t *degrees;
-
-    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
-
-    degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
-
-    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
-
-    return edgeList;
-
-}
-
-struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
-{
-
-
-    uint32_t *degrees;
-
-    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
-
-    degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
-
-    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
-
-    return edgeList;
-
-}
-
-struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
-{
-
-
-    uint32_t *degrees;
-
-    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
-
-    degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
-
-    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
-
-    return edgeList;
-
-}
-
-
-uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t lmode)
-{
-
-    uint32_t i;
-    uint32_t src;
-    uint32_t dest;
-
-    #pragma omp parallel for default(none) private(i,src,dest) shared(mt19937var,edgeList,degrees,lmode)
-    for(i = 0; i < edgeList->num_edges; i++)
-    {
-        src  = edgeList->edges_array_src[i];
-        dest = edgeList->edges_array_dest[i];
-
-        if(lmode == 1)
-        {
-            #pragma omp atomic update
-            degrees[src]++;
-        }
-        else if(lmode == 2)
-        {
-            #pragma omp atomic update
-            degrees[dest]++;
-        }
-        else if(lmode == 3)
-        {
-            #pragma omp atomic update
-            degrees[dest]++;
-            #pragma omp atomic update
-            degrees[src]++;
-        }
-        else if(lmode == 10)
-        {
-            degrees[src] = (generateRandInt(mt19937var) % edgeList->num_vertices) + 1;
-        }
-
-    }
-    return degrees;
-}
-
-
-
-struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments *arguments)
-{
-
-
-
-
-    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
-    // printf("Filename : %s \n",fnameb);
-
-    printf(" *****************************************************\n");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Reorder Process");
-    printf(" -----------------------------------------------------\n");
-    Start(timer);
-
-    switch(arguments->lmode)
-    {
-    case 1 :
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in-degree
-        break;
-    case 2  :
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
-        break;
-    case 3  :
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// (in+out)-degree
-        break;
-    case 4  :
-        edgeList = reorderGraphProcessDBG( arguments->sort, edgeList, arguments->lmode);// DBG-out
-        break;
-    case 5  :
-        edgeList = reorderGraphProcessDBG( arguments->sort, edgeList, arguments->lmode);// DBG-in
-        break;
-    case 6  :
-        edgeList = reorderGraphProcessHUBSort( arguments->sort, edgeList, arguments->lmode);// HUBSort-out
-        break;
-    case 7  :
-        edgeList = reorderGraphProcessHUBSort( arguments->sort, edgeList, arguments->lmode);// HUBSort-in
-        break;
-    case 8  :
-        edgeList = reorderGraphProcessHUBCluster( arguments->sort, edgeList, arguments->lmode);// HUBCluster-out
-        break;
-    case 9  :
-        edgeList = reorderGraphProcessHUBCluster( arguments->sort, edgeList, arguments->lmode);// HUBCluster-in
-        break;
-    case 10  :
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// (random)-degree
-        break;
-    case 11 :
-        edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
-        break;
-
-    default :
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
-    }
-
-    Stop(timer);
-
-
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Total Reorder Complete");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51f | \n", Seconds(timer));
-    printf(" -----------------------------------------------------\n");
-    printf(" *****************************************************\n");
-
-    free(timer);
-
-    return edgeList;
-
-}
-
 
 struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *degrees, uint32_t lmode)
 {
@@ -419,22 +259,26 @@ struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *deg
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting Degree Reordering/Relabeling");
     printf(" -----------------------------------------------------\n");
-    if(lmode == 1)  // in-degree
+
+
+    switch(lmode)
     {
+    case 1  :
+        printf("| %-51s | \n", "OUT-DEGREE");
+        break;
+    case 2  :
+        printf("| %-51s | \n", "IN-DEGREE");
+        break;
+    case 3  :
+        printf("| %-51s | \n", "(IN+OUT)-DEGREE");
+        break;
+    case 10  :
+        printf("| %-51s | \n", "RANDOM-DEGREE");
+        break;
+    default :
         printf("| %-51s | \n", "OUT-DEGREE");
     }
-    else if(lmode == 2)
-    {
-        printf("| %-51s | \n", "IN-DEGREE");
-    }
-    else if(lmode == 3)
-    {
-        printf("| %-51s | \n", "(IN+OUT)-DEGREE");
-    }
-    else if(lmode == 10)
-    {
-        printf("| %-51s | \n", "RANDOM-DEGREE");
-    }
+
     printf(" -----------------------------------------------------\n");
 
     Start(timer);
@@ -471,6 +315,217 @@ struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *deg
     return edgeList;
 }
 
+
+// ********************************************************************************************
+// ***************                  DBG relabel                                  **************
+// ********************************************************************************************
+
+struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
+{
+
+    // UINT32_MAX
+    uint32_t  i;
+    uint32_t *degrees;
+    uint32_t *thresholds;
+    uint32_t  num_buckets = 11;
+
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    thresholds = (uint32_t *) my_malloc(num_buckets * sizeof(uint32_t));
+
+    // START initialize thresholds
+    thresholds[0] = (edgeList->avg_degree / 2);
+    for ( i = 1; i < (num_buckets - 1); ++i)
+    {
+        thresholds[i] = thresholds[i - 1] * 2;
+    }
+    thresholds[10] = UINT32_MAX;
+    // END initialize thresholds
+
+    degrees = reorderGraphGenerateInOutDegrees( degrees, edgeList, lmode);
+
+    edgeList = reorderGraphListDBG(edgeList, degrees, thresholds, num_buckets, lmode);
+
+    free(thresholds);
+    free(degrees);
+    return edgeList;
+
+}
+
+struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t lmode)
+{
+
+    return edgeList;
+}
+
+// ********************************************************************************************
+// ***************                  HUBSort relabel                              **************
+// ********************************************************************************************
+
+struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
+{
+
+
+    uint32_t *degrees;
+
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+
+    degrees = reorderGraphGenerateInOutDegrees( degrees, edgeList, lmode);
+
+    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
+
+    free(degrees);
+    return edgeList;
+
+}
+
+
+// ********************************************************************************************
+// ***************                  HUBCluster relabel                           **************
+// ********************************************************************************************
+
+struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
+{
+
+
+    uint32_t *degrees;
+
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+
+    degrees = reorderGraphGenerateInOutDegrees( degrees, edgeList, lmode);
+
+    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
+
+    free(degrees);
+    return edgeList;
+
+}
+
+
+// ********************************************************************************************
+// ***************                  generic functions                            **************
+// ********************************************************************************************
+
+uint32_t *reorderGraphGenerateInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t lmode)
+{
+
+    uint32_t i;
+    uint32_t src;
+    uint32_t dest;
+
+    #pragma omp parallel for default(none) private(i,src,dest) shared(mt19937var,edgeList,degrees,lmode)
+    for(i = 0; i < edgeList->num_edges; i++)
+    {
+        src  = edgeList->edges_array_src[i];
+        dest = edgeList->edges_array_dest[i];
+
+        switch(lmode)
+        {
+        case 1  :
+        case 4  :
+        case 6  :
+        case 8  :
+        {
+            #pragma omp atomic update
+            degrees[src]++;
+        } // degree
+        break;
+        case 2  :
+        case 5  :
+        case 7  :
+        case 9 :
+        {
+            #pragma omp atomic update
+            degrees[dest]++;
+        }
+        break;
+        case 3  :
+        {
+            #pragma omp atomic update
+            degrees[dest]++;
+            #pragma omp atomic update
+            degrees[src]++;
+        }
+        break;
+        case 10  :
+        {
+            degrees[src] = (generateRandInt(mt19937var) % edgeList->num_vertices) + 1;
+        }
+        break;
+        default :
+        {
+            #pragma omp atomic update
+            degrees[src]++;
+        }// out-degree
+        }
+
+    }
+
+    return degrees;
+}
+
+
+
+struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments *arguments)
+{
+
+
+
+
+    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
+    // printf("Filename : %s \n",fnameb);
+
+    printf(" *****************************************************\n");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Reorder Process");
+    printf(" -----------------------------------------------------\n");
+    Start(timer);
+
+    switch(arguments->lmode)
+    {
+    case 1  :
+    case 2  :
+    case 3  :
+    case 10 :
+        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// degree
+        break;
+    case 4  :
+    case 5  :
+        edgeList = reorderGraphProcessDBG( arguments->sort, edgeList, arguments->lmode);// DBG
+        break;
+    case 6  :
+    case 7  :
+        edgeList = reorderGraphProcessHUBSort( arguments->sort, edgeList, arguments->lmode);// HUBSort
+        break;
+    case 8  :
+    case 9  :
+        edgeList = reorderGraphProcessHUBCluster( arguments->sort, edgeList, arguments->lmode);// HUBCluster
+        break;
+    case 11 :
+        edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
+        break;
+
+    default :
+        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
+    }
+
+    Stop(timer);
+
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Total Reorder Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+    printf(" *****************************************************\n");
+
+    free(timer);
+
+    return edgeList;
+
+}
+
+
+
 struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels)
 {
 
@@ -495,6 +550,10 @@ struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels)
 
 }
 
+
+// ********************************************************************************************
+// ***************                  File relabel                                 **************
+// ********************************************************************************************
 
 struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *fnameb, uint32_t size)
 {
