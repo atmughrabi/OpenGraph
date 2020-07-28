@@ -9,13 +9,8 @@ struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *
 void writeLabelsToFile(const char *fnameb, uint32_t *labels, uint32_t size);
 struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels);
 struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments *arguments);
-struct EdgeList *reorderGraphProcessPageRank(struct EdgeList *edgeList, struct Arguments *arguments);
 struct EdgeList *reorderGraphProcessDegree( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);
 struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *degrees, uint32_t lmode);
-struct EdgeList *reorderGraphListPageRank(struct GraphCSR *graph);
-struct EdgeList *reorderGraphListEpochPageRank(struct GraphCSR *graph);
-struct EdgeList *reorderGraphListEpochBFS(struct GraphCSR *graph);
-struct EdgeList *reorderGraphListEpochRabbit(struct GraphCSR *graph);
 
 uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t lmode);
 uint32_t reorderGraphProcessVertexSize( struct EdgeList *edgeList);
