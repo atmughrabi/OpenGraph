@@ -58,6 +58,10 @@ void writeEdgeListToTXTFile(struct EdgeList *edgeList, const char *fname)
 
     fp = fopen (fname_txt, "w");
 
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Average Degree");
+    printf("| %-51u | \n", edgeList->avg_degree);
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Number of Vertices (V)");
     printf("| %-51u | \n", edgeList->num_vertices);
@@ -103,6 +107,7 @@ struct EdgeList *newEdgeList( uint32_t num_edges)
 
     newEdgeList->num_edges = num_edges;
     newEdgeList->num_vertices = 0;
+    newEdgeList->avg_degree = 0;
     // newEdgeList->edges_array = newEdgeList(num_edges);
 
 #if WEIGHTED
@@ -168,6 +173,7 @@ struct EdgeList *removeDulpicatesSelfLoopEdges( struct EdgeList *edgeList)
 
     tempEdgeList->num_edges = j;
     tempEdgeList->num_vertices = edgeList->num_vertices ;
+    tempEdgeList->avg_degree = tempEdgeList->num_edges / tempEdgeList->num_vertices ;
     freeEdgeList(edgeList);
     return tempEdgeList;
 
@@ -494,6 +500,8 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 
     edgeList->num_vertices = num_vertices + 1; // max number of veritices Array[0-max]
 
+    edgeList->avg_degree = edgeList->num_edges / edgeList->num_vertices;
+
 #if WEIGHTED
     edgeList->max_weight = max_weight;
 #endif
@@ -615,6 +623,9 @@ struct EdgeList *readEdgeListsMem( struct EdgeList *edgeListmem,  uint8_t invers
 
     edgeList->num_vertices = edgeListmem->num_vertices; // max number of veritices Array[0-max]
 
+    if(edgeListmem->num_vertices)
+        edgeList->avg_degree = edgeListmem->num_edges / edgeListmem->num_vertices;
+
 #if WEIGHTED
     edgeList->max_weight =  edgeListmem->max_weight;
 #endif
@@ -625,9 +636,9 @@ struct EdgeList *readEdgeListsMem( struct EdgeList *edgeListmem,  uint8_t invers
 void edgeListPrint(struct EdgeList *edgeList)
 {
 
-
     printf("number of vertices (V) : %u \n", edgeList->num_vertices);
     printf("number of edges    (E) : %u \n", edgeList->num_edges);
+    printf("average degree     (D) : %u \n", edgeList->avg_degree);
 
     uint32_t i;
     for(i = 0; i < edgeList->num_edges; i++)

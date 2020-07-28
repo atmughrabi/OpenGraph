@@ -16,7 +16,7 @@ struct  GraphAdjLinkedList
 {
     uint32_t num_vertices;
     uint32_t num_edges;
-  
+  	uint32_t avg_degree;
 #if WEIGHTED
     float max_weight;
 #endif

@@ -66,6 +66,9 @@ void  graphGridPrint(struct GraphGrid *graphGrid)
     printf("| %-51s | \n", "UN-DIRECTED");
 #endif
     printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Average Degree (D)");
+    printf("| %-51u | \n", graphGrid->avg_degree);
+    printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Number of Vertices (V)");
     printf("| %-51u | \n", graphGrid->grid->num_vertices);
     printf(" -----------------------------------------------------\n");
@@ -112,6 +115,7 @@ struct GraphGrid *graphGridNew(struct EdgeList *edgeList)
 
     graphGrid->num_edges = edgeList->num_edges;
     graphGrid->num_vertices = edgeList->num_vertices;
+    graphGrid->avg_degree = edgeList->num_edges / edgeList->num_vertices;
 
     graphGrid->grid = gridNew(edgeList);
 

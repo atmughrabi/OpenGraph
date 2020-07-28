@@ -71,6 +71,7 @@ struct GraphAdjLinkedList *graphAdjLinkedListEdgeListNew(struct EdgeList *edgeLi
 
     graphAdjLinkedList->num_vertices = edgeList->num_vertices;
     graphAdjLinkedList->num_edges = edgeList->num_edges;
+    graphAdjLinkedList->avg_degree = edgeList->num_edges / edgeList->num_vertices;
     graphAdjLinkedList->vertices = (struct AdjLinkedList *) my_malloc( graphAdjLinkedList->num_vertices * sizeof(struct AdjLinkedList));
 
 #if WEIGHTED
@@ -145,6 +146,9 @@ void graphAdjLinkedListPrint(struct GraphAdjLinkedList *graphAdjLinkedList)
 #else
     printf("| %-51s | \n", "UN-DIRECTED");
 #endif
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Average Degree (D)");
+    printf("| %-51u | \n", graphAdjLinkedList->avg_degree);
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Number of Vertices (V)");
     printf("| %-51u | \n", graphAdjLinkedList->num_vertices);

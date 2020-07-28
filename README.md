@@ -169,7 +169,7 @@ benchmarking suite for various graph processing algorithms using pure C.
                              [0]-BFS, [1]-Page-rank, [2]-SSSP-DeltaStepping,
                              [3]-SSSP-BellmanFord, [4]-DFS,[5]-SPMV,
                              [6]-Connected-Components, [7]-Triangle Counting,
-                             [8]-IncrementalAggregation.
+                             [8 BUGGY]-IncrementalAggregation*.
 
   -b, --delta=[DELTA:1]
 
@@ -221,7 +221,7 @@ benchmarking suite for various graph processing algorithms using pure C.
                              and top-k ranked vertices listed.
 
   -k, --remove-duplicate
-                             Removers duplicate edges and self loops from the
+                             Removes duplicate edges and self loops from the
                              graph.
 
   -l, --light-reorder=[ORDER:0]
@@ -363,7 +363,7 @@ benchmarking suite for various graph processing algorithms using pure C.
   - [x] BFS   (Breadth First Search)
   - [x] PR    (Page-Rank)
   - [x] DFS   (Depth First Search)
-  - [x] IA    (Incremental Aggregation)
+  - [x] IA    (Incremental Aggregation) BUGGY*
   - [x] SSSP  (BellmanFord)
   - [x] SSSP  (Delta Stepping)
   - [x] SPMV  (Sparse Matrix Vector Multiplication)

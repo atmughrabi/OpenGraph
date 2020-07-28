@@ -84,6 +84,9 @@ void graphCSRPrint(struct GraphCSR *graphCSR)
     printf("| %-51s | \n", "UN-DIRECTED");
 #endif
     printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Average Degree (D)");
+    printf("| %-51u | \n", graphCSR->avg_degree);
+    printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Number of Vertices (V)");
     printf("| %-51u | \n", graphCSR->num_vertices);
     printf(" -----------------------------------------------------\n");
@@ -107,6 +110,7 @@ struct GraphCSR *graphCSRNew(uint32_t V, uint32_t E, uint8_t inverse)
     struct GraphCSR *graphCSR = (struct GraphCSR *) my_malloc( sizeof(struct GraphCSR));
     graphCSR->num_vertices = V;
     graphCSR->num_edges = E;
+    graphCSR->avg_degree = E / V;
 
     graphCSR->vertices = newVertexArray(V);
 

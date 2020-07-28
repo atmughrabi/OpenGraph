@@ -673,23 +673,6 @@ struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments
         edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
     }
 
-
-    // if(arguments->lmode == 1 || arguments->lmode == 5 || arguments->lmode == 6 || arguments->lmode == 7 ) // pageRank
-    //     edgeList = reorderGraphProcessPageRank(edgeList, arguments);
-    // else if(arguments->lmode == 2)
-    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in-degree
-    // else if(arguments->lmode == 3)
-    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
-    // else if(arguments->lmode == 4)
-    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in/out-degree
-    // else if(arguments->lmode == (3 + 5))
-    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree for incremental aggregation
-    // else if(arguments->lmode == 10)
-    //     edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
-    // else
-    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
-
-
     Stop(timer);
 
 

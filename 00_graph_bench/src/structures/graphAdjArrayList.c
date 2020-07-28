@@ -83,6 +83,7 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeListNew(struct EdgeList *edgeList
     graphAdjArrayList = graphAdjArrayListGraphNew(edgeList->num_vertices);
 
     graphAdjArrayList->num_edges = edgeList->num_edges;
+    graphAdjArrayList->avg_degree = edgeList->num_edges / edgeList->num_vertices;
 
 
 #if WEIGHTED
@@ -126,7 +127,7 @@ struct GraphAdjArrayList *graphAdjArrayListEdgeListNewWithInverse(struct EdgeLis
     graphAdjArrayList = graphAdjArrayListGraphNew(edgeList->num_vertices);
 
     graphAdjArrayList->num_edges = edgeList->num_edges;
-
+    graphAdjArrayList->avg_degree = edgeList->num_edges / edgeList->num_vertices;
 
 #if WEIGHTED
     graphAdjArrayList->max_weight =  edgeList->max_weight;
@@ -460,6 +461,9 @@ void graphAdjArrayListPrint(struct GraphAdjArrayList *graphAdjArrayList)
 #else
     printf("| %-51s | \n", "UN-DIRECTED");
 #endif
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Average Degree (D)");
+    printf("| %-51u | \n", graphAdjArrayList->avg_degree);
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Number of Vertices (V)");
     printf("| %-51u | \n", graphAdjArrayList->num_vertices);
