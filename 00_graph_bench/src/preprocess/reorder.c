@@ -349,7 +349,10 @@ struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments
     case 9  :
         // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
         break;
-    case 10 :
+    case 10  :
+        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// random-degree
+        break;
+    case 11 :
         edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
         break;
 

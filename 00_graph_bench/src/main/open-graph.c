@@ -109,7 +109,7 @@ static struct argp_option options[] =
     },
     {
         "light-reorder",     'l', "[ORDER:0]\n",      0,
-        "\nRelabels the graph for better cache performance. [default:0]-no-reordering [1]-out-degree [2]-in-degree [3]-(in+out)-degree [4]-DBG-out [5]-DBG-in [6]-HUBSort-out [7]-HUBSort-in [8]-HUBCluster-out [9]-HUBCluster-in [10]-LoadFromFile\n"
+        "\nRelabels the graph for better cache performance. [default:0]-no-reordering [1]-out-degree [2]-in-degree [3]-(in+out)-degree [4]-DBG-out [5]-DBG-in [6]-HUBSort-out [7]-HUBSort-in [8]-HUBCluster-out [9]-HUBCluster-in [10]-(random)-degree  [11]-LoadFromFile\n"
     },
     {
         "convert-format",    'c', "[TEXT|BIN|CSR:1]\n",      0,
