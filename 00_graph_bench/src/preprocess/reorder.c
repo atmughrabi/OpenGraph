@@ -270,7 +270,7 @@ void radixSortCountSortEdgesByRanks (uint32_t **pageRanksFP, uint32_t **pageRank
     uint32_t offset_end = 0;
     uint32_t base = 0;
 
-    #pragma omp parallel default(none) num_threads(P) shared(pageRanksFP, pageRanksFPTemp,radix,labels,labelsTemp,buckets,buckets_count, num_vertices) firstprivate(t_id, P, offset_end,offset_start,base,i,j,t,u,o) 
+    #pragma omp parallel default(none) num_threads(P) shared(pageRanksFP, pageRanksFPTemp,radix,labels,labelsTemp,buckets,buckets_count, num_vertices) firstprivate(t_id, P, offset_end,offset_start,base,i,j,t,u,o)
     {
         P = omp_get_num_threads();
         t_id = omp_get_thread_num();
@@ -596,7 +596,7 @@ uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *ed
         src  = edgeList->edges_array_src[i];
         dest = edgeList->edges_array_dest[i];
 
-        if(lmode == 3 || lmode == (5 + 3))
+        if(lmode == 1)
         {
             #pragma omp atomic update
             degrees[src]++;
@@ -606,7 +606,7 @@ uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *ed
             #pragma omp atomic update
             degrees[dest]++;
         }
-        else if(lmode == 4)
+        else if(lmode == 3)
         {
             #pragma omp atomic update
             degrees[dest]++;
@@ -636,30 +636,65 @@ struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments
     printf(" -----------------------------------------------------\n");
     Start(timer);
 
-
-
-
-    if(arguments->lmode == 1 || arguments->lmode == 5 || arguments->lmode == 6 || arguments->lmode == 7 ) // pageRank
-        edgeList = reorderGraphProcessPageRank(edgeList, arguments);
-    else if(arguments->lmode == 2)
+    switch(arguments->lmode)
+    {
+    case 1 :
         edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in-degree
-    else if(arguments->lmode == 3)
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
-    else if(arguments->lmode == 4)
+        break;
+    case 2  :
+        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        break;
+    case 3  :
         edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in/out-degree
-    else if(arguments->lmode == (3 + 5))
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree for incremental aggregation
-    else if(arguments->lmode == 10)
+        break;
+    case 4  :
+        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        break;
+    case 5  :
+        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        break;
+    case 6  :
+        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        break;
+    case 7  :
+        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        break;
+    case 8  :
+        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        break;
+    case 9  :
+        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        break;
+    case 10 :
         edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
-    else
+        break;
+
+    default :
         edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
+    }
+
+
+    // if(arguments->lmode == 1 || arguments->lmode == 5 || arguments->lmode == 6 || arguments->lmode == 7 ) // pageRank
+    //     edgeList = reorderGraphProcessPageRank(edgeList, arguments);
+    // else if(arguments->lmode == 2)
+    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in-degree
+    // else if(arguments->lmode == 3)
+    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
+    // else if(arguments->lmode == 4)
+    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in/out-degree
+    // else if(arguments->lmode == (3 + 5))
+    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree for incremental aggregation
+    // else if(arguments->lmode == 10)
+    //     edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
+    // else
+    //     edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degree
 
 
     Stop(timer);
 
 
     printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Reorder Complete");
+    printf("| %-51s | \n", "Total Reorder Complete");
     printf(" -----------------------------------------------------\n");
     printf("| %-51f | \n", Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -688,21 +723,17 @@ struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *deg
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting Degree Reordering/Relabeling");
     printf(" -----------------------------------------------------\n");
-    if(lmode == 2)  // in-degree
+    if(lmode == 1)  // in-degree
+    {
+        printf("| %-51s | \n", "OUT-DEGREE");
+    }
+    else if(lmode == 2)
     {
         printf("| %-51s | \n", "IN-DEGREE");
     }
     else if(lmode == 3)
     {
-        printf("| %-51s | \n", "OUT-DEGREE DESCENDING");
-    }
-    else if(lmode == (5 + 3))
-    {
-        printf("| %-51s | \n", "OUT-DEGREE ASCENDING");
-    }
-    else if(lmode == 4)
-    {
-        printf("| %-51s | \n", "IN/OUT-DEGREE");
+        printf("| %-51s | \n", "(IN+OUT-DEGREE)");
     }
     printf(" -----------------------------------------------------\n");
 
@@ -716,28 +747,11 @@ struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *deg
 
     labelsInverse = radixSortEdgesByDegree(degrees, labelsInverse, edgeList->num_vertices);
 
-
-    //decending order mapping
-
-    if(lmode == (5 + 3)) //increasing order for incremental Aggregation
+    #pragma omp parallel for
+    for(v = 0; v < edgeList->num_vertices; v++)
     {
-        #pragma omp parallel for
-        for(v = 0; v < edgeList->num_vertices; v++)
-        {
-            labels[labelsInverse[v]] = v;
-        }
-
+        labels[labelsInverse[v]] = edgeList->num_vertices - 1 - v;
     }
-    else
-    {
-        #pragma omp parallel for
-        for(v = 0; v < edgeList->num_vertices; v++)
-        {
-            labels[labelsInverse[v]] = edgeList->num_vertices - 1 - v;
-        }
-
-    }
-
 
     edgeList = relabelEdgeList(edgeList, labels);
 

@@ -69,7 +69,7 @@ static struct argp_option options[] =
     },
     {
         "algorithm",         'a', "[DEFAULT:0]\n",      0,
-        "\n[0]-BFS, [1]-Page-rank, [2]-SSSP-DeltaStepping, [3]-SSSP-BellmanFord, [4]-DFS,[5]-SPMV, [6]-Connected-Components, [7]-Triangle Counting, [8]-IncrementalAggregation.\n"
+        "\n[0]-BFS, [1]-Page-rank, [2]-SSSP-DeltaStepping, [3]-SSSP-BellmanFord, [4]-DFS,[5]-SPMV, [6]-Connected-Components, [7]-Triangle Counting, [8-BUGGY]-IncrementalAggregation.\n"
     },
     {
         "data-structure",    'd', "[DEFAULT:0]\n",      0,
@@ -109,7 +109,7 @@ static struct argp_option options[] =
     },
     {
         "light-reorder",     'l', "[ORDER:0]\n",      0,
-        "\n [*BUGGY] Relabels the graph for better cache performance. [default:0]-no-reordering [1]-page-rank-order [2]-in-degree [3]-out-degree [4]-in/out degree [5]-Rabbit [6]-Epoch-pageRank [7]-Epoch-BFS [8]-LoadFromFile\n"
+        "\nRelabels the graph for better cache performance. [default:0]-no-reordering [1]-out-degree [2]-in-degree [3]-(in+out)-degree [4]-DBG-out [5]-DBG-in [6]-HUBSort-out [7]-HUBSort-in [8]-HUBCluster-out [9]-HUBCluster-in [10]-LoadFromFile\n"
     },
     {
         "convert-format",    'c', "[TEXT|BIN|CSR:1]\n",      0,

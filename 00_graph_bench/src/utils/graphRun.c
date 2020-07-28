@@ -163,14 +163,14 @@ void *generateGraphDataStructure(struct Arguments *arguments)
     {
 
         arguments->sort = 1;
-        arguments->lmode = 3;
+        arguments->lmode = 2;
     }
 
-    if(arguments->algorithm == 8)  // Triangle counting depends on order
+    if(arguments->algorithm == 8)  // Incremental aggregation order
     {
 
         arguments->sort = 1;
-        arguments->lmode = 8;
+        arguments->lmode = 2;
     }
 
     if(arguments->fnameb_format == 0)  // for now it edge list is text only convert to binary
