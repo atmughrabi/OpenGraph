@@ -20,7 +20,6 @@
 #include <omp.h>
 #include <stdint.h>
 
-
 #include "timer.h"
 #include "myMalloc.h"
 #include "graphConfig.h"
@@ -28,13 +27,11 @@
 #include "fixedPoint.h"
 #include "sortRun.h"
 #include "quantization.h"
+#include "mt19937.h"
 
 #include "graphCSR.h"
 #include "reorder.h"
 #include "epochReorder.h"
-
-#include "pageRank.h"
-#include "incrementalAggregation.h"
 
 
 void radixSortCountSortEdgesByRanks (uint32_t **pageRanksFP, uint32_t **pageRanksFPTemp, uint32_t **labels, uint32_t **labelsTemp, uint32_t radix, uint32_t buckets, uint32_t *buckets_count, uint32_t num_vertices)
@@ -236,6 +233,21 @@ struct EdgeList *reorderGraphProcessDegree( uint32_t sort, struct EdgeList *edge
 
     degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
+    degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
+
+    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
+
+    return edgeList;
+
+}
+
+struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
+{
+
+
+    uint32_t *degrees;
+
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
     degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
 
@@ -245,25 +257,36 @@ struct EdgeList *reorderGraphProcessDegree( uint32_t sort, struct EdgeList *edge
 
 }
 
-uint32_t reorderGraphProcessVertexSize( struct EdgeList *edgeList)
+struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
 {
 
-    uint32_t i;
-    uint32_t src;
-    uint32_t dest;
-    uint32_t num_vertices = 0;
 
-    #pragma omp parallel for default(none) private(i,src,dest) shared(edgeList) reduction(max: num_vertices)
-    for(i = 0; i < edgeList->num_edges; i++)
-    {
+    uint32_t *degrees;
 
-        src  = edgeList->edges_array_src[i];
-        dest = edgeList->edges_array_dest[i];
-        num_vertices = maxTwoIntegers(num_vertices, maxTwoIntegers(src, dest));
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
-    }
+    degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
 
-    return num_vertices;
+    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
+
+    return edgeList;
+
+}
+
+struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode)
+{
+
+
+    uint32_t *degrees;
+
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+
+    degrees = reorderGraphProcessInOutDegrees( degrees, edgeList, lmode);
+
+    edgeList = reorderGraphListDegree( edgeList, degrees, lmode);
+
+    return edgeList;
+
 }
 
 
@@ -274,7 +297,7 @@ uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *ed
     uint32_t src;
     uint32_t dest;
 
-    #pragma omp parallel for default(none) private(i,src,dest) shared(edgeList,degrees,lmode)
+    #pragma omp parallel for default(none) private(i,src,dest) shared(mt19937var,edgeList,degrees,lmode)
     for(i = 0; i < edgeList->num_edges; i++)
     {
         src  = edgeList->edges_array_src[i];
@@ -297,9 +320,12 @@ uint32_t *reorderGraphProcessInOutDegrees(uint32_t *degrees, struct EdgeList *ed
             #pragma omp atomic update
             degrees[src]++;
         }
+        else if(lmode == 10)
+        {
+            degrees[src] = (generateRandInt(mt19937var) % edgeList->num_vertices) + 1;
+        }
 
     }
-
     return degrees;
 }
 
@@ -329,28 +355,28 @@ struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments
         edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
         break;
     case 3  :
-        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// in/out-degree
+        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// (in+out)-degree
         break;
     case 4  :
-        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        edgeList = reorderGraphProcessDBG( arguments->sort, edgeList, arguments->lmode);// DBG-out
         break;
     case 5  :
-        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        edgeList = reorderGraphProcessDBG( arguments->sort, edgeList, arguments->lmode);// DBG-in
         break;
     case 6  :
-        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        edgeList = reorderGraphProcessHUBSort( arguments->sort, edgeList, arguments->lmode);// HUBSort-out
         break;
     case 7  :
-        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        edgeList = reorderGraphProcessHUBSort( arguments->sort, edgeList, arguments->lmode);// HUBSort-in
         break;
     case 8  :
-        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        edgeList = reorderGraphProcessHUBCluster( arguments->sort, edgeList, arguments->lmode);// HUBCluster-out
         break;
     case 9  :
-        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// out-degre
+        edgeList = reorderGraphProcessHUBCluster( arguments->sort, edgeList, arguments->lmode);// HUBCluster-in
         break;
     case 10  :
-        // edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// random-degree
+        edgeList = reorderGraphProcessDegree( arguments->sort, edgeList, arguments->lmode);// (random)-degree
         break;
     case 11 :
         edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
@@ -403,7 +429,11 @@ struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *deg
     }
     else if(lmode == 3)
     {
-        printf("| %-51s | \n", "(IN+OUT-DEGREE)");
+        printf("| %-51s | \n", "(IN+OUT)-DEGREE");
+    }
+    else if(lmode == 10)
+    {
+        printf("| %-51s | \n", "RANDOM-DEGREE");
     }
     printf(" -----------------------------------------------------\n");
 
