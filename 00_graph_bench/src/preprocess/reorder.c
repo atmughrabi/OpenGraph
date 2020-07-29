@@ -392,13 +392,13 @@ struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degree
     void  *iter = 0;
     uint32_t  v = 0;
     uint32_t  t = 0;
-    uint32_t  temp_k = 0;
+    uint32_t  temp_idx = 0;
     uint32_t P = numThreads;
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
 
-    uint32_t *start_k = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+    uint32_t *start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
     uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
     vc_vector **buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
@@ -410,7 +410,7 @@ struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degree
         buckets[i] = vc_vector_create(0, sizeof(uint32_t), NULL);
     }
 
-    #pragma omp parallel default(none) shared(labels,buckets,edgeList,num_buckets,degrees,thresholds,start_k) firstprivate(iter,temp_k,k,offset_start,offset_end,t_id,i,j,v,P,t)
+    #pragma omp parallel default(none) shared(labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,P,t)
     {
         P = omp_get_num_threads();
         t_id = omp_get_thread_num();
@@ -445,8 +445,8 @@ struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degree
             {
                 for (t = 0; t < P; ++t)
                 {
-                    start_k[(t * num_buckets) + j] = temp_k;
-                    temp_k += vc_vector_count(buckets[(t * num_buckets) + j]);
+                    start_idx[(t * num_buckets) + j] = temp_idx;
+                    temp_idx += vc_vector_count(buckets[(t * num_buckets) + j]);
                 }
             }
         }
@@ -455,7 +455,7 @@ struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degree
 
         for ( j = num_buckets - 1 ; j >= 0 ; --j)
         {
-            k = start_k[(t_id * num_buckets) + j];
+            k = start_idx[(t_id * num_buckets) + j];
             for (   iter = vc_vector_begin(buckets[(t_id * num_buckets) + j]);
                     iter != vc_vector_end(buckets[(t_id * num_buckets) + j]);
                     iter = vc_vector_next(buckets[(t_id * num_buckets) + j], iter))
@@ -484,7 +484,7 @@ struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degree
 
     free(timer);
     free(buckets);
-    free(start_k);
+    free(start_idx);
     free(labels);
     return edgeList;
 }
@@ -551,13 +551,13 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
     void  *iter = 0;
     uint32_t  v = 0;
     uint32_t  t = 0;
-    uint32_t  temp_k = 0;
+    uint32_t  temp_idx = 0;
     uint32_t P = numThreads;
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
 
-    uint32_t *start_k = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+    uint32_t *start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
     uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
     vc_vector **buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
@@ -572,7 +572,7 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
         buckets[i] = vc_vector_create(0, sizeof(uint32_t), NULL);
     }
 
-    #pragma omp parallel default(none) shared(verticesHot,degreesHot,sizeHot,labels,buckets,edgeList,num_buckets,degrees,thresholds,start_k) firstprivate(iter,temp_k,k,offset_start,offset_end,t_id,i,j,v,P,t)
+    #pragma omp parallel default(none) shared(verticesHot,degreesHot,sizeHot,labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,P,t)
     {
         P = omp_get_num_threads();
         t_id = omp_get_thread_num();
@@ -605,14 +605,14 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
         {
             for ( j = num_buckets - 1; j >= 0; --j)
             {
-                temp_k = 0;
+                temp_idx = 0;
                 for (t = 0; t < P; ++t)
                 {
-                    start_k[(t * num_buckets) + j] = temp_k;
-                    temp_k += vc_vector_count(buckets[(t * num_buckets) + j]);
+                    start_idx[(t * num_buckets) + j] = temp_idx;
+                    temp_idx += vc_vector_count(buckets[(t * num_buckets) + j]);
                 }
 
-                sizeHot[j] = temp_k;
+                sizeHot[j] = temp_idx;
                 degreesHot[j]  = (uint32_t *) my_malloc(sizeHot[j] * sizeof(uint32_t));
                 verticesHot[j]  = (uint32_t *) my_malloc(sizeHot[j] * sizeof(uint32_t));
             }
@@ -622,7 +622,7 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
 
         for ( j = num_buckets - 1 ; j >= 0 ; --j)
         {
-            k = start_k[(t_id * num_buckets) + j];
+            k = start_idx[(t_id * num_buckets) + j];
             for (   iter = vc_vector_begin(buckets[(t_id * num_buckets) + j]);
                     iter != vc_vector_end(buckets[(t_id * num_buckets) + j]);
                     iter = vc_vector_next(buckets[(t_id * num_buckets) + j], iter))
@@ -678,7 +678,7 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
 
     free(timer);
     free(buckets);
-    free(start_k);
+    free(start_idx);
     free(labels);
     return edgeList;
 }
@@ -744,13 +744,13 @@ struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t 
     void  *iter = 0;
     uint32_t  v = 0;
     uint32_t  t = 0;
-    uint32_t  temp_k = 0;
+    uint32_t  temp_idx = 0;
     uint32_t P = numThreads;
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
 
-    uint32_t *start_k = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+    uint32_t *start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
     uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
     vc_vector **buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
@@ -761,7 +761,7 @@ struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t 
         buckets[i] = vc_vector_create(0, sizeof(uint32_t), NULL);
     }
 
-    #pragma omp parallel default(none) shared(labels,buckets,edgeList,num_buckets,degrees,thresholds,start_k) firstprivate(iter,temp_k,k,offset_start,offset_end,t_id,i,j,v,P,t)
+    #pragma omp parallel default(none) shared(labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,P,t)
     {
         P = omp_get_num_threads();
         t_id = omp_get_thread_num();
@@ -796,8 +796,8 @@ struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t 
             {
                 for (t = 0; t < P; ++t)
                 {
-                    start_k[(t * num_buckets) + j] = temp_k;
-                    temp_k += vc_vector_count(buckets[(t * num_buckets) + j]);
+                    start_idx[(t * num_buckets) + j] = temp_idx;
+                    temp_idx += vc_vector_count(buckets[(t * num_buckets) + j]);
                 }
             }
         }
@@ -806,7 +806,7 @@ struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t 
 
         for ( j = num_buckets - 1 ; j >= 0 ; --j)
         {
-            k = start_k[(t_id * num_buckets) + j];
+            k = start_idx[(t_id * num_buckets) + j];
             for (   iter = vc_vector_begin(buckets[(t_id * num_buckets) + j]);
                     iter != vc_vector_end(buckets[(t_id * num_buckets) + j]);
                     iter = vc_vector_next(buckets[(t_id * num_buckets) + j], iter))
@@ -835,7 +835,7 @@ struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t 
 
     free(timer);
     free(buckets);
-    free(start_k);
+    free(start_idx);
     free(labels);
     return edgeList;
 }
