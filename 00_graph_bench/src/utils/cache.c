@@ -144,8 +144,8 @@ struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_ass
 
     cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
     cache->warm_cache = newCache( l1_size / 2, 8, 4, num_vertices);
-    cache->hot_cache = newCache( l1_size / 2, 8, 4, num_vertices);
-    cache->ref_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
+    cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices);
+    cache->ref_cache  = newCache( l1_size, l1_assoc, blocksize, num_vertices);
 
     return cache;
 
@@ -175,7 +175,7 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
     struct Cache *cache = ( struct Cache *) my_malloc(sizeof(struct Cache));
 
     cache->numVertices = num_vertices;
-    initCache(cache, l1_size, l1_assoc, blocksize, 0);
+    initCache(cache, l1_size, l1_assoc, blocksize, POLICY);
 
     cache->verticesMiss = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
     cache->verticesHit = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
@@ -282,23 +282,22 @@ void online_cache_graph_stats(struct Cache *cache, uint32_t node)
     if(first_Access)
     {
         cache->vertices_total_reuse[node] = 1;
-        cache->vertices_base_reuse[node] = cache->access_counter;
+        cache->vertices_base_reuse[node]  = cache->access_counter;
     }
     else
     {
-        cache->vertices_total_reuse[node] += cache->access_counter - cache->vertices_base_reuse[node];
-        cache->vertices_base_reuse[node] = cache->access_counter;
+        cache->vertices_total_reuse[node] += (cache->access_counter - cache->vertices_base_reuse[node]);
+        cache->vertices_base_reuse[node]   = cache->access_counter;
     }
 }
 
-void Access(struct Cache *cache, uint64_t addr, uchar op, uint32_t node)
+void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 {
 
     online_cache_graph_stats(cache, node);
     cache->currentCycle++;/*per cache global counter to maintain LRU order
 
-      among cache ways, updated on every cache access*/
-
+    among cache ways, updated on every cache access*/
 
     cache->currentCycle_cache++;
 
@@ -318,13 +317,11 @@ void Access(struct Cache *cache, uint64_t addr, uchar op, uint32_t node)
         if(op == 'w')
         {
             cache->writeMisses++;
-
             cache->verticesMiss[node]++;
         }
         else
         {
             cache->readMisses++;
-
             cache->verticesMiss[node]++;
         }
 
@@ -336,7 +333,7 @@ void Access(struct Cache *cache, uint64_t addr, uchar op, uint32_t node)
     else
     {
         /**since it's a hit, update LRU and update dirty flag**/
-        updateLRU(cache, line);
+        updatePolicy(cache, line);
         if(op == 'w')
             setFlags(line, DIRTY);
 
@@ -351,7 +348,7 @@ uint32_t checkInCache(struct Cache *cache, uint64_t addr)
     if(line == NULL)
         return 1;
 
-    // updateLRU(cache, findLine(cache, addr));
+    // updatePolicy(cache, findLine(cache, addr));
     // else
     // {
     //     struct CacheLine *lineLRU = getLRU(cache, addr);
@@ -364,34 +361,72 @@ uint32_t checkInCache(struct Cache *cache, uint64_t addr)
     return 0;
 }
 
-void Prefetch(struct Cache *cache, uint64_t addr, uchar op, uint32_t node)
+void Prefetch(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 {
     cache->currentCycle++;/*per cache global counter to maintain LRU order
       among cache ways, updated on every cache access*/
     cache->currentCycle_preftcher++;
-
     cache->readsPrefetch++;
-
-
     struct CacheLine *line = findLine(cache, addr);
     if(line == NULL)/*miss*/
     {
-
         cache->readMissesPrefetch++;
-
-
         fillLine(cache, addr);
     }
     else
     {
         /**since it's a hit, update LRU and update dirty flag**/
-        updateLRU(cache, line);
+        updatePolicy(cache, line);
     }
 }
 
-
 /*look up line*/
 struct CacheLine *findLine(struct Cache *cache, uint64_t addr)
+{
+    struct CacheLine *line = NULL;
+
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        line = findLineLRU(cache, addr);
+        break;
+    case GRASP_POLICY:
+        line = findLineGRASP(cache, addr);
+        break;
+    case LFU_POLICY:
+        line = findLineLFU(cache, addr);
+        break;
+    default :
+        line = findLineLRU(cache, addr);
+    }
+
+    return line;
+}
+
+struct CacheLine *findLineLRU(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, tag, pos;
+
+    pos = cache->assoc;
+    tag = calcTag(cache, addr);
+    i   = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+        if(isValid((&cache->cacheLines[i][j])))
+            if(getTag(&(cache->cacheLines[i][j])) == tag)
+            {
+                pos = j;
+                break;
+            }
+    if(pos == cache->assoc)
+        return NULL;
+    else
+    {
+        return &(cache->cacheLines[i][pos]);
+    }
+}
+
+struct CacheLine *findLineLFU(struct Cache *cache, uint64_t addr)
 {
     uint64_t i, j, tag, pos;
 
@@ -411,16 +446,69 @@ struct CacheLine *findLine(struct Cache *cache, uint64_t addr)
         return NULL;
     else
     {
-
         return &(cache->cacheLines[i][pos]);
     }
+}
 
+struct CacheLine *findLineGRASP(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, tag, pos;
+
+    pos = cache->assoc;
+    tag = calcTag(cache, addr);
+    i   = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+        if(isValid((&cache->cacheLines[i][j])))
+            if(getTag(&(cache->cacheLines[i][j])) == tag)
+            {
+                pos = j;
+                break;
+            }
+
+    if(pos == cache->assoc)
+        return NULL;
+    else
+    {
+        return &(cache->cacheLines[i][pos]);
+    }
+}
+
+void updatePolicy(struct Cache *cache, struct CacheLine *line)
+{
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        updateLRU(cache, line);
+        break;
+    case GRASP_POLICY:
+        updateGRASP(cache, line);
+        break;
+    case LFU_POLICY:
+        updateLFU(cache, line);
+        break;
+    default :
+        updateLRU(cache, line);
+    }
 }
 
 /*upgrade LRU line to be MRU line*/
 void updateLRU(struct Cache *cache, struct CacheLine *line)
 {
     setSeq(line, cache->currentCycle);
+}
+
+void updateLFU(struct Cache *cache, struct CacheLine *line)
+{
+    uint8_t freq = getFreq(line);
+    if(freq < FREQ_MAX)
+        freq++;
+    setFreq(line, freq);
+}
+
+void updateGRASP(struct Cache *cache, struct CacheLine *line)
+{
+    setRRPV(line, cache->currentCycle);
 }
 
 /*return an invalid line as LRU, if any, otherwise return LRU line*/
@@ -452,8 +540,62 @@ struct CacheLine *getLRU(struct Cache *cache, uint64_t addr)
     return &(cache->cacheLines[i][victim]);
 }
 
+struct CacheLine *getLFU(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = FREQ_MAX;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0) return &(cache->cacheLines[i][j]);
+    }
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(getFreq(&(cache->cacheLines[i][j])) <= min)
+        {
+            victim = j;
+            min = getFreq(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+
+    cache->evictions++;
+
+    return &(cache->cacheLines[i][victim]);
+}
+
+struct CacheLine *getGRASP(struct Cache *cache, uint64_t addr)
+{
+
+}
+
 /*find a victim, move it to MRU position*/
 struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr)
+{
+    struct CacheLine *victim = NULL;
+
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        victim = findLineToReplaceLRU(cache, addr);
+        break;
+    case GRASP_POLICY:
+        victim = findLineToReplaceGRASP(cache, addr);
+        break;
+    case LFU_POLICY:
+        victim = findLineToReplaceLFU(cache, addr);
+        break;
+    default :
+        victim = findLineToReplaceLRU(cache, addr);
+    }
+
+    return victim;
+}
+
+struct CacheLine *findLineToReplaceLRU(struct Cache *cache, uint64_t addr)
 {
     struct CacheLine  *victim = getLRU(cache, addr);
     updateLRU(cache, victim);
@@ -461,9 +603,45 @@ struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr)
     return (victim);
 }
 
+struct CacheLine *findLineToReplaceLFU(struct Cache *cache, uint64_t addr)
+{
+    struct CacheLine  *victim = getLFU(cache, addr);
+    updateLFU(cache, victim);
+
+    return (victim);
+}
+
+struct CacheLine *findLineToReplaceGRASP(struct Cache *cache, uint64_t addr)
+{
+
+}
+
 /*allocate a new line*/
 struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
 {
+    struct CacheLine *victim = NULL;
+
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        victim = fillLineLRU(cache, addr);
+        break;
+    case GRASP_POLICY:
+        victim = fillLineGRASP(cache, addr);
+        break;
+    case LFU_POLICY:
+        victim = fillLineLFU(cache, addr);
+        break;
+    default :
+        victim = fillLineLRU(cache, addr);
+    }
+
+    return victim;
+}
+
+struct CacheLine *fillLineLRU(struct Cache *cache, uint64_t addr)
+{
+
     uint64_t tag;
 
     struct CacheLine *victim = findLineToReplace(cache, addr);
@@ -482,6 +660,53 @@ struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
        upgraded to MRU in the previous function (findLineToReplace)**/
 
     return victim;
+}
+
+struct CacheLine *fillLineLFU(struct Cache *cache, uint64_t addr)
+{
+
+    uint64_t tag;
+
+    struct CacheLine *victim = findLineToReplace(cache, addr);
+    assert(victim != 0);
+    if(getFlags(victim) == DIRTY)
+    {
+        writeBack(cache, addr);
+    }
+
+    tag = calcTag(cache, addr);
+    setTag(victim, tag);
+    setFlags(victim, VALID);
+
+
+    /**note that this cache line has been already
+       upgraded to MRU in the previous function (findLineToReplace)**/
+
+    return victim;
+
+}
+
+struct CacheLine *fillLineGRASP(struct Cache *cache, uint64_t addr)
+{
+     uint64_t tag;
+
+    struct CacheLine *victim = findLineToReplace(cache, addr);
+    assert(victim != 0);
+    if(getFlags(victim) == DIRTY)
+    {
+        writeBack(cache, addr);
+    }
+
+    tag = calcTag(cache, addr);
+    setTag(victim, tag);
+    setFlags(victim, VALID);
+
+
+    /**note that this cache line has been already
+       upgraded to MRU in the previous function (findLineToReplace)**/
+
+    return victim;
+
 }
 
 void printStats(struct Cache *cache)

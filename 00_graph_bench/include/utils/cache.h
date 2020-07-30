@@ -3,31 +3,37 @@
 
 #include <stdint.h>
 
+//CAPI PSL CACHE default CONFIGS
 // #define BLOCKSIZE 128
 // #define L1_SIZE 262144
 // #define L1_ASSOC 8
+// #define POLICY 0
 
 // #define BLOCKSIZE 64
 // #define L1_SIZE 32768
 // #define L1_ASSOC 8
 
+//GRASP default configs
 #define BLOCKSIZE 64
 #define L1_SIZE 1048576
 #define L1_ASSOC 16
-#define POLICY 0
+#define POLICY 2
 
-// typedef uint64_t uint64_t;
-typedef unsigned char uchar;
-// typedef uint32_t uint32_t;
+// Policy TYPES
+#define LRU_POLICY 0
+#define GRASP_POLICY 1
+#define LFU_POLICY 2
 
-
-// LRU Policy Constants
-
+// Cache states Constants
 #define INVALID 0
 #define VALID 1
 #define DIRTY 2
 
-// GRASP Policy Constants
+// LFU Policy Constants
+#define FREQ_BITS 8
+#define FREQ_MAX ((2 << FREQ_BITS) - 1)
+
+// GRASP Policy Constants RRIP (re-refernece insertion prediction)
 #define NUM_BITS_RRIP 3
 
 #define DEFAULT_INSERT_RRPV ((2 << NUM_BITS_RRIP) - 1)
@@ -42,7 +48,7 @@ struct CacheLine
 {
     uint64_t tag;
     uint8_t Flags;// 0:invalid, 1:valid, 2:dirty
-    uint64_t seq;  // LRU   POLICY 0
+    uint64_t seq; // LRU   POLICY 0
     uint8_t RRPV; // GRASP POLICY 1
     uint8_t freq; // LFU   POLICY 2
 };
@@ -109,14 +115,36 @@ uint64_t getReadsPrefetch(struct Cache *cache);
 void writeBack(struct Cache *cache, uint64_t addr);
 
 void initCache(struct Cache *cache, int s, int a, int b, int p);
-void Access(struct Cache *cache, uint64_t addr, uchar op, uint32_t node);
-void Prefetch(struct Cache *cache, uint64_t addr, uchar op, uint32_t node);
+void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node);
+void Prefetch(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node);
+
 uint32_t checkInCache(struct Cache *cache, uint64_t addr);
+
 struct CacheLine *findLine(struct Cache *cache, uint64_t addr);
-void updateLRU(struct Cache *cache, struct CacheLine *line);
-struct CacheLine *getLRU(struct Cache *cache, uint64_t addr);
-struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLineLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLineLFU(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLineGRASP(struct Cache *cache, uint64_t addr);
+
 struct CacheLine *fillLine(struct Cache *cache, uint64_t addr);
+struct CacheLine *fillLineLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *fillLineLFU(struct Cache *cache, uint64_t addr);
+struct CacheLine *fillLineGRASP(struct Cache *cache, uint64_t addr);
+
+struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLineToReplaceLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLineToReplaceLFU(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLineToReplaceGRASP(struct Cache *cache, uint64_t addr);
+
+struct CacheLine *getLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *getLFU(struct Cache *cache, uint64_t addr);
+struct CacheLine *getGRASP(struct Cache *cache, uint64_t addr);
+
+void updatePolicy(struct Cache *cache, struct CacheLine *line);
+void updateLRU(struct Cache *cache, struct CacheLine *line);
+void updateLFU(struct Cache *cache, struct CacheLine *line);
+void updateGRASP(struct Cache *cache, struct CacheLine *line);
+
+
 void printStats(struct Cache *cache);
 
 struct Cache *newCache( uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices);
