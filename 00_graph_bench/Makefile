@@ -341,6 +341,12 @@ help: app-openmp
 .PHONY: run
 run: run-openmp
 
+.PHONY: debug-cache
+debug-cache: MODE 		= -DCACHE_HARNESS
+debug-cache: INTEGRATION 	= cachesim
+debug-cache: app-cache
+	gdb -ex=r --args ./$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim  -f $(FILE_BIN) $(ARGS)
+
 .PHONY: run-cache
 run-cache: MODE 		= -DCACHE_HARNESS
 run-cache: INTEGRATION 	= cachesim

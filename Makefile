@@ -169,6 +169,10 @@ run:
 run-cache:
 	$(MAKE) run-cache $(MAKE_ARGS)
 
+.PHONY: debug-cache
+debug-cache:
+	$(MAKE) debug-cache $(MAKE_ARGS)
+
 .PHONY: run-openmp
 run-openmp:
 	$(MAKE) run-openmp $(MAKE_ARGS)

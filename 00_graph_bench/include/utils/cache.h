@@ -17,12 +17,13 @@
 #define BLOCKSIZE 64
 #define L1_SIZE 1048576
 #define L1_ASSOC 16
-#define POLICY 0
+
 
 // Policy TYPES
 #define LRU_POLICY 0
 #define GRASP_POLICY 1
 #define LFU_POLICY 2
+#define POLICY LFU_POLICY
 
 // Cache states Constants
 #define INVALID 0
@@ -31,7 +32,7 @@
 
 // LFU Policy Constants
 #define FREQ_BITS 8
-#define FREQ_MAX ((2 << FREQ_BITS) - 1)
+#define FREQ_MAX (uint8_t)((uint8_t)(2 << FREQ_BITS) - 1)
 
 // GRASP Policy Constants RRIP (re-refernece insertion prediction)
 #define NUM_BITS_RRIP 3
@@ -83,7 +84,9 @@ struct DoubleTaggedCache
 };
 
 ///cacheline helper functions
+void initCache(struct Cache *cache, int s, int a, int b, int p);
 void initCacheLine(struct CacheLine *cacheLine);
+
 uint64_t getTag(struct CacheLine *cacheLine);
 uint8_t getFlags(struct CacheLine *cacheLine);
 uint64_t getSeq(struct CacheLine *cacheLine);
@@ -98,11 +101,9 @@ void setTag(struct CacheLine *cacheLine, uint64_t a);
 void invalidate(struct CacheLine *cacheLine);
 uint32_t isValid(struct CacheLine *cacheLine);
 
-
 uint64_t calcTag(struct Cache *cache, uint64_t addr);
 uint64_t calcIndex(struct Cache *cache, uint64_t addr);
 uint64_t calcAddr4Tag(struct Cache *cache, uint64_t tag);
-
 
 uint64_t getRM(struct Cache *cache);
 uint64_t getWM(struct Cache *cache);
@@ -112,28 +113,35 @@ uint64_t getWB(struct Cache *cache);
 uint64_t getEVC(struct Cache *cache);
 uint64_t getRMPrefetch(struct Cache *cache);
 uint64_t getReadsPrefetch(struct Cache *cache);
-void writeBack(struct Cache *cache, uint64_t addr);
 
-void initCache(struct Cache *cache, int s, int a, int b, int p);
-void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node);
 void Prefetch(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node);
-
 uint32_t checkInCache(struct Cache *cache, uint64_t addr);
 
+void writeBack(struct Cache *cache, uint64_t addr);
+void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node);
 struct CacheLine *findLine(struct Cache *cache, uint64_t addr);
 struct CacheLine *fillLine(struct Cache *cache, uint64_t addr);
 struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr);
 
-struct CacheLine *getPolicy(struct Cache *cache, uint64_t addr);
-struct CacheLine *getLRU(struct Cache *cache, uint64_t addr);
-struct CacheLine *getLFU(struct Cache *cache, uint64_t addr);
-struct CacheLine *getGRASP(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimPolicy(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimLFU(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr);
 
-void updatePolicy(struct Cache *cache, struct CacheLine *line);
-void updateLRU(struct Cache *cache, struct CacheLine *line);
-void updateLFU(struct Cache *cache, struct CacheLine *line);
-void updateGRASP(struct Cache *cache, struct CacheLine *line);
+void updateInsertionPolicy(struct Cache *cache, struct CacheLine *line);
+void updateInsertLRU(struct Cache *cache, struct CacheLine *line);
+void updateInsertLFU(struct Cache *cache, struct CacheLine *line);
+void updateInsertGRASP(struct Cache *cache, struct CacheLine *line);
 
+void updatePromotionPolicy(struct Cache *cache, struct CacheLine *line);
+void updatePromoteLRU(struct Cache *cache, struct CacheLine *line);
+void updatePromoteLFU(struct Cache *cache, struct CacheLine *line);
+void updatePromoteGRASP(struct Cache *cache, struct CacheLine *line);
+
+void updateAgingPolicy(struct Cache *cache);
+void updateAgeLRU(struct Cache *cache);
+void updateAgeLFU(struct Cache *cache);
+void updateAgeGRASP(struct Cache *cache);
 
 void printStats(struct Cache *cache);
 

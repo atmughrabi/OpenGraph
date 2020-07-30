@@ -291,55 +291,6 @@ void online_cache_graph_stats(struct Cache *cache, uint32_t node)
     }
 }
 
-void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
-{
-
-    online_cache_graph_stats(cache, node);
-    cache->currentCycle++;/*per cache global counter to maintain LRU order
-
-    among cache ways, updated on every cache access*/
-
-    cache->currentCycle_cache++;
-
-    if(op == 'w')
-    {
-        cache->writes++;
-    }
-    else if(op == 'r')
-    {
-        cache->reads++;
-
-    }
-
-    struct CacheLine *line = findLine(cache, addr);
-    if(line == NULL)/*miss*/
-    {
-        if(op == 'w')
-        {
-            cache->writeMisses++;
-            cache->verticesMiss[node]++;
-        }
-        else
-        {
-            cache->readMisses++;
-            cache->verticesMiss[node]++;
-        }
-
-        struct CacheLine *newline = fillLine(cache, addr);
-        if(op == 'w')
-            setFlags(newline, DIRTY);
-
-    }
-    else
-    {
-        /**since it's a hit, update LRU and update dirty flag**/
-        updatePolicy(cache, line);
-        if(op == 'w')
-            setFlags(line, DIRTY);
-
-        cache->verticesHit[node]++;
-    }
-}
 
 uint32_t checkInCache(struct Cache *cache, uint64_t addr)
 {
@@ -376,60 +327,132 @@ void Prefetch(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t nod
     else
     {
         /**since it's a hit, update LRU and update dirty flag**/
-        updatePolicy(cache, line);
+        updatePromotionPolicy(cache, line);
     }
 }
 
-/*look up line*/
-struct CacheLine *findLine(struct Cache *cache, uint64_t addr)
-{
-    uint64_t i, j, tag, pos;
+// ********************************************************************************************
+// ***************         AGING POLICIES                                        **************
+// ********************************************************************************************
 
-    pos = cache->assoc;
-    tag = calcTag(cache, addr);
-    i   = calcIndex(cache, addr);
-
-    for(j = 0; j < cache->assoc; j++)
-        if(isValid((&cache->cacheLines[i][j])))
-            if(getTag(&(cache->cacheLines[i][j])) == tag)
-            {
-                pos = j;
-                break;
-            }
-    if(pos == cache->assoc)
-        return NULL;
-    else
-    {
-        return &(cache->cacheLines[i][pos]);
-    }
-}
-
-
-void updatePolicy(struct Cache *cache, struct CacheLine *line)
+void updateAgingPolicy(struct Cache *cache)
 {
     switch(cache->policy)
     {
     case LRU_POLICY:
-        updateLRU(cache, line);
+        updateAgeLRU(cache);
         break;
     case GRASP_POLICY:
-        updateGRASP(cache, line);
+        updateAgeGRASP(cache);
         break;
     case LFU_POLICY:
-        updateLFU(cache, line);
+        updateAgeLFU(cache);
         break;
     default :
-        updateLRU(cache, line);
+        updateAgeLRU(cache);
+    }
+}
+
+/*No aging for LRU*/
+void updateAgeLRU(struct Cache *cache)
+{
+
+}
+
+void updateAgeLFU(struct Cache *cache)
+{
+    uint64_t i, j;
+    uint8_t freq = 0;
+    for(i = 0; i < cache->sets; i++)
+    {
+        for(j = 0; j < cache->assoc; j++)
+        {
+            if(isValid(&(cache->cacheLines[i][j])))
+            {
+                freq = getFreq(&(cache->cacheLines[i][j]));
+                if(freq > 0)
+                    freq--;
+                setFreq(&(cache->cacheLines[i][j]), freq);
+            }
+        }
+    }
+}
+
+/*No aging for GRASP*/
+void updateAgeGRASP(struct Cache *cache)
+{
+
+}
+
+
+// ********************************************************************************************
+// ***************         INSERTION POLICIES                                    **************
+// ********************************************************************************************
+
+void updateInsertionPolicy(struct Cache *cache, struct CacheLine *line)
+{
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        updateInsertLRU(cache, line);
+        break;
+    case GRASP_POLICY:
+        updateInsertGRASP(cache, line);
+        break;
+    case LFU_POLICY:
+        updateInsertLFU(cache, line);
+        break;
+    default :
+        updateInsertLRU(cache, line);
     }
 }
 
 /*upgrade LRU line to be MRU line*/
-void updateLRU(struct Cache *cache, struct CacheLine *line)
+void updateInsertLRU(struct Cache *cache, struct CacheLine *line)
 {
     setSeq(line, cache->currentCycle);
 }
 
-void updateLFU(struct Cache *cache, struct CacheLine *line)
+void updateInsertLFU(struct Cache *cache, struct CacheLine *line)
+{
+    uint8_t freq = 0;
+    setFreq(line, freq);
+}
+
+void updateInsertGRASP(struct Cache *cache, struct CacheLine *line)
+{
+    setRRPV(line, cache->currentCycle);
+}
+
+// ********************************************************************************************
+// ***************         PROMOTION POLICIES                                    **************
+// ********************************************************************************************
+
+void updatePromotionPolicy(struct Cache *cache, struct CacheLine *line)
+{
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        updatePromoteLRU(cache, line);
+        break;
+    case GRASP_POLICY:
+        updatePromoteGRASP(cache, line);
+        break;
+    case LFU_POLICY:
+        updatePromoteLFU(cache, line);
+        break;
+    default :
+        updatePromoteLRU(cache, line);
+    }
+}
+
+/*upgrade LRU line to be MRU line*/
+void updatePromoteLRU(struct Cache *cache, struct CacheLine *line)
+{
+    setSeq(line, cache->currentCycle);
+}
+
+void updatePromoteLFU(struct Cache *cache, struct CacheLine *line)
 {
     uint8_t freq = getFreq(line);
     if(freq < FREQ_MAX)
@@ -437,35 +460,39 @@ void updateLFU(struct Cache *cache, struct CacheLine *line)
     setFreq(line, freq);
 }
 
-void updateGRASP(struct Cache *cache, struct CacheLine *line)
+void updatePromoteGRASP(struct Cache *cache, struct CacheLine *line)
 {
     setRRPV(line, cache->currentCycle);
 }
 
-struct CacheLine *getPolicy(struct Cache *cache, uint64_t addr)
+// ********************************************************************************************
+// ***************         VICTIM EVICTION POLICIES                              **************
+// ********************************************************************************************
+
+struct CacheLine *getVictimPolicy(struct Cache *cache, uint64_t addr)
 {
     struct CacheLine *victim = NULL;
 
     switch(cache->policy)
     {
     case LRU_POLICY:
-        victim = getLRU(cache, addr);
+        victim = getVictimLRU(cache, addr);
         break;
     case GRASP_POLICY:
-        victim = getGRASP(cache, addr);
+        victim = getVictimGRASP(cache, addr);
         break;
     case LFU_POLICY:
-        victim = getLFU(cache, addr);
+        victim = getVictimLFU(cache, addr);
         break;
     default :
-        victim = getLRU(cache, addr);
+        victim = getVictimLRU(cache, addr);
     }
 
     return victim;
 }
 
 /*return an invalid line as LRU, if any, otherwise return LRU line*/
-struct CacheLine *getLRU(struct Cache *cache, uint64_t addr)
+struct CacheLine *getVictimLRU(struct Cache *cache, uint64_t addr)
 {
     uint64_t i, j, victim, min;
 
@@ -493,7 +520,7 @@ struct CacheLine *getLRU(struct Cache *cache, uint64_t addr)
     return &(cache->cacheLines[i][victim]);
 }
 
-struct CacheLine *getLFU(struct Cache *cache, uint64_t addr)
+struct CacheLine *getVictimLFU(struct Cache *cache, uint64_t addr)
 {
     uint64_t i, j, victim, min;
 
@@ -520,16 +547,45 @@ struct CacheLine *getLFU(struct Cache *cache, uint64_t addr)
     return &(cache->cacheLines[i][victim]);
 }
 
-struct CacheLine *getGRASP(struct Cache *cache, uint64_t addr)
+struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr)
 {
 
 }
 
-/*find a victim, move it to MRU position*/
+// ********************************************************************************************
+// ***************         Cacheline lookups                                     **************
+// ********************************************************************************************
+
+/*look up line*/
+struct CacheLine *findLine(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, tag, pos;
+
+    pos = cache->assoc;
+    tag = calcTag(cache, addr);
+    i   = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+        if(isValid((&cache->cacheLines[i][j])))
+            if(getTag(&(cache->cacheLines[i][j])) == tag)
+            {
+                pos = j;
+                break;
+            }
+    if(pos == cache->assoc)
+        return NULL;
+    else
+    {
+        return &(cache->cacheLines[i][pos]);
+    }
+}
+
+
+/*find a victim*/
 struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr)
 {
-    struct CacheLine  *victim = getPolicy(cache, addr);
-    updatePolicy(cache, victim);
+    struct CacheLine  *victim = getVictimPolicy(cache, addr);
+    updateInsertionPolicy(cache, victim);
 
     return (victim);
 }
@@ -555,6 +611,54 @@ struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
        upgraded to MRU in the previous function (findLineToReplace)**/
 
     return victim;
+}
+
+void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
+{
+
+    online_cache_graph_stats(cache, node);
+    cache->currentCycle++;
+    /*per cache global counter to maintain LRU order among cache ways, updated on every cache access*/
+
+    cache->currentCycle_cache++;
+
+    if(op == 'w')
+    {
+        cache->writes++;
+    }
+    else if(op == 'r')
+    {
+        cache->reads++;
+
+    }
+
+    struct CacheLine *line = findLine(cache, addr);
+    if(line == NULL)/*miss*/
+    {
+        if(op == 'w')
+        {
+            cache->writeMisses++;
+        }
+        else
+        {
+            cache->readMisses++;
+        }
+
+        struct CacheLine *newline = fillLine(cache, addr);
+        if(op == 'w')
+            setFlags(newline, DIRTY);
+
+        cache->verticesMiss[node]++;
+    }
+    else
+    {
+        /**since it's a hit, update LRU and update dirty flag**/
+        updatePromotionPolicy(cache, line);
+        if(op == 'w')
+            setFlags(line, DIRTY);
+
+        cache->verticesHit[node]++;
+    }
 }
 
 
@@ -586,17 +690,6 @@ void printStats(struct Cache *cache)
     printf(" -----------------------------------------------------\n");
     printf("| %-21s | %'-27lu | \n", "Evictions", getEVC(cache) );
     printf(" -----------------------------------------------------\n");
-
-    printf(" -----------------------------------------------------\n");
-
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Prefetcher Stats");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-21s | %'-27lu | \n", "Reads", getReadsPrefetch(cache) );
-    printf("| %-21s | %'-27lu | \n", "Read misses", getRMPrefetch(cache) );
-    printf(" -----------------------------------------------------\n");
-    printf("| %-21s | %-27.2f | \n", "Effeciency(%)", missRatePrefetch);
-    printf(" -----------------------------------------------------\n\n");
 
 
     uint64_t  numVerticesMiss = 0;
