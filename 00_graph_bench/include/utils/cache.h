@@ -3,21 +3,32 @@
 
 #include <stdint.h>
 
-#define BLOCKSIZE 128
-#define L1_SIZE 262144
-#define L1_ASSOC 8
+// #define BLOCKSIZE 128
+// #define L1_SIZE 262144
+// #define L1_ASSOC 8
 
 // #define BLOCKSIZE 64
 // #define L1_SIZE 32768
 // #define L1_ASSOC 8
 
-// #define BLOCKSIZE 64
-// #define L1_SIZE 1048576
-// #define L1_ASSOC 16
+#define BLOCKSIZE 64
+#define L1_SIZE 1048576
+#define L1_ASSOC 16
+#define POLICY 0
 
 // typedef uint64_t ulong;
 typedef unsigned char uchar;
 typedef uint32_t uint;
+
+// GRASP Policy Constants
+#define NUM_BITS_RRIP = 3
+
+#define DEFAULT_INSERT_RRPV ((2 << NUM_BITS_RRIP) - 1)
+#define COLD_INSERT_RRPV DEFAULT_INSERT_RRPV
+#define WARM_INSERT_RRPV DEFAULT_INSERT_RRPV - 1
+#define HOT_INSERT_RRPV  1
+#define HOT_HIT_RRPV  0
+#define RRPV_INIT DEFAULT_INSERT_RRPV
 
 
 enum
@@ -30,8 +41,10 @@ enum
 struct CacheLine
 {
     ulong tag;
-    ulong Flags;   // 0:invalid, 1:valid, 2:dirty
-    ulong seq;
+    ulong Flags;// 0:invalid, 1:valid, 2:dirty
+    ulong seq;  // LRU   POLICY 0
+    ulong RRPV; // GRASP POLICY 1
+    ulong freq; // LFU   POLICY 2
 };
 
 struct Cache
@@ -59,9 +72,8 @@ struct Cache
 
 struct DoubleTaggedCache
 {
-    struct Cache *cache; // psl_cache
-    struct Cache *doubleTag; // double tag
-    // struct Cache *warm_cache; // hot_cache
+    struct Cache *cold_cache; // psl_cache
+    struct Cache *warm_cache; // double tag
     struct Cache *hot_cache; // hot_cache
     struct Cache *ref_cache; // psl_cache
 };
@@ -96,7 +108,7 @@ void writeBack(struct Cache *cache, ulong addr);
 void initCache(struct Cache *cache, int s, int a, int b );
 void Access(struct Cache *cache, ulong addr, uchar op, uint node);
 void Prefetch(struct Cache *cache, ulong addr, uchar op, uint node);
-uint32_t checkPrefetch(struct Cache *cache, ulong addr);
+uint32_t checkInCache(struct Cache *cache, ulong addr);
 struct CacheLine *findLine(struct Cache *cache, ulong addr);
 void updateLRU(struct Cache *cache, struct CacheLine *line);
 struct CacheLine *getLRU(struct Cache *cache, ulong addr);

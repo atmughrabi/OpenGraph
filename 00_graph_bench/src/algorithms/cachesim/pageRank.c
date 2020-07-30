@@ -416,7 +416,7 @@ struct PageRankStats *pageRankPullRowGraphGrid(double epsilon,  uint32_t iterati
     // pageRankPrint(pageRanks, graph->num_vertices);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -544,7 +544,7 @@ struct PageRankStats *pageRankPullRowFixedPointGraphGrid(double epsilon,  uint32
     // pageRankPrint(pageRanks, graph->num_vertices);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -675,7 +675,7 @@ struct PageRankStats *pageRankPushColumnGraphGrid(double epsilon,  uint32_t iter
     // pageRankPrint(pageRanks, graph->num_vertices);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -803,7 +803,7 @@ struct PageRankStats *pageRankPushColumnFixedPointGraphGrid(double epsilon,  uin
     // pageRankPrint(pageRanks, graph->num_vertices);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -1025,9 +1025,9 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
 
 #ifdef CACHE_HARNESS
       printf("\n===================== cache Stats (cold_cache Stats) ======================\n");
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
       printf("\n===================== cache Stats (warm_cache Stats) ======================\n");
-    printStats(cache->doubleTag);
+    printStats(cache->warm_cache);
       printf("\n===================== cache Stats (hot_cache Stats) ======================\n");
     printStats(cache->hot_cache);
       printf("\n===================== cache Stats (ref_cache Stats) ======================\n");
@@ -1153,7 +1153,7 @@ struct PageRankStats *pageRankPushGraphCSR(double epsilon,  uint32_t iterations,
     free(riDividedOnDiClause);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -1303,7 +1303,7 @@ struct PageRankStats *pageRankPullFixedPointGraphCSR(double epsilon,  uint32_t i
     free(riDividedOnDiClause);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -1432,7 +1432,7 @@ struct PageRankStats *pageRankPushFixedPointGraphCSR(double epsilon,  uint32_t i
     free(riDividedOnDiClause);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -1578,7 +1578,7 @@ struct PageRankStats *pageRankDataDrivenPullGraphCSR(double epsilon,  uint32_t i
     free(riDividedOnDiClause);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -1728,7 +1728,7 @@ struct PageRankStats *pageRankDataDrivenPushGraphCSR(double epsilon,  uint32_t i
     free(riDividedOnDiClause);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 
@@ -1880,7 +1880,7 @@ struct PageRankStats *pageRankDataDrivenPullPushGraphCSR(double epsilon,  uint32
     free(riDividedOnDiClause);
 
 #ifdef CACHE_HARNESS
-    printStats(cache->cache);
+    printStats(cache->cold_cache);
     freeDoubleTaggedCache(cache);
 #endif
 

@@ -45,6 +45,14 @@ void setSeq(struct CacheLine *cacheLine, ulong Seq)
 {
     cacheLine->seq = Seq;
 }
+ulong getFreq(struct CacheLine *cacheLine)
+{
+    return cacheLine->freq;
+}
+void setFreq(struct CacheLine *cacheLine, ulong freq)
+{
+    cacheLine->freq = freq;
+}
 void setFlags(struct CacheLine *cacheLine, ulong flags)
 {
     cacheLine->Flags = flags;
@@ -123,10 +131,9 @@ struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_ass
 
     struct DoubleTaggedCache *cache = (struct DoubleTaggedCache *) my_malloc(sizeof(struct DoubleTaggedCache));
 
-    cache->cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
-    cache->doubleTag = newCache( l1_size / 2, 16, 4, num_vertices);
+    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
+    cache->warm_cache = newCache( l1_size / 2, 8, 4, num_vertices);
     cache->hot_cache = newCache( l1_size / 2, 8, 4, num_vertices);
-
     cache->ref_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
 
     return cache;
@@ -138,9 +145,9 @@ void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
 
     if(cache)
     {
-        freeCache(cache->cache);
+        freeCache(cache->cold_cache);
         freeCache(cache->ref_cache);
-        freeCache(cache->doubleTag);
+        freeCache(cache->warm_cache);
         freeCache(cache->hot_cache);
         free(cache);
 
@@ -322,7 +329,7 @@ void Access(struct Cache *cache, ulong addr, uchar op, uint node)
     }
 }
 
-uint32_t checkPrefetch(struct Cache *cache, ulong addr)
+uint32_t checkInCache(struct Cache *cache, ulong addr)
 {
     struct CacheLine *line = findLine(cache, addr);
 
