@@ -17,7 +17,7 @@
 #define BLOCKSIZE 64
 #define L1_SIZE 1048576
 #define L1_ASSOC 16
-#define POLICY 2
+#define POLICY 0
 
 // Policy TYPES
 #define LRU_POLICY 0
@@ -121,20 +121,10 @@ void Prefetch(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t nod
 uint32_t checkInCache(struct Cache *cache, uint64_t addr);
 
 struct CacheLine *findLine(struct Cache *cache, uint64_t addr);
-struct CacheLine *findLineLRU(struct Cache *cache, uint64_t addr);
-struct CacheLine *findLineLFU(struct Cache *cache, uint64_t addr);
-struct CacheLine *findLineGRASP(struct Cache *cache, uint64_t addr);
-
 struct CacheLine *fillLine(struct Cache *cache, uint64_t addr);
-struct CacheLine *fillLineLRU(struct Cache *cache, uint64_t addr);
-struct CacheLine *fillLineLFU(struct Cache *cache, uint64_t addr);
-struct CacheLine *fillLineGRASP(struct Cache *cache, uint64_t addr);
-
 struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr);
-struct CacheLine *findLineToReplaceLRU(struct Cache *cache, uint64_t addr);
-struct CacheLine *findLineToReplaceLFU(struct Cache *cache, uint64_t addr);
-struct CacheLine *findLineToReplaceGRASP(struct Cache *cache, uint64_t addr);
 
+struct CacheLine *getPolicy(struct Cache *cache, uint64_t addr);
 struct CacheLine *getLRU(struct Cache *cache, uint64_t addr);
 struct CacheLine *getLFU(struct Cache *cache, uint64_t addr);
 struct CacheLine *getGRASP(struct Cache *cache, uint64_t addr);

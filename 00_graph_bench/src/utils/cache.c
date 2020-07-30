@@ -383,28 +383,6 @@ void Prefetch(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t nod
 /*look up line*/
 struct CacheLine *findLine(struct Cache *cache, uint64_t addr)
 {
-    struct CacheLine *line = NULL;
-
-    switch(cache->policy)
-    {
-    case LRU_POLICY:
-        line = findLineLRU(cache, addr);
-        break;
-    case GRASP_POLICY:
-        line = findLineGRASP(cache, addr);
-        break;
-    case LFU_POLICY:
-        line = findLineLFU(cache, addr);
-        break;
-    default :
-        line = findLineLRU(cache, addr);
-    }
-
-    return line;
-}
-
-struct CacheLine *findLineLRU(struct Cache *cache, uint64_t addr)
-{
     uint64_t i, j, tag, pos;
 
     pos = cache->assoc;
@@ -426,53 +404,6 @@ struct CacheLine *findLineLRU(struct Cache *cache, uint64_t addr)
     }
 }
 
-struct CacheLine *findLineLFU(struct Cache *cache, uint64_t addr)
-{
-    uint64_t i, j, tag, pos;
-
-    pos = cache->assoc;
-    tag = calcTag(cache, addr);
-    i   = calcIndex(cache, addr);
-
-    for(j = 0; j < cache->assoc; j++)
-        if(isValid((&cache->cacheLines[i][j])))
-            if(getTag(&(cache->cacheLines[i][j])) == tag)
-            {
-                pos = j;
-                break;
-            }
-
-    if(pos == cache->assoc)
-        return NULL;
-    else
-    {
-        return &(cache->cacheLines[i][pos]);
-    }
-}
-
-struct CacheLine *findLineGRASP(struct Cache *cache, uint64_t addr)
-{
-    uint64_t i, j, tag, pos;
-
-    pos = cache->assoc;
-    tag = calcTag(cache, addr);
-    i   = calcIndex(cache, addr);
-
-    for(j = 0; j < cache->assoc; j++)
-        if(isValid((&cache->cacheLines[i][j])))
-            if(getTag(&(cache->cacheLines[i][j])) == tag)
-            {
-                pos = j;
-                break;
-            }
-
-    if(pos == cache->assoc)
-        return NULL;
-    else
-    {
-        return &(cache->cacheLines[i][pos]);
-    }
-}
 
 void updatePolicy(struct Cache *cache, struct CacheLine *line)
 {
@@ -509,6 +440,28 @@ void updateLFU(struct Cache *cache, struct CacheLine *line)
 void updateGRASP(struct Cache *cache, struct CacheLine *line)
 {
     setRRPV(line, cache->currentCycle);
+}
+
+struct CacheLine *getPolicy(struct Cache *cache, uint64_t addr)
+{
+    struct CacheLine *victim = NULL;
+
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        victim = getLRU(cache, addr);
+        break;
+    case GRASP_POLICY:
+        victim = getGRASP(cache, addr);
+        break;
+    case LFU_POLICY:
+        victim = getLFU(cache, addr);
+        break;
+    default :
+        victim = getLRU(cache, addr);
+    }
+
+    return victim;
 }
 
 /*return an invalid line as LRU, if any, otherwise return LRU line*/
@@ -575,73 +528,15 @@ struct CacheLine *getGRASP(struct Cache *cache, uint64_t addr)
 /*find a victim, move it to MRU position*/
 struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr)
 {
-    struct CacheLine *victim = NULL;
-
-    switch(cache->policy)
-    {
-    case LRU_POLICY:
-        victim = findLineToReplaceLRU(cache, addr);
-        break;
-    case GRASP_POLICY:
-        victim = findLineToReplaceGRASP(cache, addr);
-        break;
-    case LFU_POLICY:
-        victim = findLineToReplaceLFU(cache, addr);
-        break;
-    default :
-        victim = findLineToReplaceLRU(cache, addr);
-    }
-
-    return victim;
-}
-
-struct CacheLine *findLineToReplaceLRU(struct Cache *cache, uint64_t addr)
-{
-    struct CacheLine  *victim = getLRU(cache, addr);
-    updateLRU(cache, victim);
+    struct CacheLine  *victim = getPolicy(cache, addr);
+    updatePolicy(cache, victim);
 
     return (victim);
-}
-
-struct CacheLine *findLineToReplaceLFU(struct Cache *cache, uint64_t addr)
-{
-    struct CacheLine  *victim = getLFU(cache, addr);
-    updateLFU(cache, victim);
-
-    return (victim);
-}
-
-struct CacheLine *findLineToReplaceGRASP(struct Cache *cache, uint64_t addr)
-{
-
 }
 
 /*allocate a new line*/
 struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
 {
-    struct CacheLine *victim = NULL;
-
-    switch(cache->policy)
-    {
-    case LRU_POLICY:
-        victim = fillLineLRU(cache, addr);
-        break;
-    case GRASP_POLICY:
-        victim = fillLineGRASP(cache, addr);
-        break;
-    case LFU_POLICY:
-        victim = fillLineLFU(cache, addr);
-        break;
-    default :
-        victim = fillLineLRU(cache, addr);
-    }
-
-    return victim;
-}
-
-struct CacheLine *fillLineLRU(struct Cache *cache, uint64_t addr)
-{
-
     uint64_t tag;
 
     struct CacheLine *victim = findLineToReplace(cache, addr);
@@ -662,52 +557,6 @@ struct CacheLine *fillLineLRU(struct Cache *cache, uint64_t addr)
     return victim;
 }
 
-struct CacheLine *fillLineLFU(struct Cache *cache, uint64_t addr)
-{
-
-    uint64_t tag;
-
-    struct CacheLine *victim = findLineToReplace(cache, addr);
-    assert(victim != 0);
-    if(getFlags(victim) == DIRTY)
-    {
-        writeBack(cache, addr);
-    }
-
-    tag = calcTag(cache, addr);
-    setTag(victim, tag);
-    setFlags(victim, VALID);
-
-
-    /**note that this cache line has been already
-       upgraded to MRU in the previous function (findLineToReplace)**/
-
-    return victim;
-
-}
-
-struct CacheLine *fillLineGRASP(struct Cache *cache, uint64_t addr)
-{
-     uint64_t tag;
-
-    struct CacheLine *victim = findLineToReplace(cache, addr);
-    assert(victim != 0);
-    if(getFlags(victim) == DIRTY)
-    {
-        writeBack(cache, addr);
-    }
-
-    tag = calcTag(cache, addr);
-    setTag(victim, tag);
-    setFlags(victim, VALID);
-
-
-    /**note that this cache line has been already
-       upgraded to MRU in the previous function (findLineToReplace)**/
-
-    return victim;
-
-}
 
 void printStats(struct Cache *cache)
 {
