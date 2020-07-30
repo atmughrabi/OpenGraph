@@ -16,12 +16,19 @@
 #define L1_ASSOC 16
 #define POLICY 0
 
-// typedef uint64_t ulong;
+// typedef uint64_t uint64_t;
 typedef unsigned char uchar;
-typedef uint32_t uint;
+// typedef uint32_t uint32_t;
+
+
+// LRU Policy Constants
+
+#define INVALID 0
+#define VALID 1
+#define DIRTY 2
 
 // GRASP Policy Constants
-#define NUM_BITS_RRIP = 3
+#define NUM_BITS_RRIP 3
 
 #define DEFAULT_INSERT_RRPV ((2 << NUM_BITS_RRIP) - 1)
 #define COLD_INSERT_RRPV DEFAULT_INSERT_RRPV
@@ -31,89 +38,85 @@ typedef uint32_t uint;
 #define RRPV_INIT DEFAULT_INSERT_RRPV
 
 
-enum
-{
-    INVALID = 0,
-    VALID,
-    DIRTY,
-};
-
 struct CacheLine
 {
-    ulong tag;
-    ulong Flags;// 0:invalid, 1:valid, 2:dirty
-    ulong seq;  // LRU   POLICY 0
-    ulong RRPV; // GRASP POLICY 1
-    ulong freq; // LFU   POLICY 2
+    uint64_t tag;
+    uint8_t Flags;// 0:invalid, 1:valid, 2:dirty
+    uint64_t seq;  // LRU   POLICY 0
+    uint8_t RRPV; // GRASP POLICY 1
+    uint8_t freq; // LFU   POLICY 2
 };
 
 struct Cache
 {
-
-    ulong size, lineSize, assoc, sets, log2Sets, log2Blk, tagMask, numLines, evictions;
-    ulong reads, readMisses, readsPrefetch, readMissesPrefetch, writes, writeMisses, writeBacks;
-    ulong access_counter;
-
+    uint64_t size, lineSize, assoc, sets, log2Sets, log2Blk, tagMask, numLines, evictions;
+    uint64_t reads, readMisses, readsPrefetch, readMissesPrefetch, writes, writeMisses, writeBacks;
+    uint64_t access_counter;
+    uint64_t policy;
     struct CacheLine **cacheLines;
 
-    ulong currentCycle;
-    ulong currentCycle_cache;
-    ulong currentCycle_preftcher;
+    uint64_t currentCycle;
+    uint64_t currentCycle_cache;
+    uint64_t currentCycle_preftcher;
     //counters for graph performance on the cache
-    uint *verticesMiss;
-    uint *verticesHit;
-    uint *vertices_base_reuse;
-    uint *vertices_total_reuse;
-    uint *vertices_accesses;
-    uint  numVertices;
-
+    uint32_t *verticesMiss;
+    uint32_t *verticesHit;
+    uint32_t *vertices_base_reuse;
+    uint32_t *vertices_total_reuse;
+    uint32_t *vertices_accesses;
+    uint32_t  numVertices;
 };
 
 
 struct DoubleTaggedCache
 {
-    struct Cache *cold_cache; // psl_cache
-    struct Cache *warm_cache; // double tag
+    struct Cache *cold_cache;// psl_cache
+    struct Cache *warm_cache;// warm tag
     struct Cache *hot_cache; // hot_cache
     struct Cache *ref_cache; // psl_cache
 };
 
 ///cacheline helper functions
 void initCacheLine(struct CacheLine *cacheLine);
-ulong getTag(struct CacheLine *cacheLine);
-ulong getFlags(struct CacheLine *cacheLine);
-ulong getSeq(struct CacheLine *cacheLine);
-void setSeq(struct CacheLine *cacheLine, ulong Seq);
-void setFlags(struct CacheLine *cacheLine, ulong flags);
-void setTag(struct CacheLine *cacheLine, ulong a);
+uint64_t getTag(struct CacheLine *cacheLine);
+uint8_t getFlags(struct CacheLine *cacheLine);
+uint64_t getSeq(struct CacheLine *cacheLine);
+uint8_t getFreq(struct CacheLine *cacheLine);
+uint8_t getRRPV(struct CacheLine *cacheLine);
+void setFreq(struct CacheLine *cacheLine, uint8_t freq);
+void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV);
+void setSeq(struct CacheLine *cacheLine, uint64_t Seq);
+void setFlags(struct CacheLine *cacheLine, uint8_t flags);
+void setTag(struct CacheLine *cacheLine, uint64_t a);
+
 void invalidate(struct CacheLine *cacheLine);
 uint32_t isValid(struct CacheLine *cacheLine);
 
 
-ulong calcTag(struct Cache *cache, ulong addr);
-ulong calcIndex(struct Cache *cache, ulong addr);
-ulong calcAddr4Tag(struct Cache *cache, ulong tag);
+uint64_t calcTag(struct Cache *cache, uint64_t addr);
+uint64_t calcIndex(struct Cache *cache, uint64_t addr);
+uint64_t calcAddr4Tag(struct Cache *cache, uint64_t tag);
 
 
-ulong getRM(struct Cache *cache);
-ulong getWM(struct Cache *cache);
-ulong getReads(struct Cache *cache);
-ulong getWrites(struct Cache *cache);
-ulong getWB(struct Cache *cache);
-ulong getEVC(struct Cache *cache);
-ulong getRMPrefetch(struct Cache *cache);
-ulong getReadsPrefetch(struct Cache *cache);
-void writeBack(struct Cache *cache, ulong addr);
+uint64_t getRM(struct Cache *cache);
+uint64_t getWM(struct Cache *cache);
+uint64_t getReads(struct Cache *cache);
+uint64_t getWrites(struct Cache *cache);
+uint64_t getWB(struct Cache *cache);
+uint64_t getEVC(struct Cache *cache);
+uint64_t getRMPrefetch(struct Cache *cache);
+uint64_t getReadsPrefetch(struct Cache *cache);
+void writeBack(struct Cache *cache, uint64_t addr);
 
-void initCache(struct Cache *cache, int s, int a, int b );
-void Access(struct Cache *cache, ulong addr, uchar op, uint node);
-void Prefetch(struct Cache *cache, ulong addr, uchar op, uint node);
-uint32_t checkInCache(struct Cache *cache, ulong addr);
-struct CacheLine *findLine(struct Cache *cache, ulong addr);
+void initCache(struct Cache *cache, int s, int a, int b, int p);
+void Access(struct Cache *cache, uint64_t addr, uchar op, uint32_t node);
+void Prefetch(struct Cache *cache, uint64_t addr, uchar op, uint32_t node);
+uint32_t checkInCache(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLine(struct Cache *cache, uint64_t addr);
 void updateLRU(struct Cache *cache, struct CacheLine *line);
-struct CacheLine *getLRU(struct Cache *cache, ulong addr);
-struct CacheLine *findLineToReplace(struct Cache *cache, ulong addr);
-struct CacheLine *fillLine(struct Cache *cache, ulong addr);
+struct CacheLine *getLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr);
+struct CacheLine *fillLine(struct Cache *cache, uint64_t addr);
 void printStats(struct Cache *cache);
 
 struct Cache *newCache( uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices);
@@ -122,6 +125,6 @@ void freeCache(struct Cache *cache);
 
 struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices);
 void freeDoubleTaggedCache(struct DoubleTaggedCache *cache);
-void cache_graph_stats(struct Cache *cache, uint node);
+void online_cache_graph_stats(struct Cache *cache, uint32_t node);
 
 #endif

@@ -28,43 +28,54 @@ void initCacheLine(struct CacheLine *cacheLine)
     cacheLine->tag = 0;
     cacheLine->Flags = 0;
 }
-ulong getTag(struct CacheLine *cacheLine)
+uint64_t getTag(struct CacheLine *cacheLine)
 {
     return cacheLine->tag;
 }
 
-ulong getFlags(struct CacheLine *cacheLine)
+uint8_t getFlags(struct CacheLine *cacheLine)
 {
     return cacheLine->Flags;
 }
-ulong getSeq(struct CacheLine *cacheLine)
+uint64_t getSeq(struct CacheLine *cacheLine)
 {
     return cacheLine->seq;
 }
-void setSeq(struct CacheLine *cacheLine, ulong Seq)
-{
-    cacheLine->seq = Seq;
-}
-ulong getFreq(struct CacheLine *cacheLine)
+uint8_t getFreq(struct CacheLine *cacheLine)
 {
     return cacheLine->freq;
 }
-void setFreq(struct CacheLine *cacheLine, ulong freq)
+uint8_t getRRPV(struct CacheLine *cacheLine)
+{
+    return cacheLine->RRPV;
+}
+void setSeq(struct CacheLine *cacheLine, uint64_t Seq)
+{
+    cacheLine->seq = Seq;
+}
+void setFreq(struct CacheLine *cacheLine, uint8_t freq)
 {
     cacheLine->freq = freq;
 }
-void setFlags(struct CacheLine *cacheLine, ulong flags)
+void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV)
+{
+    cacheLine->RRPV = RRPV;
+}
+void setFlags(struct CacheLine *cacheLine, uint8_t flags)
 {
     cacheLine->Flags = flags;
 }
-void setTag(struct CacheLine *cacheLine, ulong a)
+void setTag(struct CacheLine *cacheLine, uint64_t a)
 {
     cacheLine->tag = a;
 }
 void invalidate(struct CacheLine *cacheLine)
 {
+    cacheLine->seq = 0;
     cacheLine->tag = 0;    //useful function
     cacheLine->Flags = INVALID;
+    cacheLine->RRPV = RRPV_INIT;
+    cacheLine->freq = 0;
 }
 uint32_t isValid(struct CacheLine *cacheLine)
 {
@@ -74,53 +85,53 @@ uint32_t isValid(struct CacheLine *cacheLine)
 
 //cache helper functions
 
-ulong calcTag(struct Cache *cache, ulong addr)
+uint64_t calcTag(struct Cache *cache, uint64_t addr)
 {
     return (addr >> (cache->log2Blk) );
 }
-ulong calcIndex(struct Cache *cache, ulong addr)
+uint64_t calcIndex(struct Cache *cache, uint64_t addr)
 {
     return ((addr >> cache->log2Blk) & cache->tagMask);
 }
-ulong calcAddr4Tag(struct Cache *cache, ulong tag)
+uint64_t calcAddr4Tag(struct Cache *cache, uint64_t tag)
 {
     return (tag << (cache->log2Blk));
 }
 
-ulong getRM(struct Cache *cache)
+uint64_t getRM(struct Cache *cache)
 {
     return cache->readMisses;
 }
-ulong getWM(struct Cache *cache)
+uint64_t getWM(struct Cache *cache)
 {
     return cache->writeMisses;
 }
-ulong getReads(struct Cache *cache)
+uint64_t getReads(struct Cache *cache)
 {
     return cache->reads;
 }
-ulong getWrites(struct Cache *cache)
+uint64_t getWrites(struct Cache *cache)
 {
     return cache->writes;
 }
-ulong getWB(struct Cache *cache)
+uint64_t getWB(struct Cache *cache)
 {
     return cache->writeBacks;
 }
-ulong getEVC(struct Cache *cache)
+uint64_t getEVC(struct Cache *cache)
 {
     return cache->evictions;
 }
-ulong getRMPrefetch(struct Cache *cache)
+uint64_t getRMPrefetch(struct Cache *cache)
 {
     return cache->readMissesPrefetch;
 }
 
-ulong getReadsPrefetch(struct Cache *cache)
+uint64_t getReadsPrefetch(struct Cache *cache)
 {
     return cache->readsPrefetch;
 }
-void writeBack(struct Cache *cache, ulong addr)
+void writeBack(struct Cache *cache, uint64_t addr)
 {
     cache->writeBacks++;
 }
@@ -146,9 +157,9 @@ void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
     if(cache)
     {
         freeCache(cache->cold_cache);
-        freeCache(cache->ref_cache);
         freeCache(cache->warm_cache);
         freeCache(cache->hot_cache);
+        freeCache(cache->ref_cache);
         free(cache);
 
     }
@@ -159,18 +170,18 @@ void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
 struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices)
 {
 
-    ulong i;
+    uint64_t i;
 
     struct Cache *cache = ( struct Cache *) my_malloc(sizeof(struct Cache));
 
     cache->numVertices = num_vertices;
-    initCache(cache, l1_size, l1_assoc, blocksize);
+    initCache(cache, l1_size, l1_assoc, blocksize, 0);
 
-    cache->verticesMiss = (uint *)my_malloc(sizeof(uint) * num_vertices);
-    cache->verticesHit = (uint *)my_malloc(sizeof(uint) * num_vertices);
-    cache->vertices_base_reuse = (uint *)my_malloc(sizeof(uint) * num_vertices);
-    cache->vertices_total_reuse = (uint *)my_malloc(sizeof(uint) * num_vertices);
-    cache->vertices_accesses = (uint *)my_malloc(sizeof(uint) * num_vertices);
+    cache->verticesMiss = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->verticesHit = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->vertices_base_reuse = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->vertices_total_reuse = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->vertices_accesses = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
 
 
     for(i = 0; i < num_vertices; i++)
@@ -189,16 +200,20 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
 
 void freeCache(struct Cache *cache)
 {
-    ulong i;
+    uint64_t i;
 
     if(cache)
     {
-
         if(cache->verticesMiss)
             free(cache->verticesMiss);
         if(cache->verticesHit)
             free(cache->verticesHit);
-
+        if(cache->vertices_base_reuse)
+            free(cache->vertices_base_reuse);
+        if(cache->vertices_total_reuse)
+            free(cache->vertices_total_reuse);
+        if(cache->vertices_accesses)
+            free(cache->vertices_accesses);
 
         if(cache->cacheLines)
         {
@@ -206,7 +221,6 @@ void freeCache(struct Cache *cache)
             {
                 if(cache->cacheLines[i])
                     free(cache->cacheLines[i]);
-
             }
             free(cache->cacheLines);
         }
@@ -215,19 +229,20 @@ void freeCache(struct Cache *cache)
 
 }
 
-void initCache(struct Cache *cache, int s, int a, int b )
+void initCache(struct Cache *cache, int s, int a, int b, int p)
 {
-    ulong i, j;
+    uint64_t i, j;
     cache->reads = cache->readMisses = cache->readsPrefetch = cache->readMissesPrefetch = cache->writes = cache->evictions = 0;
     cache->writeMisses = cache->writeBacks = cache->currentCycle_preftcher = cache->currentCycle_cache = cache->currentCycle = 0;
 
-    cache->size       = (ulong)(s);
-    cache->lineSize   = (ulong)(b);
-    cache->assoc      = (ulong)(a);
-    cache->sets       = (ulong)((s / b) / a);
-    cache->numLines   = (ulong)(s / b);
-    cache->log2Sets   = (ulong)(log2(cache->sets));
-    cache->log2Blk    = (ulong)(log2(b));
+    cache->policy     = (uint64_t)(p);
+    cache->size       = (uint64_t)(s);
+    cache->lineSize   = (uint64_t)(b);
+    cache->assoc      = (uint64_t)(a);
+    cache->sets       = (uint64_t)((s / b) / a);
+    cache->numLines   = (uint64_t)(s / b);
+    cache->log2Sets   = (uint64_t)(log2(cache->sets));
+    cache->log2Blk    = (uint64_t)(log2(b));
     cache->access_counter    = 0;
 
     //*******************//
@@ -254,9 +269,9 @@ void initCache(struct Cache *cache, int s, int a, int b )
     }
 }
 
-void cache_graph_stats(struct Cache *cache, uint node)
+void online_cache_graph_stats(struct Cache *cache, uint32_t node)
 {
-    uint first_Access = 0;
+    uint32_t first_Access = 0;
 
     cache->vertices_accesses[node]++;
     cache->access_counter++;
@@ -276,10 +291,10 @@ void cache_graph_stats(struct Cache *cache, uint node)
     }
 }
 
-void Access(struct Cache *cache, ulong addr, uchar op, uint node)
+void Access(struct Cache *cache, uint64_t addr, uchar op, uint32_t node)
 {
 
-    cache_graph_stats(cache, node);
+    online_cache_graph_stats(cache, node);
     cache->currentCycle++;/*per cache global counter to maintain LRU order
 
       among cache ways, updated on every cache access*/
@@ -329,7 +344,7 @@ void Access(struct Cache *cache, ulong addr, uchar op, uint node)
     }
 }
 
-uint32_t checkInCache(struct Cache *cache, ulong addr)
+uint32_t checkInCache(struct Cache *cache, uint64_t addr)
 {
     struct CacheLine *line = findLine(cache, addr);
 
@@ -349,7 +364,7 @@ uint32_t checkInCache(struct Cache *cache, ulong addr)
     return 0;
 }
 
-void Prefetch(struct Cache *cache, ulong addr, uchar op, uint node)
+void Prefetch(struct Cache *cache, uint64_t addr, uchar op, uint32_t node)
 {
     cache->currentCycle++;/*per cache global counter to maintain LRU order
       among cache ways, updated on every cache access*/
@@ -376,9 +391,9 @@ void Prefetch(struct Cache *cache, ulong addr, uchar op, uint node)
 
 
 /*look up line*/
-struct CacheLine *findLine(struct Cache *cache, ulong addr)
+struct CacheLine *findLine(struct Cache *cache, uint64_t addr)
 {
-    ulong i, j, tag, pos;
+    uint64_t i, j, tag, pos;
 
     pos = cache->assoc;
     tag = calcTag(cache, addr);
@@ -409,9 +424,9 @@ void updateLRU(struct Cache *cache, struct CacheLine *line)
 }
 
 /*return an invalid line as LRU, if any, otherwise return LRU line*/
-struct CacheLine *getLRU(struct Cache *cache, ulong addr)
+struct CacheLine *getLRU(struct Cache *cache, uint64_t addr)
 {
-    ulong i, j, victim, min;
+    uint64_t i, j, victim, min;
 
     victim = cache->assoc;
     min    = cache->currentCycle;
@@ -438,7 +453,7 @@ struct CacheLine *getLRU(struct Cache *cache, ulong addr)
 }
 
 /*find a victim, move it to MRU position*/
-struct CacheLine *findLineToReplace(struct Cache *cache, ulong addr)
+struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr)
 {
     struct CacheLine  *victim = getLRU(cache, addr);
     updateLRU(cache, victim);
@@ -447,9 +462,9 @@ struct CacheLine *findLineToReplace(struct Cache *cache, ulong addr)
 }
 
 /*allocate a new line*/
-struct CacheLine *fillLine(struct Cache *cache, ulong addr)
+struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
 {
-    ulong tag;
+    uint64_t tag;
 
     struct CacheLine *victim = findLineToReplace(cache, addr);
     assert(victim != 0);
@@ -510,15 +525,15 @@ void printStats(struct Cache *cache)
     printf(" -----------------------------------------------------\n\n");
 
 
-    ulong  numVerticesMiss = 0;
-    ulong  totalVerticesMiss = 0;
+    uint64_t  numVerticesMiss = 0;
+    uint64_t  totalVerticesMiss = 0;
     double  avgVerticesreuse = 0;
-    ulong   accVerticesAccess = 0;
-    // ulong   minReuse = 0;
-    // uint  maxVerticesMiss = 0;
-    // uint  maxNode = 0;
+    uint64_t   accVerticesAccess = 0;
+    // uint64_t   minReuse = 0;
+    // uint32_t  maxVerticesMiss = 0;
+    // uint32_t  maxNode = 0;
 
-    uint i;
+    uint32_t i;
     for(i = 0; i < cache->numVertices; i++)
     {
         if(cache->verticesMiss[i] > 5)
