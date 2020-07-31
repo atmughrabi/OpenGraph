@@ -28,11 +28,14 @@ void initCacheLine(struct CacheLine *cacheLine)
     cacheLine->tag = 0;
     cacheLine->Flags = 0;
 }
+uint64_t getAddr(struct CacheLine *cacheLine)
+{
+    return cacheLine->addr;
+}
 uint64_t getTag(struct CacheLine *cacheLine)
 {
     return cacheLine->tag;
 }
-
 uint8_t getFlags(struct CacheLine *cacheLine)
 {
     return cacheLine->Flags;
@@ -68,6 +71,10 @@ void setFlags(struct CacheLine *cacheLine, uint8_t flags)
 void setTag(struct CacheLine *cacheLine, uint64_t a)
 {
     cacheLine->tag = a;
+}
+void setAddr(struct CacheLine *cacheLine, uint64_t addr)
+{
+    cacheLine->addr = addr;
 }
 void invalidate(struct CacheLine *cacheLine)
 {
@@ -433,8 +440,51 @@ void updateInsertLFU(struct Cache *cache, struct CacheLine *line)
 
 void updateInsertGRASP(struct Cache *cache, struct CacheLine *line)
 {
-    setRRPV(line, cache->currentCycle);
+    if(inHotRegion(cache, line))
+    {
+        setRRPV(line, HOT_INSERT_RRPV);
+    }
+    else if (inWarmRegion(cache, line))
+    {
+        setRRPV(line, WARM_INSERT_RRPV);
+    }
+    else
+    {
+        setRRPV(line, DEFAULT_INSERT_RRPV);
+    }
 }
+
+uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line)
+{
+    uint32_t v;
+    uint32_t result = 0;
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        if((line->addr >=  cache->propertyRegions[v].lower_bound) && (line->addr < cache->propertyRegions[v].hot_bound))
+        {
+            result = 1;
+        }
+    }
+
+    return result;
+}
+
+uint32_t inWarmRegion(struct Cache *cache, struct CacheLine *line)
+{
+    uint32_t v;
+    uint32_t result = 0;
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        if((line->addr >=  cache->propertyRegions[v].hot_bound) && (line->addr < cache->propertyRegions[v].warm_bound))
+        {
+            result = 1;
+        }
+    }
+    return result;
+}
+
 
 // ********************************************************************************************
 // ***************         PROMOTION POLICIES                                    **************
@@ -474,7 +524,17 @@ void updatePromoteLFU(struct Cache *cache, struct CacheLine *line)
 
 void updatePromoteGRASP(struct Cache *cache, struct CacheLine *line)
 {
-    setRRPV(line, cache->currentCycle);
+    if(inHotRegion(cache, line))
+    {
+        setRRPV(line, HOT_HIT_RRPV);
+    }
+    else
+    {
+        uint8_t RRPV = getRRPV(line);
+        if(RRPV > 0)
+            RRPV--;
+        setRRPV(line, RRPV);
+    }
 }
 
 // ********************************************************************************************
@@ -561,7 +621,45 @@ struct CacheLine *getVictimLFU(struct Cache *cache, uint64_t addr)
 
 struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr)
 {
+    uint64_t i, j, victim, min;
 
+    victim = cache->assoc;
+    min    = 0;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0) return &(cache->cacheLines[i][j]);
+    }
+
+    victim = 0;
+    min = getRRPV(&(cache->cacheLines[i][0]));
+
+    for(j = 1; j < cache->assoc; j++)
+    {
+        if(getRRPV(&(cache->cacheLines[i][j])) > min)
+        {
+            victim = j;
+            min = getRRPV(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+
+    // not in the paper optimizaiton
+    if (min < DEFAULT_INSERT_RRPV)
+    {
+        int diff = DEFAULT_INSERT_RRPV - min;
+        for(j = 1; j < cache->assoc; j++)
+        {
+            uint8_t RRPV = getRRPV(&(cache->cacheLines[i][j])) + diff;
+            setRRPV(&(cache->cacheLines[i][j]), RRPV);
+            assert(RRPV <= DEFAULT_INSERT_RRPV);
+        }
+    }
+
+    cache->evictions++;
+    cache->cacheLines[i][victim].addr = addr; // update victim with new address so we simulate hot/cold insertion
+    return &(cache->cacheLines[i][victim]);
 }
 
 // ********************************************************************************************
@@ -616,8 +714,8 @@ struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
 
     tag = calcTag(cache, addr);
     setTag(victim, tag);
+    setAddr(victim, addr);
     setFlags(victim, VALID);
-
 
     /**note that this cache line has been already
        upgraded to MRU in the previous function (findLineToReplace)**/
@@ -674,6 +772,11 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 }
 
 // ********************************************************************************************
+// ***************               GRASP Policy                                    **************
+// ********************************************************************************************
+
+
+// ********************************************************************************************
 // ***************               GRASP Initializaiton                            **************
 // ********************************************************************************************
 
@@ -681,7 +784,7 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
 {
     uint32_t v;
     uint64_t total_properties_size = 0;
-    uint32_t property_fraction = 100 / cache->numPropertyRegions;
+    // uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
 
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
@@ -709,27 +812,6 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
         }
     }
 
-
-    for (v = 0; v < cache->numPropertyRegions; ++v)
-    {
-
-        printf(" -----------------------------------------------------\n");
-        printf("| %-25s | %-24u| \n", "ID", v);
-
-        printf(" -----------------------------------------------------\n");
-        printf("| %-25s | %-24u| \n", "size", propertyMetaData[v].size);
-        printf("| %-25s | %-24u| \n", "data_type_size", propertyMetaData[v].data_type_size);
-        printf("| %-25s | 0x%-22lx| \n", "base_address", propertyMetaData[v].base_address);
-        printf(" -----------------------------------------------------\n");
-
-        printf(" -----------------------------------------------------\n");
-        printf("| %-25s | %-24u| \n", "fraction", cache->propertyRegions[v].fraction );
-        printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->propertyRegions[v].lower_bound );
-        printf("| %-25s | 0x%-22lx| \n", "hot_bound", cache->propertyRegions[v].hot_bound );
-        printf("| %-25s | 0x%-22lx| \n", "warm_bound", cache->propertyRegions[v].warm_bound );
-        printf("| %-25s | 0x%-22lx| \n", "upper_bound", cache->propertyRegions[v].upper_bound );
-        printf(" -----------------------------------------------------\n");
-    }
 }
 
 // ********************************************************************************************
@@ -745,6 +827,8 @@ void printStats(struct Cache *cache)
     float missRatePrefetch = (double)(( getRMPrefetch(cache)) * 100) / (cache->currentCycle_preftcher); //calculate miss rate
     missRatePrefetch = roundf(missRatePrefetch * 100) / 100;
 
+    uint32_t v;
+    uint32_t i;
 
     printf("\n -----------------------------------------------------\n");
     printf(" -----------------------------------------------------\n");
@@ -763,7 +847,21 @@ void printStats(struct Cache *cache)
     printf("| %-21s | %'-27lu | \n", "Evictions", getEVC(cache) );
     printf(" -----------------------------------------------------\n");
 
-
+    if(cache->policy == GRASP_POLICY)
+    {
+        for (v = 0; v < cache->numPropertyRegions; ++v)
+        {
+            printf(" -----------------------------------------------------\n");
+            printf("| %-25s | %-24u| \n", "ID", v);
+            printf(" -----------------------------------------------------\n");
+            printf("| %-25s | %-24u| \n", "fraction", cache->propertyRegions[v].fraction );
+            printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->propertyRegions[v].lower_bound );
+            printf("| %-25s | 0x%-22lx| \n", "hot_bound", cache->propertyRegions[v].hot_bound );
+            printf("| %-25s | 0x%-22lx| \n", "warm_bound", cache->propertyRegions[v].warm_bound );
+            printf("| %-25s | 0x%-22lx| \n", "upper_bound", cache->propertyRegions[v].upper_bound );
+            printf(" -----------------------------------------------------\n");
+        }
+    }
     uint64_t  numVerticesMiss = 0;
     uint64_t  totalVerticesMiss = 0;
     double  avgVerticesreuse = 0;
@@ -772,7 +870,7 @@ void printStats(struct Cache *cache)
     // uint32_t  maxVerticesMiss = 0;
     // uint32_t  maxNode = 0;
 
-    uint32_t i;
+
     for(i = 0; i < cache->numVertices; i++)
     {
         if(cache->verticesMiss[i] > 5)

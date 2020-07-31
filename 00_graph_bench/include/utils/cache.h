@@ -25,7 +25,9 @@
 #define LFU_POLICY 2
 
 // CHOOSE global Policy
-#define POLICY LRU_POLICY
+// #define POLICY LRU_POLICY
+#define POLICY GRASP_POLICY
+// #define POLICY LFU_POLICY
 
 // Cache states Constants
 #define INVALID 0
@@ -65,6 +67,7 @@ struct PropertyRegion
 
 struct CacheLine
 {
+    uint64_t addr;
     uint64_t tag;
     uint8_t Flags;// 0:invalid, 1:valid, 2:dirty
     uint64_t seq; // LRU   POLICY 0
@@ -112,6 +115,7 @@ void initCache(struct Cache *cache, int s, int a, int b, int p);
 void initCacheLine(struct CacheLine *cacheLine);
 
 uint64_t getTag(struct CacheLine *cacheLine);
+uint64_t getAddr(struct CacheLine *cacheLine);
 uint8_t getFlags(struct CacheLine *cacheLine);
 uint64_t getSeq(struct CacheLine *cacheLine);
 uint8_t getFreq(struct CacheLine *cacheLine);
@@ -121,6 +125,8 @@ void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV);
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq);
 void setFlags(struct CacheLine *cacheLine, uint8_t flags);
 void setTag(struct CacheLine *cacheLine, uint64_t a);
+void setAddr(struct CacheLine *cacheLine, uint64_t addr);
+
 
 void invalidate(struct CacheLine *cacheLine);
 uint32_t isValid(struct CacheLine *cacheLine);
@@ -205,10 +211,11 @@ void freeDoubleTaggedCache(struct DoubleTaggedCache *cache);
 void online_cache_graph_stats(struct Cache *cache, uint32_t node);
 
 // ********************************************************************************************
-// ***************               GRASP Initializaiton                            **************
+// ***************               GRASP Policy                                    **************
 // ********************************************************************************************
 
 void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData);
-
+uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line);
+uint32_t inWarmRegion(struct Cache *cache, struct CacheLine *line);
 
 #endif

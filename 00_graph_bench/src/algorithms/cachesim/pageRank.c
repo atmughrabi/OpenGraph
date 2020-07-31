@@ -1035,6 +1035,7 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
         printf("| %-25s | 0x%-22lx| \n", "base_address", propertyMetaData[v].base_address);
         printf(" -----------------------------------------------------\n");
     }
+
     printf("\n===================== cache Stats (cold_cache Stats) =================\n");
     printStats(cache->cold_cache);
     printf("\n===================== cache Stats (warm_cache Stats) =================\n");
