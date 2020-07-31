@@ -21,13 +21,19 @@
 
 // Policy TYPES
 #define LRU_POLICY 0
-#define GRASP_POLICY 1
-#define LFU_POLICY 2
+#define LFU_POLICY 1
+#define GRASP_POLICY 2
+#define SRRIP_POLICY 3
+#define PIN_POLICY 4
+#define PLRU_POLICY 5
 
-// CHOOSE global Policy
+// CHOOSE global Policys
 // #define POLICY LRU_POLICY
-#define POLICY GRASP_POLICY
+// #define POLICY GRASP_POLICY
 // #define POLICY LFU_POLICY
+#define POLICY SRRIP_POLICY
+// #define POLICY PIN_POLICY
+// #define POLICY PLRU_POLICY
 
 // Cache states Constants
 #define INVALID 0
@@ -36,17 +42,24 @@
 
 // LFU Policy Constants
 #define FREQ_BITS 8
-#define FREQ_MAX (uint8_t)((uint8_t)(2 << FREQ_BITS) - 1)
+#define FREQ_MAX (uint8_t)((uint32_t)(1 << FREQ_BITS) - 1)
 
 // GRASP Policy Constants RRIP (re-refernece insertion prediction)
 #define NUM_BITS_RRIP 3
 
-#define DEFAULT_INSERT_RRPV ((2 << NUM_BITS_RRIP) - 1)
+#define DEFAULT_INSERT_RRPV ((1 << NUM_BITS_RRIP) - 1)
 #define COLD_INSERT_RRPV DEFAULT_INSERT_RRPV
 #define WARM_INSERT_RRPV DEFAULT_INSERT_RRPV - 1
 #define HOT_INSERT_RRPV  1
 #define HOT_HIT_RRPV  0
 #define RRPV_INIT DEFAULT_INSERT_RRPV
+
+// SRRIP Policy Constants RRIP (re-refernece insertion prediction)
+#define NUM_BITS_SRRIP 2
+
+#define DEFAULT_INSERT_SRRPV ((1 << NUM_BITS_SRRIP) - 1)
+#define HOT_HIT_SRRPV  0
+#define SRRPV_INIT DEFAULT_INSERT_RRPV
 
 
 struct PropertyMetaData
@@ -69,10 +82,12 @@ struct CacheLine
 {
     uint64_t addr;
     uint64_t tag;
-    uint8_t Flags;// 0:invalid, 1:valid, 2:dirty
-    uint64_t seq; // LRU   POLICY 0
-    uint8_t RRPV; // GRASP POLICY 1
-    uint8_t freq; // LFU   POLICY 2
+    uint8_t Flags; // 0:invalid, 1:valid, 2:dirty
+    uint64_t seq;  // LRU   POLICY 0
+    uint8_t freq;  // LFU   POLICY 1
+    uint8_t RRPV;  // GRASP POLICY 2
+    uint8_t SRRPV; // SRRPV POLICY 3
+    uint8_t PIN;   // PIN POLICY 4
 };
 
 struct Cache
@@ -166,6 +181,9 @@ struct CacheLine *getVictimPolicy(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimLRU(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimLFU(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimPIN(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr);
 
 // ********************************************************************************************
 // ***************         INSERTION POLICIES                                    **************
@@ -175,6 +193,9 @@ void updateInsertionPolicy(struct Cache *cache, struct CacheLine *line);
 void updateInsertLRU(struct Cache *cache, struct CacheLine *line);
 void updateInsertLFU(struct Cache *cache, struct CacheLine *line);
 void updateInsertGRASP(struct Cache *cache, struct CacheLine *line);
+void updateInsertSRRIP(struct Cache *cache, struct CacheLine *line);
+void updateInsertPIN(struct Cache *cache, struct CacheLine *line);
+void updateInsertPLRU(struct Cache *cache, struct CacheLine *line);
 
 // ********************************************************************************************
 // ***************         PROMOTION POLICIES                                    **************
@@ -184,6 +205,9 @@ void updatePromotionPolicy(struct Cache *cache, struct CacheLine *line);
 void updatePromoteLRU(struct Cache *cache, struct CacheLine *line);
 void updatePromoteLFU(struct Cache *cache, struct CacheLine *line);
 void updatePromoteGRASP(struct Cache *cache, struct CacheLine *line);
+void updatePromoteSRRIP(struct Cache *cache, struct CacheLine *line);
+void updatePromotePIN(struct Cache *cache, struct CacheLine *line);
+void updatePromotePLRU(struct Cache *cache, struct CacheLine *line);
 
 // ********************************************************************************************
 // ***************         AGING POLICIES                                        **************
@@ -193,7 +217,9 @@ void updateAgingPolicy(struct Cache *cache);
 void updateAgeLRU(struct Cache *cache);
 void updateAgeLFU(struct Cache *cache);
 void updateAgeGRASP(struct Cache *cache);
-
+void updateAgeSRRIP(struct Cache *cache);
+void updateAgePIN(struct Cache *cache);
+void updateAgePLRU(struct Cache *cache);
 
 // ********************************************************************************************
 // ***************               Stats output                                    **************

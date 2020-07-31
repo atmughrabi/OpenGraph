@@ -147,7 +147,7 @@ struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_ass
 {
     struct DoubleTaggedCache *cache = (struct DoubleTaggedCache *) my_malloc(sizeof(struct DoubleTaggedCache));
 
-    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, policy, numPropertyRegions);
+    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, LRU_POLICY, numPropertyRegions);
     cache->warm_cache = newCache( l1_size / 2, 8, 4, num_vertices, policy, numPropertyRegions);
     cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices, policy, numPropertyRegions);
     cache->ref_cache  = newCache( l1_size, l1_assoc, blocksize, num_vertices, policy, numPropertyRegions);
