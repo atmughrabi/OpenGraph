@@ -317,7 +317,7 @@ struct PageRankStats *pageRankPullRowGraphGrid(double epsilon,  uint32_t iterati
     uint32_t totalPartitions  = graph->grid->num_partitions;
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
 
@@ -440,7 +440,7 @@ struct PageRankStats *pageRankPullRowFixedPointGraphGrid(double epsilon,  uint32
     uint32_t activeVertices = 0;
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
     // float init_pr = 1.0f / (float)graph->num_vertices;
@@ -572,7 +572,7 @@ struct PageRankStats *pageRankPushColumnGraphGrid(double epsilon,  uint32_t iter
     uint32_t activeVertices = 0;
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
     // float init_pr = 1.0f / (float)graph->num_vertices;
@@ -699,7 +699,7 @@ struct PageRankStats *pageRankPushColumnFixedPointGraphGrid(double epsilon,  uin
 
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
     // float init_pr = 1.0f / (float)graph->num_vertices;
@@ -885,9 +885,6 @@ struct PageRankStats *pageRankGraphCSR(double epsilon,  uint32_t iterations, uin
 struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph)
 {
 
-    int *finish_flag;
-    finish_flag = (int *) my_malloc(sizeof(int));
-
     double error_total = 0.0;
     // uint32_t j;
     uint32_t v;
@@ -902,9 +899,23 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     uint32_t *sorted_edges_array = NULL;
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
+    float *pageRanksNext = (float *) my_malloc(graph->num_vertices * sizeof(float));
+    float *riDividedOnDiClause = (float *) my_malloc(graph->num_vertices * sizeof(float));
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    uint32_t numPropertyRegions = 2;
+    struct PropertyMetaData *propertyMetaData = (struct PropertyMetaData *) my_malloc(graph->num_vertices * sizeof(struct PropertyMetaData));
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, numPropertyRegions);
+
+    propertyMetaData[0].base_address = (uint64_t)&pageRanksNext[0];
+    propertyMetaData[0].size = graph->num_vertices;
+    propertyMetaData[0].data_type_size = sizeof(float);
+
+    propertyMetaData[1].base_address = (uint64_t)&riDividedOnDiClause[0];
+    propertyMetaData[1].size = graph->num_vertices;
+    propertyMetaData[1].data_type_size = sizeof(float);
+
+    initDoubleTaggedCacheRegion(cache, propertyMetaData);
 #endif
 
 #if DIRECTED
@@ -915,11 +926,6 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
 #endif
 
-
-    float *pageRanksNext = (float *) my_malloc(graph->num_vertices * sizeof(float));
-    float *pageRanksNext2 = (float *) my_malloc(graph->num_vertices * sizeof(float));
-    float *riDividedOnDiClause = (float *) my_malloc(graph->num_vertices * sizeof(float));
-    float *riDividedOnDiClause2 = (float *) my_malloc(graph->num_vertices * sizeof(float));
 
 
     printf(" -----------------------------------------------------\n");
@@ -948,12 +954,10 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
             if(graph->vertices->out_degree[v])
             {
                 riDividedOnDiClause[v] = stats->pageRanks[v] / graph->vertices->out_degree[v];
-                riDividedOnDiClause2[v] = stats->pageRanks[v] / graph->vertices->out_degree[v];
             }
             else
             {
                 riDividedOnDiClause[v] = 0.0f;
-                riDividedOnDiClause2[v] = 0.0f;
             }
         }
 
@@ -967,14 +971,13 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
 #endif
 
 
-        #pragma omp parallel for private(v) shared(epsilon, pageRanksNext2, pageRanksNext,stats) reduction(+ : error_total, activeVertices)
+        #pragma omp parallel for private(v) shared(epsilon, pageRanksNext,stats) reduction(+ : error_total, activeVertices)
         for(v = 0; v < graph->num_vertices; v++)
         {
             float prevPageRank =  stats->pageRanks[v];
             float nextPageRank =  stats->base_pr + (stats->damp * pageRanksNext[v]);
             stats->pageRanks[v] = nextPageRank;
             pageRanksNext[v] = 0.0f;
-            pageRanksNext2[v] = 0.0f;
             double error = fabs( nextPageRank - prevPageRank);
             error_total += (error / graph->num_vertices);
 
@@ -1015,24 +1018,34 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     // printf(" -----------------------------------------------------\n");
 
     // pageRankPrint(pageRanks, graph->num_vertices);
-    free(finish_flag);
+
     free(timer);
     free(timer_inner);
     free(pageRanksNext);
     free(riDividedOnDiClause);
-    free(pageRanksNext2);
-    free(riDividedOnDiClause2);
 
 #ifdef CACHE_HARNESS
-      printf("\n===================== cache Stats (cold_cache Stats) ======================\n");
+    printf("\n=====================      Property Regions          =================\n");
+
+    for (v = 0; v < numPropertyRegions; ++v)
+    {
+        printf(" -----------------------------------------------------\n");
+        printf("| %-25s | %-24u| \n", "size", propertyMetaData[v].size);
+        printf("| %-25s | %-24u| \n", "data_type_size", propertyMetaData[v].data_type_size);
+        printf("| %-25s | 0x%-22lx| \n", "base_address", propertyMetaData[v].base_address);
+        printf(" -----------------------------------------------------\n");
+    }
+    printf("\n===================== cache Stats (cold_cache Stats) =================\n");
     printStats(cache->cold_cache);
-      printf("\n===================== cache Stats (warm_cache Stats) ======================\n");
+    printf("\n===================== cache Stats (warm_cache Stats) =================\n");
     printStats(cache->warm_cache);
-      printf("\n===================== cache Stats (hot_cache Stats) ======================\n");
+    printf("\n===================== cache Stats (hot_cache Stats)  =================\n");
     printStats(cache->hot_cache);
-      printf("\n===================== cache Stats (ref_cache Stats) ======================\n");
+    printf("\n===================== cache Stats (ref_cache Stats)  =================\n");
     printStats(cache->ref_cache);
+
     freeDoubleTaggedCache(cache);
+    free(propertyMetaData);
 #endif
 
     stats->error_total = error_total;
@@ -1055,7 +1068,7 @@ struct PageRankStats *pageRankPushGraphCSR(double epsilon,  uint32_t iterations,
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
 
@@ -1183,7 +1196,7 @@ struct PageRankStats *pageRankPullFixedPointGraphCSR(double epsilon,  uint32_t i
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
 
@@ -1325,7 +1338,7 @@ struct PageRankStats *pageRankPushFixedPointGraphCSR(double epsilon,  uint32_t i
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
     uint64_t *pageRanksNext = (uint64_t *) my_malloc(graph->num_vertices * sizeof(uint64_t));
@@ -1464,7 +1477,7 @@ struct PageRankStats *pageRankDataDrivenPullGraphCSR(double epsilon,  uint32_t i
     int activeVertices = 0;
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
     workListCurr  = (uint8_t *) my_malloc(graph->num_vertices * sizeof(uint8_t));
@@ -1613,7 +1626,7 @@ struct PageRankStats *pageRankDataDrivenPushGraphCSR(double epsilon,  uint32_t i
     workListNext  = (uint8_t *) my_malloc(graph->num_vertices * sizeof(uint8_t));
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
     resetWorkList(workListNext, graph->num_vertices);
@@ -1764,7 +1777,7 @@ struct PageRankStats *pageRankDataDrivenPullPushGraphCSR(double epsilon,  uint32
     workListNext  = (uint8_t *) my_malloc(graph->num_vertices * sizeof(uint8_t));
 
 #ifdef CACHE_HARNESS
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, 0);
 #endif
 
     resetWorkList(workListNext, graph->num_vertices);

@@ -126,7 +126,6 @@ uint64_t getRMPrefetch(struct Cache *cache)
 {
     return cache->readMissesPrefetch;
 }
-
 uint64_t getReadsPrefetch(struct Cache *cache)
 {
     return cache->readsPrefetch;
@@ -137,23 +136,28 @@ void writeBack(struct Cache *cache, uint64_t addr)
 }
 
 
-struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices)
+struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions)
 {
-
     struct DoubleTaggedCache *cache = (struct DoubleTaggedCache *) my_malloc(sizeof(struct DoubleTaggedCache));
 
-    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices);
-    cache->warm_cache = newCache( l1_size / 2, 8, 4, num_vertices);
-    cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices);
-    cache->ref_cache  = newCache( l1_size, l1_assoc, blocksize, num_vertices);
+    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, policy, numPropertyRegions);
+    cache->warm_cache = newCache( l1_size / 2, 8, 4, num_vertices, policy, numPropertyRegions);
+    cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices, policy, numPropertyRegions);
+    cache->ref_cache  = newCache( l1_size, l1_assoc, blocksize, num_vertices, policy, numPropertyRegions);
 
     return cache;
+}
 
+void initDoubleTaggedCacheRegion(struct DoubleTaggedCache *cache, struct PropertyMetaData *propertyMetaData)
+{
+    initialzeCachePropertyRegions (cache->cold_cache, propertyMetaData);
+    initialzeCachePropertyRegions (cache->warm_cache, propertyMetaData);
+    initialzeCachePropertyRegions (cache->hot_cache, propertyMetaData);
+    initialzeCachePropertyRegions (cache->ref_cache, propertyMetaData);
 }
 
 void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
 {
-
     if(cache)
     {
         freeCache(cache->cold_cache);
@@ -161,28 +165,35 @@ void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
         freeCache(cache->hot_cache);
         freeCache(cache->ref_cache);
         free(cache);
-
     }
-
 }
 
 
-struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices)
+struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions)
 {
 
     uint64_t i;
 
     struct Cache *cache = ( struct Cache *) my_malloc(sizeof(struct Cache));
+    initCache(cache, l1_size, l1_assoc, blocksize, policy);
 
-    cache->numVertices = num_vertices;
-    initCache(cache, l1_size, l1_assoc, blocksize, POLICY);
+    cache->numPropertyRegions  = numPropertyRegions;
+    cache->propertyRegions     = (struct PropertyRegion *)my_malloc(sizeof(struct PropertyRegion) * numPropertyRegions);
 
+    for(i = 0; i < numPropertyRegions; i++)
+    {
+        cache->propertyRegions[i].upper_bound = 0;
+        cache->propertyRegions[i].hot_bound   = 0;
+        cache->propertyRegions[i].warm_bound  = 0;
+        cache->propertyRegions[i].lower_bound = 0;
+    }
+
+    cache->numVertices  = num_vertices;
     cache->verticesMiss = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
-    cache->verticesHit = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
-    cache->vertices_base_reuse = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->verticesHit  = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->vertices_base_reuse  = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
     cache->vertices_total_reuse = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
-    cache->vertices_accesses = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
-
+    cache->vertices_accesses    = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
 
     for(i = 0; i < num_vertices; i++)
     {
@@ -204,6 +215,8 @@ void freeCache(struct Cache *cache)
 
     if(cache)
     {
+        if(cache->propertyRegions)
+            free(cache->propertyRegions);
         if(cache->verticesMiss)
             free(cache->verticesMiss);
         if(cache->verticesHit)
@@ -226,7 +239,6 @@ void freeCache(struct Cache *cache)
         }
         free(cache);
     }
-
 }
 
 void initCache(struct Cache *cache, int s, int a, int b, int p)
@@ -235,7 +247,7 @@ void initCache(struct Cache *cache, int s, int a, int b, int p)
     cache->reads = cache->readMisses = cache->readsPrefetch = cache->readMissesPrefetch = cache->writes = cache->evictions = 0;
     cache->writeMisses = cache->writeBacks = cache->currentCycle_preftcher = cache->currentCycle_cache = cache->currentCycle = 0;
 
-    cache->policy     = (uint64_t)(p);
+    cache->policy     = (uint32_t)(p);
     cache->size       = (uint64_t)(s);
     cache->lineSize   = (uint64_t)(b);
     cache->assoc      = (uint64_t)(a);
@@ -661,12 +673,72 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
     }
 }
 
+// ********************************************************************************************
+// ***************               GRASP Initializaiton                            **************
+// ********************************************************************************************
+
+void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData)
+{
+    uint32_t v;
+    uint64_t total_properties_size = 0;
+    uint32_t property_fraction = 100 / cache->numPropertyRegions;
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        total_properties_size += (propertyMetaData[v].size * propertyMetaData[v].data_type_size);
+    }
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        // cache->propertyRegions[v].fraction    = property_fraction; // classical vs ratio of array size in bytes
+        cache->propertyRegions[v].fraction    = ((propertyMetaData[v].size * propertyMetaData[v].data_type_size) * 100) / total_properties_size;
+
+        cache->propertyRegions[v].lower_bound = propertyMetaData[v].base_address;
+        cache->propertyRegions[v].upper_bound = propertyMetaData[v].base_address + (propertyMetaData[v].size * propertyMetaData[v].data_type_size);
+
+        cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].lower_bound + ((cache->size * cache->propertyRegions[v].fraction) / 100);
+        if(cache->propertyRegions[v].hot_bound > cache->propertyRegions[v].upper_bound)
+        {
+            cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].upper_bound;
+        }
+
+        cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].hot_bound + ((cache->size * cache->propertyRegions[v].fraction) / 100);
+        if(cache->propertyRegions[v].warm_bound > cache->propertyRegions[v].upper_bound)
+        {
+            cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].upper_bound;
+        }
+    }
+
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+
+        printf(" -----------------------------------------------------\n");
+        printf("| %-25s | %-24u| \n", "ID", v);
+
+        printf(" -----------------------------------------------------\n");
+        printf("| %-25s | %-24u| \n", "size", propertyMetaData[v].size);
+        printf("| %-25s | %-24u| \n", "data_type_size", propertyMetaData[v].data_type_size);
+        printf("| %-25s | 0x%-22lx| \n", "base_address", propertyMetaData[v].base_address);
+        printf(" -----------------------------------------------------\n");
+
+        printf(" -----------------------------------------------------\n");
+        printf("| %-25s | %-24u| \n", "fraction", cache->propertyRegions[v].fraction );
+        printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->propertyRegions[v].lower_bound );
+        printf("| %-25s | 0x%-22lx| \n", "hot_bound", cache->propertyRegions[v].hot_bound );
+        printf("| %-25s | 0x%-22lx| \n", "warm_bound", cache->propertyRegions[v].warm_bound );
+        printf("| %-25s | 0x%-22lx| \n", "upper_bound", cache->propertyRegions[v].upper_bound );
+        printf(" -----------------------------------------------------\n");
+    }
+}
+
+// ********************************************************************************************
+// ***************               Stats output                                    **************
+// ********************************************************************************************
+
 
 void printStats(struct Cache *cache)
 {
-
-
-
     float missRate = (double)((getWM(cache) + getRM(cache)) * 100) / (cache->currentCycle_cache); //calculate miss rate
     missRate = roundf(missRate * 100) / 100;                            //rounding miss rate
 
@@ -757,3 +829,23 @@ void printStats(struct Cache *cache)
 
 
 }
+
+// void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache)
+// {
+//     for (v = 0; v < numPropertyRegions; ++v)
+//     {
+//         printf(" -----------------------------------------------------\n");
+//         printf("| %-25s | %-24u| \n", "size", propertyMetaData[v].size);
+//         printf("| %-25s | %-24u| \n", "data_type_size", propertyMetaData[v].data_type_size);
+//         printf("| %-25s | 0x%-22lx| \n", "base_address", propertyMetaData[v].base_address);
+//         printf(" -----------------------------------------------------\n");
+//     }
+//     printf("\n===================== cache Stats (cold_cache Stats) =================\n");
+//     printStats(cache->cold_cache);
+//     printf("\n===================== cache Stats (warm_cache Stats) =================\n");
+//     printStats(cache->warm_cache);
+//     printf("\n===================== cache Stats (hot_cache Stats)  =================\n");
+//     printStats(cache->hot_cache);
+//     printf("\n===================== cache Stats (ref_cache Stats)  =================\n");
+//     printStats(cache->ref_cache);
+// }
