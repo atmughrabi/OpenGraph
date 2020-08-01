@@ -28,12 +28,12 @@
 #define PLRU_POLICY 5
 
 // CHOOSE global Policys
-#define POLICY LRU_POLICY
+// #define POLICY LRU_POLICY
 // #define POLICY GRASP_POLICY
 // #define POLICY LFU_POLICY
 // #define POLICY SRRIP_POLICY
 // #define POLICY PIN_POLICY
-// #define POLICY PLRU_POLICY
+#define POLICY PLRU_POLICY
 
 // Cache states Constants
 #define INVALID 0
@@ -88,7 +88,7 @@ struct CacheLine
     uint8_t RRPV;  // GRASP POLICY 2
     uint8_t SRRPV; // SRRPV POLICY 3
     uint8_t PIN;   // PIN POLICY 4
-    uint8_t PLRUm;   // PLRU POLICY 4
+    uint8_t PLRU;   // PLRU POLICY 4
 };
 
 struct Cache
@@ -138,15 +138,17 @@ uint8_t getFreq(struct CacheLine *cacheLine);
 uint8_t getRRPV(struct CacheLine *cacheLine);
 uint8_t getSRRPV(struct CacheLine *cacheLine);
 uint8_t getPIN(struct CacheLine *cacheLine);
+uint8_t getPLRU(struct CacheLine *cacheLine);
 
+void setFlags(struct CacheLine *cacheLine, uint8_t flags);
+void setTag(struct CacheLine *cacheLine, uint64_t a);
+void setAddr(struct CacheLine *cacheLine, uint64_t addr);
+void setSeq(struct CacheLine *cacheLine, uint64_t Seq);
 void setFreq(struct CacheLine *cacheLine, uint8_t freq);
 void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV);
 void setSRRPV(struct CacheLine *cacheLine, uint8_t SRRPV);
 void setPIN(struct CacheLine *cacheLine, uint8_t PIN);
-void setSeq(struct CacheLine *cacheLine, uint64_t Seq);
-void setFlags(struct CacheLine *cacheLine, uint8_t flags);
-void setTag(struct CacheLine *cacheLine, uint64_t a);
-void setAddr(struct CacheLine *cacheLine, uint64_t addr);
+void setPLRU(struct CacheLine *cacheLine, uint8_t PLRU);
 
 void invalidate(struct CacheLine *cacheLine);
 uint32_t isValid(struct CacheLine *cacheLine);

@@ -60,6 +60,11 @@ uint8_t getPIN(struct CacheLine *cacheLine)
 {
     return cacheLine->PIN;
 }
+uint8_t getPLRU(struct CacheLine *cacheLine)
+{
+    return cacheLine->PLRU;
+}
+
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq)
 {
     cacheLine->seq = Seq;
@@ -80,6 +85,11 @@ void setPIN(struct CacheLine *cacheLine, uint8_t PIN)
 {
     cacheLine->PIN = PIN;
 }
+void setPLRU(struct CacheLine *cacheLine, uint8_t PLRU)
+{
+    cacheLine->PLRU = PLRU;
+}
+
 void setFlags(struct CacheLine *cacheLine, uint8_t flags)
 {
     cacheLine->Flags = flags;
@@ -100,7 +110,7 @@ void invalidate(struct CacheLine *cacheLine)
     cacheLine->RRPV = RRPV_INIT;
     cacheLine->SRRPV = SRRPV_INIT;
     cacheLine->PIN = 0;
-    cacheLine->PLRUm = 0;
+    cacheLine->PLRU = 0;
     cacheLine->freq = 0;
 }
 uint32_t isValid(struct CacheLine *cacheLine)
@@ -446,6 +456,9 @@ void updateInsertionPolicy(struct Cache *cache, struct CacheLine *line)
     case PIN_POLICY:
         updateInsertPIN(cache, line);
         break;
+    case PLRU_POLICY:
+        updateInsertPLRU(cache, line);
+        break;
     default :
         updateInsertLRU(cache, line);
     }
@@ -497,6 +510,33 @@ void updateInsertPIN(struct Cache *cache, struct CacheLine *line)
         setSeq(line, cache->currentCycle);
         setPIN(line, 0);
     }
+}
+
+void updateInsertPLRU(struct Cache *cache, struct CacheLine *line)
+{
+    uint64_t i, j, tag;
+    uint8_t bit_sum = 0;
+    uint8_t PLRU = 1;
+
+    i      = calcIndex(cache, line->addr);
+    tag = calcTag(cache, line->addr);
+
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(getTag(&(cache->cacheLines[i][j])) != tag)
+            bit_sum += getPLRU(&(cache->cacheLines[i][j]));
+    }
+
+    if(bit_sum == (cache->assoc - 1))
+    {
+        for(j = 0; j < (cache->assoc); j++)
+        {
+            setPLRU(&(cache->cacheLines[i][j]), 0);
+        }
+    }
+
+    setPLRU(line, PLRU);
 }
 
 uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line)
@@ -554,6 +594,9 @@ void updatePromotionPolicy(struct Cache *cache, struct CacheLine *line)
     case PIN_POLICY:
         updatePromotePIN(cache, line);
         break;
+    case PLRU_POLICY:
+        updatePromotePLRU(cache, line);
+        break;
     default :
         updatePromoteLRU(cache, line);
     }
@@ -598,6 +641,34 @@ void updatePromotePIN(struct Cache *cache, struct CacheLine *line)
     setSeq(line, cache->currentCycle);
 }
 
+void updatePromotePLRU(struct Cache *cache, struct CacheLine *line)
+{
+
+    uint64_t i, j, tag;
+    uint8_t bit_sum = 0;
+    uint8_t PLRU = 1;
+
+    i      = calcIndex(cache, line->addr);
+    tag = calcTag(cache, line->addr);
+
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(getTag(&(cache->cacheLines[i][j])) != tag)
+            bit_sum += getPLRU(&(cache->cacheLines[i][j]));
+    }
+
+    if(bit_sum == (cache->assoc - 1))
+    {
+        for(j = 0; j < (cache->assoc); j++)
+        {
+            setPLRU(&(cache->cacheLines[i][j]), 0);
+        }
+    }
+
+    setPLRU(line, PLRU);
+}
+
 // ********************************************************************************************
 // ***************         VICTIM EVICTION POLICIES                              **************
 // ********************************************************************************************
@@ -622,6 +693,9 @@ struct CacheLine *getVictimPolicy(struct Cache *cache, uint64_t addr)
         break;
     case PIN_POLICY:
         victim = getVictimPIN(cache, addr);
+        break;
+    case PLRU_POLICY:
+        victim = getVictimPLRU(cache, addr);
         break;
     default :
         victim = getVictimLRU(cache, addr);
@@ -841,6 +915,39 @@ uint8_t getVictimPINBypass(struct Cache *cache, uint64_t addr)
 
     return bypass;
 }
+
+
+struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim;
+    victim = cache->assoc;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(!getPLRU(&(cache->cacheLines[i][j])))
+        {
+            victim = j;
+            break;
+        }
+    }
+    assert(victim != cache->assoc);
+
+    cache->evictions++;
+
+    cache->cacheLines[i][victim].addr = addr;
+    return &(cache->cacheLines[i][victim]);
+}
+
 
 // ********************************************************************************************
 // ***************         Cacheline lookups                                     **************
