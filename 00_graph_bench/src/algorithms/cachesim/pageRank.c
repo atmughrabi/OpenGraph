@@ -1019,10 +1019,7 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
 
     // pageRankPrint(pageRanks, graph->num_vertices);
 
-    free(timer);
-    free(timer_inner);
-    free(pageRanksNext);
-    free(riDividedOnDiClause);
+
 
 #ifdef CACHE_HARNESS
     printf("\n=====================      Property Regions          =================\n");
@@ -1049,6 +1046,11 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     free(propertyMetaData);
 #endif
 
+
+    free(timer);
+    free(timer_inner);
+    free(pageRanksNext);
+    free(riDividedOnDiClause);
     stats->error_total = error_total;
     return stats;
 }

@@ -28,10 +28,10 @@
 #define PLRU_POLICY 5
 
 // CHOOSE global Policys
-// #define POLICY LRU_POLICY
+#define POLICY LRU_POLICY
 // #define POLICY GRASP_POLICY
 // #define POLICY LFU_POLICY
-#define POLICY SRRIP_POLICY
+// #define POLICY SRRIP_POLICY
 // #define POLICY PIN_POLICY
 // #define POLICY PLRU_POLICY
 
@@ -137,9 +137,12 @@ uint64_t getSeq(struct CacheLine *cacheLine);
 uint8_t getFreq(struct CacheLine *cacheLine);
 uint8_t getRRPV(struct CacheLine *cacheLine);
 uint8_t getSRRPV(struct CacheLine *cacheLine);
+uint8_t getPIN(struct CacheLine *cacheLine);
+
 void setFreq(struct CacheLine *cacheLine, uint8_t freq);
 void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV);
 void setSRRPV(struct CacheLine *cacheLine, uint8_t SRRPV);
+void setPIN(struct CacheLine *cacheLine, uint8_t PIN);
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq);
 void setFlags(struct CacheLine *cacheLine, uint8_t flags);
 void setTag(struct CacheLine *cacheLine, uint64_t a);
@@ -184,6 +187,7 @@ struct CacheLine *getVictimLFU(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimPIN(struct Cache *cache, uint64_t addr);
+uint8_t getVictimPINBypass(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr);
 
 // ********************************************************************************************
@@ -244,5 +248,6 @@ void online_cache_graph_stats(struct Cache *cache, uint32_t node);
 void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData);
 uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line);
 uint32_t inWarmRegion(struct Cache *cache, struct CacheLine *line);
+uint32_t inHotRegionAddr(struct Cache *cache, uint64_t addr);
 
 #endif

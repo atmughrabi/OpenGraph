@@ -56,6 +56,10 @@ uint8_t getSRRPV(struct CacheLine *cacheLine)
 {
     return cacheLine->SRRPV;
 }
+uint8_t getPIN(struct CacheLine *cacheLine)
+{
+    return cacheLine->PIN;
+}
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq)
 {
     cacheLine->seq = Seq;
@@ -71,6 +75,10 @@ void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV)
 void setSRRPV(struct CacheLine *cacheLine, uint8_t SRRPV)
 {
     cacheLine->SRRPV = SRRPV;
+}
+void setPIN(struct CacheLine *cacheLine, uint8_t PIN)
+{
+    cacheLine->PIN = PIN;
 }
 void setFlags(struct CacheLine *cacheLine, uint8_t flags)
 {
@@ -435,6 +443,9 @@ void updateInsertionPolicy(struct Cache *cache, struct CacheLine *line)
     case SRRIP_POLICY:
         updateInsertSRRIP(cache, line);
         break;
+    case PIN_POLICY:
+        updateInsertPIN(cache, line);
+        break;
     default :
         updateInsertLRU(cache, line);
     }
@@ -472,6 +483,20 @@ void updateInsertSRRIP(struct Cache *cache, struct CacheLine *line)
 {
     uint8_t SRRPV = DEFAULT_INSERT_SRRPV;
     setSRRPV(line, SRRPV);
+}
+
+void updateInsertPIN(struct Cache *cache, struct CacheLine *line)
+{
+    if(inHotRegion(cache, line))
+    {
+        setSeq(line, cache->currentCycle);
+        setPIN(line, 1);
+    }
+    else
+    {
+        setSeq(line, cache->currentCycle);
+        setPIN(line, 0);
+    }
 }
 
 uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line)
@@ -526,6 +551,9 @@ void updatePromotionPolicy(struct Cache *cache, struct CacheLine *line)
     case SRRIP_POLICY:
         updatePromoteSRRIP(cache, line);
         break;
+    case PIN_POLICY:
+        updatePromotePIN(cache, line);
+        break;
     default :
         updatePromoteLRU(cache, line);
     }
@@ -565,6 +593,11 @@ void updatePromoteSRRIP(struct Cache *cache, struct CacheLine *line)
     setSRRPV(line, HIT_SRRPV);
 }
 
+void updatePromotePIN(struct Cache *cache, struct CacheLine *line)
+{
+    setSeq(line, cache->currentCycle);
+}
+
 // ********************************************************************************************
 // ***************         VICTIM EVICTION POLICIES                              **************
 // ********************************************************************************************
@@ -586,6 +619,9 @@ struct CacheLine *getVictimPolicy(struct Cache *cache, uint64_t addr)
         break;
     case SRRIP_POLICY:
         victim = getVictimSRRIP(cache, addr);
+        break;
+    case PIN_POLICY:
+        victim = getVictimPIN(cache, addr);
         break;
     default :
         victim = getVictimLRU(cache, addr);
@@ -680,7 +716,7 @@ struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr)
     }
     assert(victim != cache->assoc);
 
-    // not in the paper optimizaiton
+    // not in the GRASP paper optimizaiton
     if (min < DEFAULT_INSERT_RRPV)
     {
         int diff = DEFAULT_INSERT_RRPV - min;
@@ -744,6 +780,66 @@ struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr)
 
     cache->evictions++;
     return &(cache->cacheLines[i][victim]);
+}
+
+/*return an invalid line as LRU, if any, otherwise return LRU line*/
+struct CacheLine *getVictimPIN(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = cache->currentCycle;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(!getPIN(&(cache->cacheLines[i][j])) && (getSeq(&(cache->cacheLines[i][j])) <= min))
+        {
+            victim = j;
+            min = getSeq(&(cache->cacheLines[i][j]));
+        }
+    }
+    // assert(victim != cache->assoc);
+
+    cache->evictions++;
+    cache->cacheLines[i][victim].addr = addr; // update victim with new address so we simulate hot/cold insertion
+
+    return &(cache->cacheLines[i][victim]);
+}
+
+/*return an invalid line as LRU, if any, otherwise return LRU line*/
+uint8_t getVictimPINBypass(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, min;
+    uint8_t bypass = 1;
+    min    = cache->currentCycle;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return 0;
+        }
+    }
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(!getPIN(&(cache->cacheLines[i][j])) && (getSeq(&(cache->cacheLines[i][j])) <= min))
+        {
+            min = getSeq(&(cache->cacheLines[i][j]));
+            bypass = 0;
+        }
+    }
+
+    return bypass;
 }
 
 // ********************************************************************************************
@@ -838,9 +934,21 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
             cache->readMisses++;
         }
 
-        struct CacheLine *newline = fillLine(cache, addr);
-        if(op == 'w')
-            setFlags(newline, DIRTY);
+        if(cache->policy == PIN_POLICY)
+        {
+            if(!getVictimPINBypass(cache, addr))
+            {
+                struct CacheLine *newline = fillLine(cache, addr);
+                if(op == 'w')
+                    setFlags(newline, DIRTY);
+            }
+        }
+        else
+        {
+            struct CacheLine *newline = fillLine(cache, addr);
+            if(op == 'w')
+                setFlags(newline, DIRTY);
+        }
 
         cache->verticesMiss[node]++;
     }
