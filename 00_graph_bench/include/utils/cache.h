@@ -57,9 +57,9 @@
 // SRRIP Policy Constants RRIP (re-refernece insertion prediction)
 #define NUM_BITS_SRRIP 2
 
-#define DEFAULT_INSERT_SRRPV ((1 << NUM_BITS_SRRIP) - 1)
+#define SRRPV_INIT ((1 << NUM_BITS_SRRIP) - 1)
+#define DEFAULT_INSERT_SRRPV (SRRPV_INIT - 1)
 #define HIT_SRRPV  0
-#define SRRPV_INIT DEFAULT_INSERT_RRPV
 
 
 struct PropertyMetaData

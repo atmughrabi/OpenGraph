@@ -736,10 +736,11 @@ struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr)
             }
         }
 
-        assert(min != SRRPV_INIT && min != 0);
-        assert(victim != cache->assoc);
     }
     while(!min);
+
+    assert(min != SRRPV_INIT || min != 0);
+    assert(victim != cache->assoc);
 
     cache->evictions++;
     return &(cache->cacheLines[i][victim]);
