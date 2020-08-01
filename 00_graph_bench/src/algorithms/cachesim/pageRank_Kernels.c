@@ -190,43 +190,43 @@ void pageRankPullGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
         {
             u = sorted_edges_array[j];
 
-            // Access(cache->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
+            // Access(cache->accel_graph->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
             // Access(cache->ref_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
 
             nodeIncomingPR += riDividedOnDiClause[u]; // pageRanks[v]/graph->vertices[v].out_degree;
 
-            if(checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && checkInCache(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u])))
+            if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && checkInCache(cache->accel_graph->hot_cache, (uint64_t) & (riDividedOnDiClause[u])))
             {
                 if(riDividedOnDiClause[u] > 0.015){ // keep in PSL cache
-                    Access(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                    Access(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
                 }
                 else if(riDividedOnDiClause[u] > 0.0015){ // put in warm cache
-                    Access(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
-                    Access(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                    Access(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                    Access(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
                 }
                 else { // put in hot cache
-                    Access(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
-                    Access(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                    Access(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+                    Access(cache->accel_graph->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
                 }
 
-            } else  if(!checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && checkInCache(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
-                Access(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
-            } else  if(checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && !checkInCache(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
-                Access(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
-            } else  if(!checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && !checkInCache(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
-                Access(cache->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            } else  if(!checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && checkInCache(cache->accel_graph->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
+                Access(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            } else  if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && !checkInCache(cache->accel_graph->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
+                Access(cache->accel_graph->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            } else  if(!checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u])) && !checkInCache(cache->accel_graph->hot_cache, (uint64_t) & (riDividedOnDiClause[u]))) {
+                Access(cache->accel_graph->hot_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
             }
 
             Access(cache->ref_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
-            // Access(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            // Access(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
         }
 
         pageRanksNext[v] = nodeIncomingPR;
-        Access(cache->cold_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
-        Access(cache->cold_cache, (uint64_t) & (pageRanksNext[v]), 'w', v);
+        Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
+        Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[v]), 'w', v);
         Access(cache->ref_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
         Access(cache->ref_cache, (uint64_t) & (pageRanksNext[v]), 'w', v);
-        // Access(cache->warm_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
+        // Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
     }
 
 
@@ -279,16 +279,16 @@ void pageRankPushGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
             for(j = edge_idx ; j < (edge_idx + out_degree[v + 1]) ; j++)
             {
                 u = sorted_edges_array[j];
-                if(checkInCache(cache->warm_cache, (uint64_t) & (pageRanksNext[u])))
+                if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (pageRanksNext[u])))
                 {
-                    Prefetch(cache->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
+                    Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
                 }
 
             }
 
-            if(checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[v + 1])))
+            if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[v + 1])))
             {
-                Prefetch(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[v + 1]), 's', (v + 1));
+                Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[v + 1]), 's', (v + 1));
             }
         }
 #endif
@@ -296,23 +296,23 @@ void pageRankPushGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
         degree = out_degree[v];
         edge_idx = edges_idx[v];
 
-        // Access(cache->cold_cache, (uint64_t) & (out_degree[v]), 'r', v);
-        // Access(cache->cold_cache, (uint64_t) & (edges_idx[v]), 'r', v);
+        // Access(cache->accel_graph->cold_cache, (uint64_t) & (out_degree[v]), 'r', v);
+        // Access(cache->accel_graph->cold_cache, (uint64_t) & (edges_idx[v]), 'r', v);
 
         for(j = edge_idx ; j < (edge_idx + degree) ; j++)
         {
             u = sorted_edges_array[j];
 
-            Access(cache->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
 
             pageRanksNext[u] += riDividedOnDiClause[v];
 
-            Access(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
-            Access(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
 
-            Access(cache->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
-            Access(cache->cold_cache, (uint64_t) & (pageRanksNext[u]), 'w', u);
-            Access(cache->warm_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[u]), 'w', u);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
         }
     }
 }
@@ -369,14 +369,14 @@ void pageRankPullFixedPointGraphCSRKernelCache(struct DoubleTaggedCache *cache, 
             for(j = edge_idx ; j < (edge_idx + out_degree[v + 1]) ; j++)
             {
                 u = sorted_edges_array[j];
-                if(checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u])))
+                if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u])))
                 {
-                    Prefetch(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 's', u);
+                    Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 's', u);
                 }
             }
-            if(checkInCache(cache->warm_cache, (uint64_t) & (pageRanksNext[v + 1])))
+            if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (pageRanksNext[v + 1])))
             {
-                Prefetch(cache->cold_cache, (uint64_t) & (pageRanksNext[v + 1]), 'r', (v + 1));
+                Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[v + 1]), 'r', (v + 1));
             }
         }
 #endif
@@ -385,26 +385,26 @@ void pageRankPullFixedPointGraphCSRKernelCache(struct DoubleTaggedCache *cache, 
         degree = out_degree[v];
         edge_idx = edges_idx[v];
 
-        // Access(cache->cold_cache, (uint64_t) & (out_degree[v]), 'r', v);
-        // Access(cache->cold_cache, (uint64_t) & (edges_idx[v]), 'r', v);
+        // Access(cache->accel_graph->cold_cache, (uint64_t) & (out_degree[v]), 'r', v);
+        // Access(cache->accel_graph->cold_cache, (uint64_t) & (edges_idx[v]), 'r', v);
 
         for(j = edge_idx ; j <  (edge_idx + degree) ; j++)
         {
             u = sorted_edges_array[j];
 
-            Access(cache->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
 
             nodeIncomingPR += riDividedOnDiClause[u]; // pageRanks[v]/graph->vertices[v].out_degree;
 
-            Access(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
-            Access(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u);
 
         }
 
         pageRanksNext[v] = nodeIncomingPR;
-        Access(cache->cold_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
-        Access(cache->cold_cache, (uint64_t) & (pageRanksNext[v]), 'w', v);
-        Access(cache->warm_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
+        Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
+        Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[v]), 'w', v);
+        Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanksNext[v]), 'r', v);
     }
 
 
@@ -457,16 +457,16 @@ void pageRankPushFixedPointGraphCSRKernelCache(struct DoubleTaggedCache *cache, 
             for(j = edge_idx ; j < (edge_idx + out_degree[v + 1]) ; j++)
             {
                 u = sorted_edges_array[j];
-                if(checkInCache(cache->warm_cache, (uint64_t) & (pageRanksNext[u])))
+                if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (pageRanksNext[u])))
                 {
-                    Prefetch(cache->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
+                    Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
                 }
 
             }
 
-            if(checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[v + 1])))
+            if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[v + 1])))
             {
-                Prefetch(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[v + 1]), 's', (v + 1));
+                Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[v + 1]), 's', (v + 1));
             }
         }
 #endif
@@ -474,23 +474,23 @@ void pageRankPushFixedPointGraphCSRKernelCache(struct DoubleTaggedCache *cache, 
         degree = out_degree[v];
         edge_idx = edges_idx[v];
 
-        // Access(cache->cold_cache, (uint64_t) & (out_degree[v]), 'r', v);
-        // Access(cache->cold_cache, (uint64_t) & (edges_idx[v]), 'r', v);
+        // Access(cache->accel_graph->cold_cache, (uint64_t) & (out_degree[v]), 'r', v);
+        // Access(cache->accel_graph->cold_cache, (uint64_t) & (edges_idx[v]), 'r', v);
 
         for(j = edge_idx ; j < (edge_idx + degree) ; j++)
         {
             u = sorted_edges_array[j];
 
-            Access(cache->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
 
             pageRanksNext[u] += riDividedOnDiClause[v];
 
-            Access(cache->cold_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
-            Access(cache->warm_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause[v]), 'r', v);
 
-            Access(cache->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
-            Access(cache->cold_cache, (uint64_t) & (pageRanksNext[u]), 'w', u);
-            Access(cache->warm_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanksNext[u]), 'w', u);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanksNext[u]), 'r', u);
         }
     }
 }
@@ -586,21 +586,21 @@ uint32_t pageRankDataDrivenPullGraphCSRKernelCache(struct DoubleTaggedCache *cac
                 for(j = edge_idx ; j < (edge_idx + degree) ; j++)
                 {
                     u = in_sorted_edges_array_dd_pull_csr[j];
-                    if(checkInCache(cache->warm_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u])))
+                    if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u])))
                     {
-                        Prefetch(cache->cold_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u]), 'r', u);
+                        Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u]), 'r', u);
                     }
 
                 }
 
-                if(checkInCache(cache->warm_cache, (uint64_t) & (pageRanks_dd_pull_csr[v + 1])))
+                if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (pageRanks_dd_pull_csr[v + 1])))
                 {
-                    Prefetch(cache->cold_cache, (uint64_t) & (pageRanks_dd_pull_csr[v + 1]), 's', (v + 1));
+                    Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pull_csr[v + 1]), 's', (v + 1));
                 }
             }
 #endif
 
-        Access(cache->cold_cache, (uint64_t) & (workListCurr[v]), 'r', v);
+        Access(cache->accel_graph->cold_cache, (uint64_t) & (workListCurr[v]), 'r', v);
         if(workListCurr[v])
         {
 
@@ -609,50 +609,50 @@ uint32_t pageRankDataDrivenPullGraphCSRKernelCache(struct DoubleTaggedCache *cac
 
             degree = in_degree_dd_pull_csr[v]; // when directed we use inverse graph out degree means in degree
             edge_idx = in_edges_idx_dd_pull_csr[v];
-            // Access(cache->cold_cache, (uint64_t) & (in_degree_dd_pull_csr[v]), 'r', v);
-            // Access(cache->cold_cache, (uint64_t) & (in_edges_idx_dd_pull_csr[v]), 'r', v);
+            // Access(cache->accel_graph->cold_cache, (uint64_t) & (in_degree_dd_pull_csr[v]), 'r', v);
+            // Access(cache->accel_graph->cold_cache, (uint64_t) & (in_edges_idx_dd_pull_csr[v]), 'r', v);
 
 
             for(j = edge_idx ; j < (edge_idx + degree) ; j++)
             {
                 u = in_sorted_edges_array_dd_pull_csr[j];
-                Access(cache->cold_cache, (uint64_t) & (in_sorted_edges_array_dd_pull_csr[j]), 'r', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (in_sorted_edges_array_dd_pull_csr[j]), 'r', u);
 
 
                 nodeIncomingPR += riDividedOnDiClause_dd_pull_csr[u]; // sum (PRi/outDegree(i))
-                Access(cache->cold_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u]), 'r', u);
-                Access(cache->warm_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u]), 'r', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u]), 'r', u);
+                Access(cache->accel_graph->warm_cache, (uint64_t) & (riDividedOnDiClause_dd_pull_csr[u]), 'r', u);
 
             }
 
             float oldPageRank =  pageRanks_dd_pull_csr[v];
-            Access(cache->cold_cache, (uint64_t) & (pageRanks_dd_pull_csr[v]), 'r', v);
-            Access(cache->warm_cache, (uint64_t) & (pageRanks_dd_pull_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pull_csr[v]), 'r', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanks_dd_pull_csr[v]), 'r', v);
 
             float newPageRank =  base_pr + (damp * nodeIncomingPR);
             error = fabs(newPageRank - oldPageRank);
 
             (*error_total) += error / num_vertices;
-            Access(cache->cold_cache, (uint64_t) & ((*error_total)), 'r', v);
-            Access(cache->cold_cache, (uint64_t) & ((*error_total)), 'w', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & ((*error_total)), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & ((*error_total)), 'w', v);
 
             if(error >= epsilon)
             {
                 pageRanks_dd_pull_csr[v] = newPageRank;
-                Access(cache->cold_cache, (uint64_t) & (pageRanks_dd_pull_csr[v]), 'w', v);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pull_csr[v]), 'w', v);
 
                 degree = out_degree_dd_pull_csr[v];
                 edge_idx = out_edges_idx_dd_pull_csr[v];
-                // Access(cache->cold_cache, (uint64_t) & (out_degree_dd_pull_csr[v]), 'r', v);
-                // Access(cache->cold_cache, (uint64_t) & (out_edges_idx_dd_pull_csr[v]), 'r', v);
+                // Access(cache->accel_graph->cold_cache, (uint64_t) & (out_degree_dd_pull_csr[v]), 'r', v);
+                // Access(cache->accel_graph->cold_cache, (uint64_t) & (out_edges_idx_dd_pull_csr[v]), 'r', v);
 
                 for(j = edge_idx ; j < (edge_idx + degree) ; j++)
                 {
                     u = out_sorted_edges_array_dd_pull_csr[j];
-                    Access(cache->cold_cache, (uint64_t) & (out_sorted_edges_array_dd_pull_csr[j]), 'r', u);
+                    Access(cache->accel_graph->cold_cache, (uint64_t) & (out_sorted_edges_array_dd_pull_csr[j]), 'r', u);
 
                     workListNext[u] = 1;
-                    Access(cache->cold_cache, (uint64_t) & (workListNext[u]), 'w', u);
+                    Access(cache->accel_graph->cold_cache, (uint64_t) & (workListNext[u]), 'w', u);
                 }
 
                 activeVertices++;
@@ -746,30 +746,30 @@ uint32_t pageRankDataDrivenPushGraphCSRKernelCache(struct DoubleTaggedCache *cac
                 for(j = edge_idx ; j < (edge_idx + degree) ; j++)
                 {
                     u = out_sorted_edges_array_dd_push_csr[j];
-                    if(checkInCache(cache->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[u])))
+                    if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[u])))
                     {
-                        Prefetch(cache->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'r', u);
+                        Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'r', u);
                     }
 
                 }
 
-                if(checkInCache(cache->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[v + 1])))
+                if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[v + 1])))
                 {
-                    Prefetch(cache->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[v + 1]), 's', (v + 1));
+                    Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[v + 1]), 's', (v + 1));
                 }
             }
 #endif
 
-        Access(cache->cold_cache, (uint64_t) & (workListCurr[v]), 'r', v);
+        Access(cache->accel_graph->cold_cache, (uint64_t) & (workListCurr[v]), 'r', v);
         if(workListCurr[v])
         {
             float oldPageRank =  pageRanks_dd_push_csr[v];
-            Access(cache->cold_cache, (uint64_t) & (pageRanks_dd_push_csr[v]), 'r', v);
-            Access(cache->warm_cache, (uint64_t) & (pageRanks_dd_push_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_push_csr[v]), 'r', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanks_dd_push_csr[v]), 'r', v);
 
             float newPageRank =  aResiduals_dd_push_csr[v] + pageRanks_dd_push_csr[v];
-            Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[v]), 'r', v);
-            Access(cache->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[v]), 'r', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[v]), 'r', v);
 
             (*error_total) += fabs(newPageRank / num_vertices - oldPageRank / num_vertices);
 
@@ -777,8 +777,8 @@ uint32_t pageRankDataDrivenPushGraphCSRKernelCache(struct DoubleTaggedCache *cac
 
             degree = out_degree_dd_push_csr[v];
             float delta = damp * (aResiduals_dd_push_csr[v] / degree);
-            Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[v]), 'r', v);
-            Access(cache->cold_cache, (uint64_t) & (out_degree_dd_push_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (out_degree_dd_push_csr[v]), 'r', v);
 
             edge_idx = out_edges_idx_dd_push_csr[v];
 
@@ -788,11 +788,11 @@ uint32_t pageRankDataDrivenPushGraphCSRKernelCache(struct DoubleTaggedCache *cac
                 float prevResidual = 0.0f;
 
                 prevResidual = aResiduals_dd_push_csr[u];
-                Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'r', u);
-                Access(cache->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'r', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'r', u);
+                Access(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'r', u);
 
                 aResiduals_dd_push_csr[u] += delta;
-                Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'w', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_push_csr[u]), 'w', u);
 
                 if ((fabs(prevResidual + delta) >= epsilon) && (prevResidual <= epsilon))
                 {
@@ -800,8 +800,8 @@ uint32_t pageRankDataDrivenPushGraphCSRKernelCache(struct DoubleTaggedCache *cac
                     if(!workListNext[u])
                     {
                         workListNext[u] = 1;
-                        Access(cache->cold_cache, (uint64_t) & (workListNext[u]), 'w', u);
-                        Access(cache->warm_cache, (uint64_t) & (workListNext[u]), 'w', u);
+                        Access(cache->accel_graph->cold_cache, (uint64_t) & (workListNext[u]), 'w', u);
+                        Access(cache->accel_graph->warm_cache, (uint64_t) & (workListNext[u]), 'w', u);
 
                     }
                 }
@@ -906,26 +906,26 @@ uint32_t pageRankDataDrivenPullPushGraphCSRKernelCache(struct DoubleTaggedCache 
                 for(j = edge_idx ; j < (edge_idx + degree) ; j++)
                 {
                     u = in_sorted_edges_array_dd_pullpush_csr[j];
-                    if(checkInCache(cache->warm_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u])))
+                    if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u])))
                     {
-                        Prefetch(cache->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u]), 'r', u);
+                        Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u]), 'r', u);
                     }
 
-                    if(checkInCache(cache->warm_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u])))
+                    if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u])))
                     {
-                        Prefetch(cache->cold_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u]), 'r', u);
+                        Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u]), 'r', u);
                     }
 
                 }
 
-                if(checkInCache(cache->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v + 1])))
+                if(checkInCache(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v + 1])))
                 {
-                    Prefetch(cache->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v + 1]), 's', (v + 1));
+                    Prefetch(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v + 1]), 's', (v + 1));
                 }
             }
 #endif
 
-        Access(cache->cold_cache, (uint64_t) & (workListCurr[v]), 'r', v);
+        Access(cache->accel_graph->cold_cache, (uint64_t) & (workListCurr[v]), 'r', v);
         if(workListCurr[v])
         {
             float nodeIncomingPR = 0.0f;
@@ -934,65 +934,65 @@ uint32_t pageRankDataDrivenPullPushGraphCSRKernelCache(struct DoubleTaggedCache 
             for(j = edge_idx ; j < (edge_idx + degree) ; j++)
             {
                 u = in_sorted_edges_array_dd_pullpush_csr[j];
-                // Access(cache->cold_cache, (uint64_t) & (in_sorted_edges_array_dd_pullpush_csr[j]), 'r', u);
+                // Access(cache->accel_graph->cold_cache, (uint64_t) & (in_sorted_edges_array_dd_pullpush_csr[j]), 'r', u);
 
                 nodeIncomingPR += pageRanks_dd_pullpush_csr[u] / out_degree_dd_pullpush_csr[u];
-                Access(cache->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u]), 'r', u);
-                Access(cache->cold_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u]), 'r', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u]), 'r', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u]), 'r', u);
 
-                Access(cache->warm_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u]), 'r', u);
-                Access(cache->warm_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u]), 'r', u);
+                Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[u]), 'r', u);
+                Access(cache->accel_graph->warm_cache, (uint64_t) & (out_degree_dd_pullpush_csr[u]), 'r', u);
             }
 
             float newPageRank = base_pr + (damp * nodeIncomingPR);
             float oldPageRank =  pageRanks_dd_pullpush_csr[v];
-            Access(cache->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'r', v);
-            Access(cache->warm_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'r', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'r', v);
 
             (*error_total) += fabs(newPageRank / num_vertices - oldPageRank / num_vertices);
 
             pageRanks_dd_pullpush_csr[v] = newPageRank;
-            Access(cache->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'r', v);
-            Access(cache->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'w', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (pageRanks_dd_pullpush_csr[v]), 'w', v);
 
             degree = out_degree_dd_pullpush_csr[v];
             float delta = damp * (aResiduals_dd_pullpush_csr[v] / degree);
-            Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'r', v);
-            Access(cache->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'r', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'r', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'r', v);
 
             edge_idx = out_edges_idx_dd_pullpush_csr[v];
 
             for(j = edge_idx ; j < (edge_idx + degree) ; j++)
             {
                 u = out_sorted_edges_array_dd_pullpush_csr[j];
-                // Access(cache->cold_cache, (uint64_t) & (out_sorted_edges_array_dd_pullpush_csr[j]), 'r', u);
+                // Access(cache->accel_graph->cold_cache, (uint64_t) & (out_sorted_edges_array_dd_pullpush_csr[j]), 'r', u);
 
                 float prevResidual = 0.0f;
 
                 prevResidual = aResiduals_dd_pullpush_csr[u];
-                Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[u]), 'r', u);
-                Access(cache->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[u]), 'r', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[u]), 'r', u);
+                Access(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[u]), 'r', u);
 
                 aResiduals_dd_pullpush_csr[u] += delta;
-                Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[u]), 'w', u);
+                Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[u]), 'w', u);
 
 
                 if ((fabs(prevResidual + delta) >= epsilon) && (prevResidual <= epsilon))
                 {
                     activeVertices++;
 
-                    Access(cache->cold_cache, (uint64_t) & (workListNext[u]), 'r', u);
-                    Access(cache->warm_cache, (uint64_t) & (workListNext[u]), 'r', u);
+                    Access(cache->accel_graph->cold_cache, (uint64_t) & (workListNext[u]), 'r', u);
+                    Access(cache->accel_graph->warm_cache, (uint64_t) & (workListNext[u]), 'r', u);
                     if(!workListNext[u])
                     {
                         workListNext[u] = 1;
-                        Access(cache->cold_cache, (uint64_t) & (workListNext[u]), 'w', u);
+                        Access(cache->accel_graph->cold_cache, (uint64_t) & (workListNext[u]), 'w', u);
                     }
                 }
             }
             aResiduals_dd_pullpush_csr[v] = 0.0f;
-            Access(cache->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'w', v);
-            Access(cache->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'w', v);
+            Access(cache->accel_graph->cold_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'w', v);
+            Access(cache->accel_graph->warm_cache, (uint64_t) & (aResiduals_dd_pullpush_csr[v]), 'w', v);
         }
     }
 

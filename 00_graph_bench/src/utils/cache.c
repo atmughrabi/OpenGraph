@@ -171,24 +171,23 @@ void writeBack(struct Cache *cache, uint64_t addr)
     cache->writeBacks++;
 }
 
+// ********************************************************************************************
+// ***************               Cache comparison                                **************
+// ********************************************************************************************
 
 struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions)
 {
     struct DoubleTaggedCache *cache = (struct DoubleTaggedCache *) my_malloc(sizeof(struct DoubleTaggedCache));
 
-    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, LRU_POLICY, numPropertyRegions);
-    cache->warm_cache = newCache( l1_size / 2, 8, 4, num_vertices, policy, numPropertyRegions);
-    cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices, policy, numPropertyRegions);
-    cache->ref_cache  = newCache( l1_size, l1_assoc, blocksize, num_vertices, policy, numPropertyRegions);
+    cache->accel_graph = newAccelGraphCache(PSL_L1_SIZE, PSL_L1_ASSOC, PSL_BLOCKSIZE, num_vertices, PSL_POLICY, numPropertyRegions);
+    cache->ref_cache   = newCache( l1_size, l1_assoc, blocksize, num_vertices, policy, numPropertyRegions);
 
     return cache;
 }
 
 void initDoubleTaggedCacheRegion(struct DoubleTaggedCache *cache, struct PropertyMetaData *propertyMetaData)
 {
-    initialzeCachePropertyRegions (cache->cold_cache, propertyMetaData);
-    initialzeCachePropertyRegions (cache->warm_cache, propertyMetaData);
-    initialzeCachePropertyRegions (cache->hot_cache, propertyMetaData);
+    initAccelGraphCacheRegion (cache->accel_graph, propertyMetaData);
     initialzeCachePropertyRegions (cache->ref_cache, propertyMetaData);
 }
 
@@ -196,14 +195,49 @@ void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
 {
     if(cache)
     {
-        freeCache(cache->cold_cache);
-        freeCache(cache->warm_cache);
-        freeCache(cache->hot_cache);
+        freeAccelGraphCache(cache->accel_graph);
         freeCache(cache->ref_cache);
         free(cache);
     }
 }
 
+// ********************************************************************************************
+// ***************              AccelGraph Cache configuration                   **************
+// ********************************************************************************************
+
+
+struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions)
+{
+    struct AccelGraphCache *cache = (struct AccelGraphCache *) my_malloc(sizeof(struct AccelGraphCache));
+
+    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, PSL_POLICY, numPropertyRegions);
+    cache->warm_cache = newCache( l1_size / 2, 8, 4, num_vertices, WARM_POLICY, numPropertyRegions);
+    cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices, HOT_POLICY, numPropertyRegions);
+
+    return cache;
+}
+
+void initAccelGraphCacheRegion(struct AccelGraphCache *cache, struct PropertyMetaData *propertyMetaData)
+{
+    initialzeCachePropertyRegions (cache->cold_cache, propertyMetaData);
+    initialzeCachePropertyRegions (cache->warm_cache, propertyMetaData);
+    initialzeCachePropertyRegions (cache->hot_cache, propertyMetaData);
+}
+
+void freeAccelGraphCache(struct AccelGraphCache *cache)
+{
+    if(cache)
+    {
+        freeCache(cache->cold_cache);
+        freeCache(cache->warm_cache);
+        freeCache(cache->hot_cache);
+        free(cache);
+    }
+}
+
+// ********************************************************************************************
+// ***************              general Cache functions                          **************
+// ********************************************************************************************
 
 struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions)
 {
@@ -1088,6 +1122,10 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
         total_properties_size += (propertyMetaData[v].size * propertyMetaData[v].data_type_size);
+        cache->propertyRegions[v].base_address = propertyMetaData[v].base_address;
+        cache->propertyRegions[v].size = propertyMetaData[v].size;
+        cache->propertyRegions[v].data_type_size = propertyMetaData[v].data_type_size;
+
     }
 
     for (v = 0; v < cache->numPropertyRegions; ++v)
@@ -1117,6 +1155,300 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
 // ***************               Stats output                                    **************
 // ********************************************************************************************
 
+void printStatsCache(struct Cache *cache)
+{
+    float missRate = (double)((getWM(cache) + getRM(cache)) * 100) / (cache->currentCycle_cache); //calculate miss rate
+    missRate = roundf(missRate * 100) / 100;                            //rounding miss rate
+
+    float missRateRead = (double)((getRM(cache)) * 100) / (getReads(cache)); //calculate miss rate
+    missRateRead = roundf(missRateRead * 100) / 100;                            //rounding miss rate
+
+    float missRateWrite = (double)((getWM(cache)) * 100) / (getWrites(cache)); //calculate miss rate
+    missRateWrite = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Simulation results (Cache)");
+    printf(" -----------------------------------------------------\n");
+
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        printf("| %-51s | \n", "LRU_POLICY");
+        break;
+    case LFU_POLICY:
+        printf("| %-51s | \n", "LFU_POLICY");
+        break;
+    case GRASP_POLICY:
+        printf("| %-51s | \n", "GRASP_POLICY");
+        break;
+    case SRRIP_POLICY:
+        printf("| %-51s | \n", "SRRIP_POLICY");
+        break;
+    case PIN_POLICY:
+        printf("| %-51s | \n", "PIN_POLICY");
+        break;
+    case PLRU_POLICY:
+        printf("| %-51s | \n", "PLRU_POLICY");
+        break;
+    default :
+        printf("| %-51s | \n", "LRU_POLICY");
+    }
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Cache Size (KB)", cache->size / 1024 );
+    printf("| %-21s | %'-27lu | \n", "Block Size",    cache->lineSize);
+    printf("| %-21s | %'-27lu | \n", "Associativity", cache->assoc);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Reads/Writes", cache->currentCycle_cache );
+    printf("| %-21s | %'-27lu | \n", "Reads/Writes misses", (getWM(cache) + getRM(cache)));
+    printf("| %-21s | %-27.2f | \n", "Miss rate(%)", missRate);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Reads", getReads(cache) );
+    printf("| %-21s | %'-27lu | \n", "Read misses", getRM(cache) );
+    printf("| %-21s | %-27.2f | \n", "Rd Miss rate(%)", missRateRead);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Writes", getWrites(cache) );
+    printf("| %-21s | %'-27lu | \n", "Write misses", getWM(cache) );
+    printf("| %-21s | %-27.2f | \n", "Wrt Miss rate(%)", missRateWrite);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Writebacks", getWB(cache) );
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Evictions", getEVC(cache) );
+    printf(" -----------------------------------------------------\n");
+
+}
+
+void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
+{
+
+    uint64_t  avgDegrees = 0;
+    uint32_t  num_buckets = 11;
+    uint32_t  i = 0;
+    uint32_t  v = 0;
+    uint32_t  num_vertices = cache->numVertices;
+    uint64_t *thresholds;
+    uint64_t *thresholds_count;
+    uint64_t *thresholds_totalAccesses;
+    uint64_t *thresholds_totalDegrees;
+    uint64_t *thresholds_totalReuses;
+    uint64_t *thresholds_totalMisses;
+    uint64_t thresholds_totalAccess  = 0;
+    uint64_t thresholds_totalCount   = 0;
+    uint64_t thresholds_totalDegree  = 0;
+    uint64_t thresholds_totalReuse   = 0;
+    uint64_t thresholds_totalMiss    = 0;
+    float *thresholds_avgAccesses;
+    float *thresholds_avgDegrees;
+    float *thresholds_avgReuses;
+    float *thresholds_avgMisses;
+
+    thresholds               = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
+    thresholds_count         = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
+    thresholds_totalDegrees  = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
+    thresholds_totalReuses   = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
+    thresholds_totalMisses   = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
+    thresholds_totalAccesses = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
+    thresholds_avgAccesses   = (float *) my_malloc(num_buckets * sizeof(float));
+    thresholds_avgDegrees    = (float *) my_malloc(num_buckets * sizeof(float));
+    thresholds_avgReuses     = (float *) my_malloc(num_buckets * sizeof(float));
+    thresholds_avgMisses     = (float *) my_malloc(num_buckets * sizeof(float));
+
+    for (i = 0; i < num_buckets; ++i)
+    {
+        thresholds[i]               = 0;
+        thresholds_count[i]         = 0;
+        thresholds_totalDegrees[i]  = 0;
+        thresholds_totalReuses[i]   = 0;
+        thresholds_totalMisses[i]   = 0;
+        thresholds_avgDegrees[i]    = 0;
+        thresholds_avgReuses[i]     = 0;
+        thresholds_avgMisses[i]     = 0;
+        thresholds_totalAccesses[i] = 0;
+        thresholds_avgAccesses[i]   = 0;
+    }
+
+    for (v = 0; v < num_vertices; ++v)
+    {
+        avgDegrees +=  degrees[v];
+    }
+
+    avgDegrees /= num_vertices;
+
+    // START initialize thresholds
+    thresholds[0] = (avgDegrees / 2);
+    for ( i = 1; i < (num_buckets - 1); ++i)
+    {
+        thresholds[i] = thresholds[i - 1] * 2;
+    }
+    thresholds[num_buckets - 1] = UINT32_MAX;
+    // END initialize thresholds
+
+
+    // collect stats perbucket
+    for (v = 0; v < num_vertices; ++v)
+    {
+        for ( i = 0; i < num_buckets; ++i)
+        {
+            if(degrees[v] <= thresholds[i])
+            {
+                thresholds_count[i] += 1;
+                thresholds_totalDegrees[i]  += degrees[v];
+                thresholds_totalReuses[i]   += cache->vertices_total_reuse[v];
+                thresholds_totalMisses[i]   += cache->verticesMiss[v];
+                thresholds_totalAccesses[i] +=  cache->vertices_accesses[v];
+                break;
+            }
+        }
+    }
+
+    // collect stats perbucket
+    for ( i = 0; i < num_buckets; ++i)
+    {
+        if(thresholds_count[i])
+        {
+            thresholds_avgDegrees[i]   = (float)thresholds_totalDegrees[i]  / thresholds_count[i];
+            thresholds_avgReuses[i]    = (float)thresholds_totalReuses[i]   / thresholds_totalAccesses[i];
+            thresholds_avgMisses[i]    = (float)thresholds_totalMisses[i]   / thresholds_count[i];
+            thresholds_avgAccesses[i]  = (float)thresholds_totalAccesses[i]  / thresholds_count[i];
+        }
+
+        thresholds_totalAccess += thresholds_totalAccesses[i];
+        thresholds_totalCount  += thresholds_count[i];
+        thresholds_totalDegree += thresholds_totalDegrees[i];
+        thresholds_totalReuse += thresholds_totalReuses[i];
+        thresholds_totalMiss +=  thresholds_totalMisses[i];
+    }
+
+    printf(" -----------------------------------------------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | %-15s | %-15s | \n", "<= Threshold", "avgAccesses", "avgDegrees", "avgReuse", "avgMisses");
+    printf(" -----------------------------------------------------------------------------------------\n");
+    for ( i = 0; i < num_buckets; ++i)
+    {
+        printf("| %-15lu | %-15lu | %-15.2f | %-15.2f | %-15.2f |\n", thresholds[i], thresholds_count[i], thresholds_avgDegrees[i], thresholds_avgReuses[i], thresholds_avgMisses[i]);
+    }
+    printf(" -----------------------------------------------------------------------------------------\n");
+
+    printf("| %-15s | %-15s | %-15s | %-15s | %-15s | \n", "avgDegrees", "totalAccess", "totalDegrees(%)", "totalReuse(%)", "totalMisses(%)");
+    printf(" -----------------------------------------------------------------------------------------\n");
+    printf("| %-15lu | %-15lu | %-15lu | %-15lu | %-15lu |\n", avgDegrees, thresholds_totalAccess, thresholds_totalDegree, thresholds_totalReuse, thresholds_totalMiss);
+
+
+    free(thresholds);
+    free(thresholds_count);
+    free(thresholds_totalDegrees);
+    free(thresholds_totalReuses);
+    free(thresholds_totalMisses);
+    free(thresholds_avgDegrees);
+    free(thresholds_avgReuses);
+    free(thresholds_avgMisses);
+    free(thresholds_totalAccesses);
+    free(thresholds_avgAccesses);
+}
+
+void printStatsGraphCache(struct Cache *cache, uint32_t *in_degree, uint32_t *out_degree)
+{
+    printStatsCache(cache);
+    printf("\n======================  Reuse stats Out Degree =======================\n");
+    printStatsGraphReuse(cache, out_degree);
+    printf("\n======================  Reuse stats In Degree  =======================\n");
+    printStatsGraphReuse(cache, in_degree);
+}
+
+void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degree, uint32_t *out_degree)
+{
+    //rounding miss rate
+
+
+
+
+    uint64_t readsHits_hot  = getReads(cache->hot_cache) - getRM(cache->hot_cache);
+    uint64_t readsHits_warm = getReads(cache->warm_cache) - getRM(cache->warm_cache);
+
+    uint64_t readsMisses_cold = getRM(cache->cold_cache);
+
+    uint64_t writesHits_hot  = getWrites(cache->hot_cache) - getWM(cache->hot_cache);
+    uint64_t writesHits_warm = getWrites(cache->warm_cache) - getWM(cache->warm_cache);
+
+    uint64_t writesMisses_cold = getWM(cache->cold_cache);
+
+    uint64_t ReadWrite_total = getReads(cache->cold_cache) + getWrites(cache->cold_cache) + readsHits_hot + readsHits_warm + writesHits_hot + writesHits_warm;
+    uint64_t ReadWriteMisses_total = readsMisses_cold + writesMisses_cold;
+
+    uint64_t Read_total = getReads(cache->cold_cache) + readsHits_hot + readsHits_warm;
+    uint64_t ReadMisses_total = readsMisses_cold ;
+
+    uint64_t Write_total = getWrites(cache->cold_cache) + writesHits_hot + writesHits_warm;
+    uint64_t WriteMisses_total =  writesMisses_cold;
+
+    float missRate = (double)(ReadWriteMisses_total * 100) / (ReadWrite_total); //calculate miss rate
+    missRate = roundf(missRate * 100) / 100;
+
+    float missRateRead = (double)((ReadMisses_total) * 100) / (Read_total); //calculate miss rate
+    missRateRead = roundf(missRateRead * 100) / 100;
+
+    float missRateWrite = (double)((WriteMisses_total) * 100) / (Write_total); //calculate miss rate
+    missRateWrite = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
+
+
+    printf("\n====================== cache Stats Accel Graph =======================\n");
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Simulation results (Cache)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Reads/Writes", ReadWrite_total);
+    printf("| %-21s | %'-27lu | \n", "Reads/Writes misses", ReadWriteMisses_total);
+    printf("| %-21s | %-27.2f | \n", "Miss rate(%)", missRate);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Reads", Read_total);
+    printf("| %-21s | %'-27lu | \n", "Read misses", ReadMisses_total );
+    printf("| %-21s | %-27.2f | \n", "Rd Miss rate(%)", missRateRead);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Writes", Write_total);
+    printf("| %-21s | %'-27lu | \n", "Write misses", WriteMisses_total );
+    printf("| %-21s | %-27.2f | \n", "Wrt Miss rate(%)", missRateWrite);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Writebacks", getWB(cache->cold_cache) );
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %'-27lu | \n", "Evictions", getEVC(cache->cold_cache) );
+    printf(" -----------------------------------------------------\n");
+
+    printf("\n================ cache Stats ((PSL) cold_cache Stats) ================\n");
+    printStatsGraphCache(cache->cold_cache, in_degree, out_degree);
+    printf("\n===================  cache Stats (warm_cache Stats) ==================\n");
+    printStatsGraphCache(cache->warm_cache, in_degree, out_degree);
+    printf("\n===================  cache Stats (hot_cache Stats)  ==================\n");
+    printStatsGraphCache(cache->hot_cache, in_degree, out_degree);
+}
+
+void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache, uint32_t *in_degree, uint32_t *out_degree)
+{
+    printStatsAccelGraphCache(cache->accel_graph, in_degree, out_degree);
+    printf("\n======================================================================\n");
+    printf("\n===================== cache Stats (ref_cache Stats)  =================\n");
+    printStatsGraphCache(cache->ref_cache, in_degree, out_degree);
+    if(cache->ref_cache->policy == GRASP_POLICY)
+    {
+        uint32_t v;
+        printf("\n=====================      Property Regions          =================\n");
+
+        for (v = 0; v < cache->ref_cache->numPropertyRegions; ++v)
+        {
+            printf(" -----------------------------------------------------\n");
+            printf("| %-25s | %-24u| \n", "ID", v);
+            printf(" -----------------------------------------------------\n");
+            printf("| %-25s | %-24u| \n", "size", cache->ref_cache->propertyRegions[v].size);
+            printf("| %-25s | %-24u| \n", "data_type_size", cache->ref_cache->propertyRegions[v].data_type_size);
+            printf("| %-25s | 0x%-22lx| \n", "base_address", cache->ref_cache->propertyRegions[v].base_address);
+            printf(" -----------------------------------------------------\n");
+            printf("| %-25s | %-24u| \n", "fraction", cache->ref_cache->propertyRegions[v].fraction );
+            printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->ref_cache->propertyRegions[v].lower_bound );
+            printf("| %-25s | 0x%-22lx| \n", "hot_bound", cache->ref_cache->propertyRegions[v].hot_bound );
+            printf("| %-25s | 0x%-22lx| \n", "warm_bound", cache->ref_cache->propertyRegions[v].warm_bound );
+            printf("| %-25s | 0x%-22lx| \n", "upper_bound", cache->ref_cache->propertyRegions[v].upper_bound );
+            printf(" -----------------------------------------------------\n");
+        }
+    }
+}
 
 void printStats(struct Cache *cache)
 {
@@ -1146,12 +1478,19 @@ void printStats(struct Cache *cache)
     printf("| %-21s | %'-27lu | \n", "Evictions", getEVC(cache) );
     printf(" -----------------------------------------------------\n");
 
+
     if(cache->policy == GRASP_POLICY)
     {
+        printf("\n=====================      Property Regions          =================\n");
+
         for (v = 0; v < cache->numPropertyRegions; ++v)
         {
             printf(" -----------------------------------------------------\n");
             printf("| %-25s | %-24u| \n", "ID", v);
+            printf(" -----------------------------------------------------\n");
+            printf("| %-25s | %-24u| \n", "size", cache->propertyRegions[v].size);
+            printf("| %-25s | %-24u| \n", "data_type_size", cache->propertyRegions[v].data_type_size);
+            printf("| %-25s | 0x%-22lx| \n", "base_address", cache->propertyRegions[v].base_address);
             printf(" -----------------------------------------------------\n");
             printf("| %-25s | %-24u| \n", "fraction", cache->propertyRegions[v].fraction );
             printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->propertyRegions[v].lower_bound );

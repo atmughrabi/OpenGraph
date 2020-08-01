@@ -3,22 +3,6 @@
 
 #include <stdint.h>
 
-//CAPI PSL CACHE default CONFIGS
-// #define BLOCKSIZE 128
-// #define L1_SIZE 262144
-// #define L1_ASSOC 8
-// #define POLICY 0
-
-// #define BLOCKSIZE 64
-// #define L1_SIZE 32768
-// #define L1_ASSOC 8
-
-//GRASP default configs
-#define BLOCKSIZE 64
-#define L1_SIZE 1048576
-#define L1_ASSOC 16
-
-
 // Policy TYPES
 #define LRU_POLICY 0
 #define LFU_POLICY 1
@@ -26,14 +10,44 @@
 #define SRRIP_POLICY 3
 #define PIN_POLICY 4
 #define PLRU_POLICY 5
+#define GRASPXP_POLICY 6
 
+// GRASP EXPRESS (GRASP-XP)
 // CHOOSE global Policys
 // #define POLICY LRU_POLICY
 // #define POLICY GRASP_POLICY
-// #define POLICY LFU_POLICY
+#define POLICY LFU_POLICY
 // #define POLICY SRRIP_POLICY
 // #define POLICY PIN_POLICY
-#define POLICY PLRU_POLICY
+// #define POLICY PLRU_POLICY
+
+#ifndef POLICY
+#define POLICY GRASP_POLICY
+#endif
+
+//CAPI PSL CACHE default CONFIGS
+#define PSL_BLOCKSIZE 128
+#define PSL_L1_SIZE 262144
+#define PSL_L1_ASSOC 8
+#define PSL_POLICY PLRU_POLICY
+#define HOT_POLICY PLRU_POLICY
+#define WARM_POLICY PLRU_POLICY
+//GRASP/Ref_cache default configs
+// #define BLOCKSIZE 64
+// #define L1_SIZE 1048576
+// #define L1_ASSOC 16
+
+#define BLOCKSIZE 128
+#define L1_SIZE 524288
+#define L1_ASSOC 8
+
+// #define BLOCKSIZE 128
+// #define L1_SIZE 262144
+// #define L1_ASSOC 8
+
+// #define BLOCKSIZE 64
+// #define L1_SIZE 32768
+// #define L1_ASSOC 8
 
 // Cache states Constants
 #define INVALID 0
@@ -71,6 +85,9 @@ struct PropertyMetaData
 
 struct PropertyRegion
 {
+    uint64_t base_address;
+    uint32_t size;
+    uint32_t data_type_size;
     uint64_t lower_bound;
     uint64_t hot_bound;
     uint64_t warm_bound;
@@ -118,11 +135,16 @@ struct Cache
 };
 
 
-struct DoubleTaggedCache
+struct AccelGraphCache
 {
     struct Cache *cold_cache;// psl_cache
-    struct Cache *warm_cache;// warm tag
+    struct Cache *warm_cache;// warm_cache
     struct Cache *hot_cache; // hot_cache
+};
+
+struct DoubleTaggedCache
+{
+    struct AccelGraphCache *accel_graph;// psl_cache
     struct Cache *ref_cache; // psl_cache
 };
 
@@ -234,13 +256,31 @@ void updateAgePLRU(struct Cache *cache);
 
 // void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache);
 void printStats(struct Cache *cache);
+void printStatsCache(struct Cache *cache);
+void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees);
+void printStatsGraphCache(struct Cache *cache, uint32_t *in_degree, uint32_t *out_degree);
+void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degree, uint32_t *out_degree);
+void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache, uint32_t *in_degree, uint32_t *out_degree);
 
 struct Cache *newCache( uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions);
 void freeCache(struct Cache *cache);
 
+// ********************************************************************************************
+// ***************               Cache comparison                                **************
+// ********************************************************************************************
+
 struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices,  uint32_t policy, uint32_t numPropertyReg);
 void initDoubleTaggedCacheRegion(struct DoubleTaggedCache *cache, struct PropertyMetaData *propertyMetaData);
 void freeDoubleTaggedCache(struct DoubleTaggedCache *cache);
+
+// ********************************************************************************************
+// ***************              AccelGraph Cache configuration                   **************
+// ********************************************************************************************
+
+struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices,  uint32_t policy, uint32_t numPropertyReg);
+void initAccelGraphCacheRegion(struct AccelGraphCache *cache, struct PropertyMetaData *propertyMetaData);
+void freeAccelGraphCache(struct AccelGraphCache *cache);
+
 void online_cache_graph_stats(struct Cache *cache, uint32_t node);
 
 // ********************************************************************************************
