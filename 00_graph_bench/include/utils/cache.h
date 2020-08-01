@@ -58,7 +58,7 @@
 #define NUM_BITS_SRRIP 2
 
 #define DEFAULT_INSERT_SRRPV ((1 << NUM_BITS_SRRIP) - 1)
-#define HOT_HIT_SRRPV  0
+#define HIT_SRRPV  0
 #define SRRPV_INIT DEFAULT_INSERT_RRPV
 
 
@@ -88,6 +88,7 @@ struct CacheLine
     uint8_t RRPV;  // GRASP POLICY 2
     uint8_t SRRPV; // SRRPV POLICY 3
     uint8_t PIN;   // PIN POLICY 4
+    uint8_t PLRUm;   // PLRU POLICY 4
 };
 
 struct Cache
@@ -135,13 +136,14 @@ uint8_t getFlags(struct CacheLine *cacheLine);
 uint64_t getSeq(struct CacheLine *cacheLine);
 uint8_t getFreq(struct CacheLine *cacheLine);
 uint8_t getRRPV(struct CacheLine *cacheLine);
+uint8_t getSRRPV(struct CacheLine *cacheLine);
 void setFreq(struct CacheLine *cacheLine, uint8_t freq);
 void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV);
+void setSRRPV(struct CacheLine *cacheLine, uint8_t SRRPV);
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq);
 void setFlags(struct CacheLine *cacheLine, uint8_t flags);
 void setTag(struct CacheLine *cacheLine, uint64_t a);
 void setAddr(struct CacheLine *cacheLine, uint64_t addr);
-
 
 void invalidate(struct CacheLine *cacheLine);
 uint32_t isValid(struct CacheLine *cacheLine);
@@ -171,7 +173,6 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 struct CacheLine *findLine(struct Cache *cache, uint64_t addr);
 struct CacheLine *fillLine(struct Cache *cache, uint64_t addr);
 struct CacheLine *findLineToReplace(struct Cache *cache, uint64_t addr);
-
 
 // ********************************************************************************************
 // ***************         VICTIM EVICTION POLICIES                              **************

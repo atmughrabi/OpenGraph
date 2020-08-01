@@ -52,6 +52,10 @@ uint8_t getRRPV(struct CacheLine *cacheLine)
 {
     return cacheLine->RRPV;
 }
+uint8_t getSRRPV(struct CacheLine *cacheLine)
+{
+    return cacheLine->SRRPV;
+}
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq)
 {
     cacheLine->seq = Seq;
@@ -63,6 +67,10 @@ void setFreq(struct CacheLine *cacheLine, uint8_t freq)
 void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV)
 {
     cacheLine->RRPV = RRPV;
+}
+void setSRRPV(struct CacheLine *cacheLine, uint8_t SRRPV)
+{
+    cacheLine->SRRPV = SRRPV;
 }
 void setFlags(struct CacheLine *cacheLine, uint8_t flags)
 {
@@ -82,6 +90,9 @@ void invalidate(struct CacheLine *cacheLine)
     cacheLine->tag = 0;    //useful function
     cacheLine->Flags = INVALID;
     cacheLine->RRPV = RRPV_INIT;
+    cacheLine->SRRPV = SRRPV_INIT;
+    cacheLine->PIN = 0;
+    cacheLine->PLRUm = 0;
     cacheLine->freq = 0;
 }
 uint32_t isValid(struct CacheLine *cacheLine)
@@ -415,11 +426,14 @@ void updateInsertionPolicy(struct Cache *cache, struct CacheLine *line)
     case LRU_POLICY:
         updateInsertLRU(cache, line);
         break;
+    case LFU_POLICY:
+        updateInsertLFU(cache, line);
+        break;
     case GRASP_POLICY:
         updateInsertGRASP(cache, line);
         break;
-    case LFU_POLICY:
-        updateInsertLFU(cache, line);
+    case SRRIP_POLICY:
+        updateInsertSRRIP(cache, line);
         break;
     default :
         updateInsertLRU(cache, line);
@@ -452,6 +466,12 @@ void updateInsertGRASP(struct Cache *cache, struct CacheLine *line)
     {
         setRRPV(line, DEFAULT_INSERT_RRPV);
     }
+}
+
+void updateInsertSRRIP(struct Cache *cache, struct CacheLine *line)
+{
+    uint8_t SRRPV = DEFAULT_INSERT_SRRPV;
+    setSRRPV(line, SRRPV);
 }
 
 uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line)
@@ -497,11 +517,14 @@ void updatePromotionPolicy(struct Cache *cache, struct CacheLine *line)
     case LRU_POLICY:
         updatePromoteLRU(cache, line);
         break;
+    case LFU_POLICY:
+        updatePromoteLFU(cache, line);
+        break;
     case GRASP_POLICY:
         updatePromoteGRASP(cache, line);
         break;
-    case LFU_POLICY:
-        updatePromoteLFU(cache, line);
+    case SRRIP_POLICY:
+        updatePromoteSRRIP(cache, line);
         break;
     default :
         updatePromoteLRU(cache, line);
@@ -537,6 +560,11 @@ void updatePromoteGRASP(struct Cache *cache, struct CacheLine *line)
     }
 }
 
+void updatePromoteSRRIP(struct Cache *cache, struct CacheLine *line)
+{
+    setSRRPV(line, HIT_SRRPV);
+}
+
 // ********************************************************************************************
 // ***************         VICTIM EVICTION POLICIES                              **************
 // ********************************************************************************************
@@ -550,11 +578,14 @@ struct CacheLine *getVictimPolicy(struct Cache *cache, uint64_t addr)
     case LRU_POLICY:
         victim = getVictimLRU(cache, addr);
         break;
+    case LFU_POLICY:
+        victim = getVictimLFU(cache, addr);
+        break;
     case GRASP_POLICY:
         victim = getVictimGRASP(cache, addr);
         break;
-    case LFU_POLICY:
-        victim = getVictimLFU(cache, addr);
+    case SRRIP_POLICY:
+        victim = getVictimSRRIP(cache, addr);
         break;
     default :
         victim = getVictimLRU(cache, addr);
@@ -629,7 +660,11 @@ struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr)
 
     for(j = 0; j < cache->assoc; j++)
     {
-        if(isValid(&(cache->cacheLines[i][j])) == 0) return &(cache->cacheLines[i][j]);
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
     }
 
     victim = 0;
@@ -659,6 +694,54 @@ struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr)
 
     cache->evictions++;
     cache->cacheLines[i][victim].addr = addr; // update victim with new address so we simulate hot/cold insertion
+    return &(cache->cacheLines[i][victim]);
+}
+
+struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = 0;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    do
+    {
+        for(j = 0; j < cache->assoc; j++)
+        {
+            if(getSRRPV(&(cache->cacheLines[i][j])) == SRRPV_INIT)
+            {
+                victim = j;
+                min = getSRRPV(&(cache->cacheLines[i][j]));
+                break;
+            }
+        }
+
+        if(!min)
+        {
+            for(j = 0; j < cache->assoc; j++)
+            {
+                uint8_t SRRPV = getSRRPV(&(cache->cacheLines[i][j])) + 1;
+                if(SRRPV <= SRRPV_INIT)
+                    setSRRPV(&(cache->cacheLines[i][j]), SRRPV);
+            }
+        }
+
+        assert(min != SRRPV_INIT && min != 0);
+        assert(victim != cache->assoc);
+    }
+    while(!min);
+
+    cache->evictions++;
     return &(cache->cacheLines[i][victim]);
 }
 
