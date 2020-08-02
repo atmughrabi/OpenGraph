@@ -259,11 +259,11 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
     }
 
     cache->numVertices  = num_vertices;
-    cache->verticesMiss = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
-    cache->verticesHit  = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->verticesMiss = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
+    cache->verticesHit  = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
     cache->vertices_base_reuse  = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
     cache->vertices_total_reuse = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
-    cache->vertices_accesses    = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
+    cache->vertices_accesses    = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
 
     for(i = 0; i < num_vertices; i++)
     {
@@ -1224,7 +1224,7 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
             if(isValid(victim))
             {
                 // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-                Access(accel_graph->warm_cache, victim->addr, 'r', victim->idx);
+                Access(accel_graph->warm_cache, victim->addr, 'w', victim->idx);
             }
         }
         else if(inWarmRegionAddrGRASP(accel_graph->warm_cache, addr))
@@ -1265,7 +1265,7 @@ void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t 
             if(isValid(victim))
             {
                 // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-                Access(accel_graph->warm_cache, victim->addr, 'r', victim->idx);
+                Access(accel_graph->warm_cache, victim->addr, 'w', victim->idx);
             }
         }
         else if(value > 0.0015 && value <= 0.015)
@@ -1317,18 +1317,17 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
         // cache->propertyRegions[v].fraction    = 100; // classical vs ratio of array size in bytes
-        cache->propertyRegions[v].fraction    = ((propertyMetaData[v].size * propertyMetaData[v].data_type_size) * 100) / total_properties_size;
-
+        cache->propertyRegions[v].fraction    = (uint64_t)(((uint64_t)(propertyMetaData[v].size * propertyMetaData[v].data_type_size) * 100) / total_properties_size );
         cache->propertyRegions[v].lower_bound = propertyMetaData[v].base_address;
-        cache->propertyRegions[v].upper_bound = propertyMetaData[v].base_address + (propertyMetaData[v].size * propertyMetaData[v].data_type_size);
+        cache->propertyRegions[v].upper_bound = propertyMetaData[v].base_address + (uint64_t)(propertyMetaData[v].size * propertyMetaData[v].data_type_size);
 
-        cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].lower_bound + ((size * cache->propertyRegions[v].fraction) / 100);
+        cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].lower_bound + ((uint64_t)(size * cache->propertyRegions[v].fraction) / 100);
         if(cache->propertyRegions[v].hot_bound > cache->propertyRegions[v].upper_bound)
         {
             cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].upper_bound;
         }
 
-        cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].hot_bound + ((size * cache->propertyRegions[v].fraction) / 100);
+        cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].hot_bound + ((uint64_t)(size * cache->propertyRegions[v].fraction) / 100);
         if(cache->propertyRegions[v].warm_bound > cache->propertyRegions[v].upper_bound)
         {
             cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].upper_bound;
@@ -1481,8 +1480,10 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
             if(degrees[v] <= thresholds[i])
             {
                 if(cache->vertices_accesses[v])
+                {
                     thresholds_count[i] += 1;
-                thresholds_totalDegrees[i]  += degrees[v];
+                    thresholds_totalDegrees[i]  += degrees[v];
+                }
                 thresholds_totalReuses[i]   += cache->vertices_total_reuse[v];
                 thresholds_totalMisses[i]   += cache->verticesMiss[v];
                 thresholds_totalAccesses[i] += cache->vertices_accesses[v];
@@ -1522,10 +1523,10 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
         printf("| %-15lu | %-15lu | %-15lu | %-15.2f | %-15.2f | %-15.2f | %-15.2f |\n", thresholds[i], thresholds_count[i], thresholds_totalAccesses[i], thresholds_avgAccesses[i], thresholds_avgDegrees[i], thresholds_avgReuses[i], thresholds_avgMisses[i]);
     }
     printf(" -----------------------------------------------------------------------------------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-15s | %-15s | %-15s | %-15s | \n", "avgDegrees", "Total Count(V)", "totalAccess", "totalDegrees", "totalReuse", "totalMisses");
-    printf(" -----------------------------------------------------------------------------------------------------------\n");
-    printf("| %-15lu | %-15lu | %-15lu | %-15lu | %-15lu | %-15lu |\n", avgDegrees, thresholds_totalCount, thresholds_totalAccess, thresholds_totalDegree, thresholds_totalReuse, thresholds_totalMiss);
-    printf(" -----------------------------------------------------------------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | %-15s | %-15s |  %-15s | %-15s | \n", "avgDegrees", "Total Count(V)", "totalAccess", "totalDegrees",  "avgDegrees", "totalReuse", "totalMisses");
+    printf(" -----------------------------------------------------------------------------------------------------------------------------\n");
+    printf("| %-15lu | %-15lu | %-15lu | %-15lu | %-15lu |  %-15lu | %-15lu |\n", avgDegrees, thresholds_totalCount, thresholds_totalAccess, thresholds_totalDegree, avgDegrees, thresholds_totalReuse, thresholds_totalMiss);
+    printf(" -----------------------------------------------------------------------------------------------------------------------------\n");
 
     free(thresholds);
     free(thresholds_count);

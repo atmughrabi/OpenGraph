@@ -139,11 +139,11 @@ struct Cache
     uint64_t currentCycle_preftcher;
 
     //counters for graph performance on the cache
-    uint32_t *verticesMiss;
-    uint32_t *verticesHit;
+    uint64_t *verticesMiss;
+    uint64_t *verticesHit;
     uint64_t *vertices_base_reuse;
     uint64_t *vertices_total_reuse;
-    uint32_t *vertices_accesses;
+    uint64_t *vertices_accesses;
     uint32_t  numVertices;
 
     uint32_t  num_buckets;

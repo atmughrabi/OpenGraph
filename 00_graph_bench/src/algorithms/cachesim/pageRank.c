@@ -903,7 +903,7 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     float *riDividedOnDiClause = (float *) my_malloc(graph->num_vertices * sizeof(float));
 
 #ifdef CACHE_HARNESS
-    uint32_t numPropertyRegions = 1;
+    uint32_t numPropertyRegions = 2;
     struct PropertyMetaData *propertyMetaData = (struct PropertyMetaData *) my_malloc(graph->num_vertices * sizeof(struct PropertyMetaData));
     struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, numPropertyRegions);
 
