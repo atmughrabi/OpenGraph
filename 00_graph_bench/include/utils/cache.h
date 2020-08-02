@@ -4,32 +4,32 @@
 #include <stdint.h>
 
 // Policy TYPES
-#define LRU_POLICY 0
-#define LFU_POLICY 1
-#define GRASP_POLICY 2
-#define SRRIP_POLICY 3
-#define PIN_POLICY 4
-#define PLRU_POLICY 5
+#define LRU_POLICY     0
+#define LFU_POLICY     1
+#define GRASP_POLICY   2
+#define SRRIP_POLICY   3
+#define PIN_POLICY     4
+#define PLRU_POLICY    5
 #define GRASPXP_POLICY 6
 
 
 
 //CAPI PSL CACHE default CONFIGS
 #define PSL_BLOCKSIZE 128
-#define PSL_L1_SIZE 262144
-#define PSL_L1_ASSOC 8
-#define PSL_POLICY PLRU_POLICY
-#define HOT_POLICY PLRU_POLICY
-#define WARM_POLICY PLRU_POLICY
+#define PSL_L1_SIZE   262144
+#define PSL_L1_ASSOC  8
+#define PSL_POLICY    PLRU_POLICY
+#define HOT_POLICY    PLRU_POLICY
+#define WARM_POLICY   PLRU_POLICY
 
 
 //GRASP/Ref_cache default configs
 // GRASP EXPRESS (GRASP-XP)
 // CHOOSE global Policys
 // #define POLICY LRU_POLICY
-// #define POLICY GRASP_POLICY
+#define POLICY GRASP_POLICY
 // #define POLICY LFU_POLICY
-#define POLICY SRRIP_POLICY
+// #define POLICY SRRIP_POLICY
 // #define POLICY PIN_POLICY
 // #define POLICY PLRU_POLICY
 
@@ -37,21 +37,25 @@
 #define POLICY GRASP_POLICY
 #endif
 
-// #define BLOCKSIZE 64
-// #define L1_SIZE 1048576
-// #define L1_ASSOC 16
+// #define BLOCKSIZE   64
+// #define L1_SIZE     1048576
+// #define L1_ASSOC    16
 
-#define BLOCKSIZE 64
-#define L1_SIZE 524288
-#define L1_ASSOC 8
+#define BLOCKSIZE   128
+#define L1_SIZE     786432
+#define L1_ASSOC    8
 
-// #define BLOCKSIZE 128
-// #define L1_SIZE 262144
-// #define L1_ASSOC 8
+// #define BLOCKSIZE   128
+// #define L1_SIZE     524288
+// #define L1_ASSOC    8
 
-// #define BLOCKSIZE 64
-// #define L1_SIZE 32768
-// #define L1_ASSOC 8
+// #define BLOCKSIZE   128
+// #define L1_SIZE     262144
+// #define L1_ASSOC    8
+
+// #define BLOCKSIZE   64
+// #define L1_SIZE     32768
+// #define L1_ASSOC    8
 
 // Cache states Constants
 #define INVALID 0
@@ -256,7 +260,6 @@ void updateAgeSRRIP(struct Cache *cache);
 void updateAgePIN(struct Cache *cache);
 void updateAgePLRU(struct Cache *cache);
 
-
 // ********************************************************************************************
 // ***************               Cache Orignzation                                **************
 // ********************************************************************************************
@@ -276,14 +279,20 @@ void freeAccelGraphCache(struct AccelGraphCache *cache);
 // ********************************************************************************************
 // ***************               ACCElGraph Policy                               **************
 // ********************************************************************************************
+
+void AccessDoubleTaggedCacheUInt64(struct DoubleTaggedCache *cache, uint64_t addr, unsigned char op, uint32_t node, uint64_t value);
+void AccessDoubleTaggedCacheUInt32(struct DoubleTaggedCache *cache, uint64_t addr, unsigned char op, uint32_t node, uint32_t value);
+void AccessDoubleTaggedCacheFloat(struct DoubleTaggedCache *cache, uint64_t addr, unsigned char op, uint32_t node, float value);
 void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node);
-void AccessAccelGraphExpress(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node);
+void AccessAccelGraphExpressUInt64(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, uint64_t value);
+void AccessAccelGraphExpressUInt32(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, uint32_t value);
+void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, float value);
 
 // ********************************************************************************************
 // ***************               GRASP Policy                                    **************
 // ********************************************************************************************
 
-void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData);
+void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData, uint64_t size);
 uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line);
 uint32_t inWarmRegion(struct Cache *cache, struct CacheLine *line);
 uint32_t inHotRegionAddrGRASP(struct Cache *cache, uint64_t addr);

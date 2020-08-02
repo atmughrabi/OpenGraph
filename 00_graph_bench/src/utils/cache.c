@@ -65,7 +65,6 @@ uint8_t getPLRU(struct CacheLine *cacheLine)
 {
     return cacheLine->PLRU;
 }
-
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq)
 {
     cacheLine->seq = Seq;
@@ -90,7 +89,6 @@ void setPLRU(struct CacheLine *cacheLine, uint8_t PLRU)
 {
     cacheLine->PLRU = PLRU;
 }
-
 void setFlags(struct CacheLine *cacheLine, uint8_t flags)
 {
     cacheLine->Flags = flags;
@@ -188,8 +186,8 @@ struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_ass
 
 void initDoubleTaggedCacheRegion(struct DoubleTaggedCache *cache, struct PropertyMetaData *propertyMetaData)
 {
-    initAccelGraphCacheRegion (cache->accel_graph, propertyMetaData);
-    initialzeCachePropertyRegions (cache->ref_cache, propertyMetaData);
+    initAccelGraphCacheRegion     (cache->accel_graph, propertyMetaData);
+    initialzeCachePropertyRegions (cache->ref_cache  , propertyMetaData, cache->ref_cache->size);
 }
 
 void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
@@ -212,7 +210,7 @@ struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, 
     struct AccelGraphCache *cache = (struct AccelGraphCache *) my_malloc(sizeof(struct AccelGraphCache));
 
     cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, PSL_POLICY, numPropertyRegions);
-    cache->warm_cache = newCache( l1_size / 2, 16, 4, num_vertices, WARM_POLICY, numPropertyRegions);
+    cache->warm_cache = newCache( l1_size, 8, 4, num_vertices, WARM_POLICY, numPropertyRegions);
     cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices, HOT_POLICY, numPropertyRegions);
 
     return cache;
@@ -220,9 +218,10 @@ struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, 
 
 void initAccelGraphCacheRegion(struct AccelGraphCache *cache, struct PropertyMetaData *propertyMetaData)
 {
-    initialzeCachePropertyRegions (cache->cold_cache, propertyMetaData);
-    initialzeCachePropertyRegions (cache->warm_cache, propertyMetaData);
-    initialzeCachePropertyRegions (cache->hot_cache, propertyMetaData);
+    uint64_t size = cache->cold_cache->size + cache->warm_cache->size + cache->hot_cache->size;
+    initialzeCachePropertyRegions (cache->cold_cache, propertyMetaData, size);
+    initialzeCachePropertyRegions (cache->warm_cache, propertyMetaData, size);
+    initialzeCachePropertyRegions (cache->hot_cache , propertyMetaData, size);
 }
 
 void freeAccelGraphCache(struct AccelGraphCache *cache)
@@ -242,7 +241,6 @@ void freeAccelGraphCache(struct AccelGraphCache *cache)
 
 struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions)
 {
-
     uint64_t i;
 
     struct Cache *cache = ( struct Cache *) my_malloc(sizeof(struct Cache));
@@ -268,7 +266,6 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
     cache->vertices_total_avg_reuse = (float *)my_malloc(sizeof(float) * num_vertices);
     cache->vertices_total_avg_count = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
 
-
     for(i = 0; i < num_vertices; i++)
     {
         cache->verticesMiss[i] = 0;
@@ -279,7 +276,6 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
         cache->vertices_total_avg_reuse[i] = 0;
         cache->vertices_total_avg_count[i] = 0;
     }
-
     return cache;
 }
 
@@ -1168,16 +1164,57 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 // ***************               ACCElGraph Policy                               **************
 // ********************************************************************************************
 
+void AccessDoubleTaggedCacheFloat(struct DoubleTaggedCache *cache, uint64_t addr, unsigned char op, uint32_t node, float value)
+{
+    // AccessAccelGraphExpressFloat(cache->accel_graph, addr, op, node, value);
+    AccessAccelGraphGRASP(cache->accel_graph, addr, op, node);
+    Access(cache->ref_cache, addr, op, node);
+}
+
 void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node)
 {
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
-        if(inHotRegionAddrGRASP(accel_graph->cold_cache, addr))
+        if(inHotRegionAddrGRASP(accel_graph->hot_cache, addr))
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
         }
-        else if(inWarmRegionAddrGRASP(accel_graph->cold_cache, addr))
+        else if(inWarmRegionAddrGRASP(accel_graph->warm_cache, addr))
+        {
+            Access(accel_graph->cold_cache, addr, op, node);
+            Access(accel_graph->warm_cache, addr, op, node);
+        }
+        else
+        {
+            Access(accel_graph->cold_cache, addr, op, node);
+        }
+    }
+    else  if(!checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
+    {
+        Access(accel_graph->warm_cache, addr, op, node);
+    }
+    else  if(checkInCache(accel_graph->warm_cache, addr) && !checkInCache(accel_graph->hot_cache, addr))
+    {
+        Access(accel_graph->hot_cache, addr, op, node);
+    }
+    else  if(!checkInCache(accel_graph->warm_cache, addr) && !checkInCache(accel_graph->hot_cache, addr))
+    {
+        Access(accel_graph->hot_cache, addr, op, node);
+    }
+}
+
+
+void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, float value)
+{
+    if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
+    {
+        if(value <= 0.0015)
+        {
+            Access(accel_graph->cold_cache, addr, op, node);
+            Access(accel_graph->hot_cache, addr, op, node);
+        }
+        else if(value > 0.0015 && value <= 0.015)
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->warm_cache, addr, op, node);
@@ -1205,12 +1242,11 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
 // ***************               GRASP Policy                                    **************
 // ********************************************************************************************
 
-
 // ********************************************************************************************
 // ***************               GRASP Initializaiton                            **************
 // ********************************************************************************************
 
-void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData)
+void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData, uint64_t size)
 {
     uint32_t v;
     uint64_t total_properties_size = 0;
@@ -1222,30 +1258,28 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
         cache->propertyRegions[v].base_address = propertyMetaData[v].base_address;
         cache->propertyRegions[v].size = propertyMetaData[v].size;
         cache->propertyRegions[v].data_type_size = propertyMetaData[v].data_type_size;
-
     }
 
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
-        cache->propertyRegions[v].fraction    = 100; // classical vs ratio of array size in bytes
-        // cache->propertyRegions[v].fraction    = ((propertyMetaData[v].size * propertyMetaData[v].data_type_size) * 100) / total_properties_size;
+        // cache->propertyRegions[v].fraction    = 100; // classical vs ratio of array size in bytes
+        cache->propertyRegions[v].fraction    = ((propertyMetaData[v].size * propertyMetaData[v].data_type_size) * 100) / total_properties_size;
 
         cache->propertyRegions[v].lower_bound = propertyMetaData[v].base_address;
         cache->propertyRegions[v].upper_bound = propertyMetaData[v].base_address + (propertyMetaData[v].size * propertyMetaData[v].data_type_size);
 
-        cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].lower_bound + ((cache->size * cache->propertyRegions[v].fraction) / 100);
+        cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].lower_bound + ((size * cache->propertyRegions[v].fraction) / 100);
         if(cache->propertyRegions[v].hot_bound > cache->propertyRegions[v].upper_bound)
         {
             cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].upper_bound;
         }
 
-        cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].hot_bound + ((cache->size * cache->propertyRegions[v].fraction) / 100);
+        cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].hot_bound + ((size * cache->propertyRegions[v].fraction) / 100);
         if(cache->propertyRegions[v].warm_bound > cache->propertyRegions[v].upper_bound)
         {
             cache->propertyRegions[v].warm_bound = cache->propertyRegions[v].upper_bound;
         }
     }
-
 }
 
 // ********************************************************************************************
@@ -1255,13 +1289,13 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
 void printStatsCache(struct Cache *cache)
 {
     float missRate = (double)((getWM(cache) + getRM(cache)) * 100) / (cache->currentCycle_cache); //calculate miss rate
-    missRate = roundf(missRate * 100) / 100;                            //rounding miss rate
+    missRate       = roundf(missRate * 100) / 100;                                                //rounding miss rate
 
-    float missRateRead = (double)((getRM(cache)) * 100) / (getReads(cache)); //calculate miss rate
-    missRateRead = roundf(missRateRead * 100) / 100;                            //rounding miss rate
+    float missRateRead = (double)((getRM(cache)) * 100) / (getReads(cache));   //calculate miss rate
+    missRateRead       = roundf(missRateRead * 100) / 100;                     //rounding miss rate
 
     float missRateWrite = (double)((getWM(cache)) * 100) / (getWrites(cache)); //calculate miss rate
-    missRateWrite = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
+    missRateWrite       = roundf(missRateWrite * 100) / 100;                   //rounding miss rate
 
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Simulation results (Cache)");
@@ -1312,32 +1346,33 @@ void printStatsCache(struct Cache *cache)
     printf(" -----------------------------------------------------\n");
     printf("| %-21s | %'-27lu | \n", "Evictions", getEVC(cache) );
     printf(" -----------------------------------------------------\n");
-
 }
 
 void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
 {
-
-    uint64_t  avgDegrees = 0;
-    uint32_t  num_buckets = 11;
     uint32_t  i = 0;
     uint32_t  v = 0;
+    uint64_t  avgDegrees = 0;
+    uint32_t  num_buckets = 11;
     uint32_t  num_vertices = cache->numVertices;
+
     uint64_t *thresholds;
     uint64_t *thresholds_count;
     uint64_t *thresholds_totalAccesses;
     uint64_t *thresholds_totalDegrees;
     uint64_t *thresholds_totalReuses;
     uint64_t *thresholds_totalMisses;
+
+    float *thresholds_avgAccesses;
+    float *thresholds_avgDegrees;
+    float *thresholds_avgReuses;
+    float *thresholds_avgMisses;
+
     uint64_t thresholds_totalAccess  = 0;
     uint64_t thresholds_totalCount   = 0;
     uint64_t thresholds_totalDegree  = 0;
     uint64_t thresholds_totalReuse   = 0;
     uint64_t thresholds_totalMiss    = 0;
-    float *thresholds_avgAccesses;
-    float *thresholds_avgDegrees;
-    float *thresholds_avgReuses;
-    float *thresholds_avgMisses;
 
     thresholds               = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
     thresholds_count         = (uint64_t *) my_malloc(num_buckets * sizeof(uint64_t));
@@ -1453,43 +1488,58 @@ void printStatsGraphCache(struct Cache *cache, uint32_t *in_degree, uint32_t *ou
     printStatsGraphReuse(cache, out_degree);
     // printf("\n======================  Reuse stats In Degree  =======================\n");
     // printStatsGraphReuse(cache, in_degree);
+    uint32_t v;
+
+    printf("\n=====================      Property Regions          =================\n");
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        printf(" -----------------------------------------------------\n");
+        printf("| %-25s | %-24u| \n", "ID", v);
+        printf(" -----------------------------------------------------\n");
+        printf("| %-25s | %-24u| \n", "size", cache->propertyRegions[v].size);
+        printf("| %-25s | %-24u| \n", "data_type_size", cache->propertyRegions[v].data_type_size);
+        printf("| %-25s | 0x%-22lx| \n", "base_address", cache->propertyRegions[v].base_address);
+        printf(" -----------------------------------------------------\n");
+        printf("| %-25s | %-24u| \n", "fraction", cache->propertyRegions[v].fraction );
+        printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->propertyRegions[v].lower_bound );
+        printf("| %-25s | 0x%-22lx| \n", "hot_bound", cache->propertyRegions[v].hot_bound );
+        printf("| %-25s | 0x%-22lx| \n", "warm_bound", cache->propertyRegions[v].warm_bound );
+        printf("| %-25s | 0x%-22lx| \n", "upper_bound", cache->propertyRegions[v].upper_bound );
+        printf(" -----------------------------------------------------\n");
+    }
 }
 
 void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degree, uint32_t *out_degree)
 {
     //rounding miss rate
 
-
-
-
-    uint64_t readsHits_hot  = getReads(cache->hot_cache) - getRM(cache->hot_cache);
-    uint64_t readsHits_warm = getReads(cache->warm_cache) - getRM(cache->warm_cache);
+    uint64_t readsHits_hot    = getReads(cache->hot_cache)  - getRM(cache->hot_cache);
+    uint64_t readsHits_warm   = getReads(cache->warm_cache) - getRM(cache->warm_cache);
 
     uint64_t readsMisses_cold = getRM(cache->cold_cache);
 
-    uint64_t writesHits_hot  = getWrites(cache->hot_cache) - getWM(cache->hot_cache);
-    uint64_t writesHits_warm = getWrites(cache->warm_cache) - getWM(cache->warm_cache);
+    uint64_t writesHits_hot   = getWrites(cache->hot_cache)  - getWM(cache->hot_cache);
+    uint64_t writesHits_warm  = getWrites(cache->warm_cache) - getWM(cache->warm_cache);
 
     uint64_t writesMisses_cold = getWM(cache->cold_cache);
 
-    uint64_t ReadWrite_total = getReads(cache->cold_cache) + getWrites(cache->cold_cache) + readsHits_hot + readsHits_warm + writesHits_hot + writesHits_warm;
+    uint64_t ReadWrite_total   = getReads(cache->cold_cache) + getWrites(cache->cold_cache) + readsHits_hot + readsHits_warm + writesHits_hot + writesHits_warm;
     uint64_t ReadWriteMisses_total = readsMisses_cold + writesMisses_cold;
 
-    uint64_t Read_total = getReads(cache->cold_cache) + readsHits_hot + readsHits_warm;
+    uint64_t Read_total       = getReads(cache->cold_cache) + readsHits_hot + readsHits_warm;
     uint64_t ReadMisses_total = readsMisses_cold ;
 
-    uint64_t Write_total = getWrites(cache->cold_cache) + writesHits_hot + writesHits_warm;
+    uint64_t Write_total       = getWrites(cache->cold_cache) + writesHits_hot + writesHits_warm;
     uint64_t WriteMisses_total =  writesMisses_cold;
 
     float missRate = (double)(ReadWriteMisses_total * 100) / (ReadWrite_total); //calculate miss rate
-    missRate = roundf(missRate * 100) / 100;
+    missRate       = roundf(missRate * 100) / 100;
 
     float missRateRead = (double)((ReadMisses_total) * 100) / (Read_total); //calculate miss rate
-    missRateRead = roundf(missRateRead * 100) / 100;
+    missRateRead       = roundf(missRateRead * 100) / 100;
 
     float missRateWrite = (double)((WriteMisses_total) * 100) / (Write_total); //calculate miss rate
-    missRateWrite = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
-
+    missRateWrite       = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
 
     printf("\n====================== cache Stats Accel Graph =======================\n");
 
@@ -1527,28 +1577,28 @@ void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache, uint32_t *in_d
     printf("\n======================================================================\n");
     printf("\n===================== cache Stats (ref_cache Stats)  =================\n");
     printStatsGraphCache(cache->ref_cache, in_degree, out_degree);
-    if(cache->ref_cache->policy == GRASP_POLICY)
-    {
-        uint32_t v;
-        printf("\n=====================      Property Regions          =================\n");
+    // if(cache->ref_cache->policy == GRASP_POLICY)
+    // {
+    // uint32_t v;
+    // printf("\n=====================      Property Regions          =================\n");
 
-        for (v = 0; v < cache->ref_cache->numPropertyRegions; ++v)
-        {
-            printf(" -----------------------------------------------------\n");
-            printf("| %-25s | %-24u| \n", "ID", v);
-            printf(" -----------------------------------------------------\n");
-            printf("| %-25s | %-24u| \n", "size", cache->ref_cache->propertyRegions[v].size);
-            printf("| %-25s | %-24u| \n", "data_type_size", cache->ref_cache->propertyRegions[v].data_type_size);
-            printf("| %-25s | 0x%-22lx| \n", "base_address", cache->ref_cache->propertyRegions[v].base_address);
-            printf(" -----------------------------------------------------\n");
-            printf("| %-25s | %-24u| \n", "fraction", cache->ref_cache->propertyRegions[v].fraction );
-            printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->ref_cache->propertyRegions[v].lower_bound );
-            printf("| %-25s | 0x%-22lx| \n", "hot_bound", cache->ref_cache->propertyRegions[v].hot_bound );
-            printf("| %-25s | 0x%-22lx| \n", "warm_bound", cache->ref_cache->propertyRegions[v].warm_bound );
-            printf("| %-25s | 0x%-22lx| \n", "upper_bound", cache->ref_cache->propertyRegions[v].upper_bound );
-            printf(" -----------------------------------------------------\n");
-        }
-    }
+    // for (v = 0; v < cache->ref_cache->numPropertyRegions; ++v)
+    // {
+    //     printf(" -----------------------------------------------------\n");
+    //     printf("| %-25s | %-24u| \n", "ID", v);
+    //     printf(" -----------------------------------------------------\n");
+    //     printf("| %-25s | %-24u| \n", "size", cache->ref_cache->propertyRegions[v].size);
+    //     printf("| %-25s | %-24u| \n", "data_type_size", cache->ref_cache->propertyRegions[v].data_type_size);
+    //     printf("| %-25s | 0x%-22lx| \n", "base_address", cache->ref_cache->propertyRegions[v].base_address);
+    //     printf(" -----------------------------------------------------\n");
+    //     printf("| %-25s | %-24u| \n", "fraction", cache->ref_cache->propertyRegions[v].fraction );
+    //     printf("| %-25s | 0x%-22lx| \n", "lower_bound", cache->ref_cache->propertyRegions[v].lower_bound );
+    //     printf("| %-25s | 0x%-22lx| \n", "hot_bound", cache->ref_cache->propertyRegions[v].hot_bound );
+    //     printf("| %-25s | 0x%-22lx| \n", "warm_bound", cache->ref_cache->propertyRegions[v].warm_bound );
+    //     printf("| %-25s | 0x%-22lx| \n", "upper_bound", cache->ref_cache->propertyRegions[v].upper_bound );
+    //     printf(" -----------------------------------------------------\n");
+    // }
+    // }
 }
 
 void printStats(struct Cache *cache)
@@ -1601,10 +1651,11 @@ void printStats(struct Cache *cache)
             printf(" -----------------------------------------------------\n");
         }
     }
-    uint64_t  numVerticesMiss = 0;
+
+    double    avgVerticesreuse  = 0;
+    uint64_t  numVerticesMiss   = 0;
     uint64_t  totalVerticesMiss = 0;
-    double  avgVerticesreuse = 0;
-    uint64_t   accVerticesAccess = 0;
+    uint64_t  accVerticesAccess = 0;
     // uint64_t   minReuse = 0;
     // uint32_t  maxVerticesMiss = 0;
     // uint32_t  maxNode = 0;
@@ -1628,8 +1679,6 @@ void printStats(struct Cache *cache)
         }
 
     }
-
-
 
     avgVerticesreuse /= accVerticesAccess;
 
