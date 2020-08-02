@@ -103,6 +103,7 @@ void setAddr(struct CacheLine *cacheLine, uint64_t addr)
 }
 void invalidate(struct CacheLine *cacheLine)
 {
+    cacheLine->idx = 0;
     cacheLine->seq = 0;
     cacheLine->tag = 0;    //useful function
     cacheLine->Flags = INVALID;
@@ -187,7 +188,7 @@ struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_ass
 void initDoubleTaggedCacheRegion(struct DoubleTaggedCache *cache, struct PropertyMetaData *propertyMetaData)
 {
     initAccelGraphCacheRegion     (cache->accel_graph, propertyMetaData);
-    initialzeCachePropertyRegions (cache->ref_cache  , propertyMetaData, cache->ref_cache->size);
+    initialzeCachePropertyRegions (cache->ref_cache, propertyMetaData, cache->ref_cache->size);
 }
 
 void freeDoubleTaggedCache(struct DoubleTaggedCache *cache)
@@ -211,7 +212,7 @@ struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, 
 
     cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, PSL_POLICY, numPropertyRegions);
     cache->warm_cache = newCache( l1_size, 8, 4, num_vertices, WARM_POLICY, numPropertyRegions);
-    cache->hot_cache  = newCache( l1_size / 2, 8, 4, num_vertices, HOT_POLICY, numPropertyRegions);
+    cache->hot_cache  = newCache( l1_size, 8, 4, num_vertices, HOT_POLICY, numPropertyRegions);
 
     return cache;
 }
@@ -221,7 +222,7 @@ void initAccelGraphCacheRegion(struct AccelGraphCache *cache, struct PropertyMet
     uint64_t size = cache->cold_cache->size + cache->warm_cache->size + cache->hot_cache->size;
     initialzeCachePropertyRegions (cache->cold_cache, propertyMetaData, size);
     initialzeCachePropertyRegions (cache->warm_cache, propertyMetaData, size);
-    initialzeCachePropertyRegions (cache->hot_cache , propertyMetaData, size);
+    initialzeCachePropertyRegions (cache->hot_cache, propertyMetaData, size);
 }
 
 void freeAccelGraphCache(struct AccelGraphCache *cache)
@@ -263,8 +264,6 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
     cache->vertices_base_reuse  = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
     cache->vertices_total_reuse = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
     cache->vertices_accesses    = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
-    cache->vertices_total_avg_reuse = (float *)my_malloc(sizeof(float) * num_vertices);
-    cache->vertices_total_avg_count = (uint32_t *)my_malloc(sizeof(uint32_t) * num_vertices);
 
     for(i = 0; i < num_vertices; i++)
     {
@@ -273,12 +272,19 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
         cache->vertices_base_reuse[i] = 0;
         cache->vertices_total_reuse[i] = 0;
         cache->vertices_accesses[i] = 0;
-        cache->vertices_total_avg_reuse[i] = 0;
-        cache->vertices_total_avg_count[i] = 0;
     }
+
     return cache;
 }
 
+
+void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  num_buckets)
+{
+
+    cache->num_buckets             = num_buckets;
+    cache->thresholds_count        = (uint64_t *)my_malloc(sizeof(uint64_t) * num_buckets);
+    cache->thresholds_totalDegrees = (uint64_t *)my_malloc(sizeof(uint64_t) * num_buckets);
+}
 
 void freeCache(struct Cache *cache)
 {
@@ -298,10 +304,6 @@ void freeCache(struct Cache *cache)
             free(cache->vertices_total_reuse);
         if(cache->vertices_accesses)
             free(cache->vertices_accesses);
-        if(cache->vertices_total_avg_reuse)
-            free(cache->vertices_total_avg_reuse);
-        if(cache->vertices_total_avg_count)
-            free(cache->vertices_total_avg_count);
 
         if(cache->cacheLines)
         {
@@ -805,7 +807,11 @@ struct CacheLine *getVictimLRU(struct Cache *cache, uint64_t addr)
 
     for(j = 0; j < cache->assoc; j++)
     {
-        if(isValid(&(cache->cacheLines[i][j])) == 0) return &(cache->cacheLines[i][j]);
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
     }
     for(j = 0; j < cache->assoc; j++)
     {
@@ -818,8 +824,7 @@ struct CacheLine *getVictimLRU(struct Cache *cache, uint64_t addr)
     assert(victim != cache->assoc);
 
     cache->evictions++;
-
-
+    cache->cacheLines[i][victim].addr = addr;
     return &(cache->cacheLines[i][victim]);
 }
 
@@ -833,7 +838,11 @@ struct CacheLine *getVictimLFU(struct Cache *cache, uint64_t addr)
 
     for(j = 0; j < cache->assoc; j++)
     {
-        if(isValid(&(cache->cacheLines[i][j])) == 0) return &(cache->cacheLines[i][j]);
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
     }
     for(j = 0; j < cache->assoc; j++)
     {
@@ -846,7 +855,7 @@ struct CacheLine *getVictimLFU(struct Cache *cache, uint64_t addr)
     assert(victim != cache->assoc);
 
     cache->evictions++;
-
+    cache->cacheLines[i][victim].addr = addr;
     return &(cache->cacheLines[i][victim]);
 }
 
@@ -943,6 +952,7 @@ struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr)
     assert(victim != cache->assoc);
 
     cache->evictions++;
+    cache->cacheLines[i][victim].addr = addr;
     return &(cache->cacheLines[i][victim]);
 }
 
@@ -975,7 +985,6 @@ struct CacheLine *getVictimPIN(struct Cache *cache, uint64_t addr)
 
     cache->evictions++;
     cache->cacheLines[i][victim].addr = addr; // update victim with new address so we simulate hot/cold insertion
-
     return &(cache->cacheLines[i][victim]);
 }
 
@@ -1035,6 +1044,33 @@ struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr)
     cache->evictions++;
 
     cache->cacheLines[i][victim].addr = addr;
+    return &(cache->cacheLines[i][victim]);
+}
+
+
+struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim;
+    victim = cache->assoc;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(!getPLRU(&(cache->cacheLines[i][j])))
+        {
+            victim = j;
+            break;
+        }
+    }
+    assert(victim != cache->assoc);
     return &(cache->cacheLines[i][victim]);
 }
 
@@ -1131,22 +1167,25 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
             cache->readMisses++;
         }
 
+        struct CacheLine *newline = NULL;
+
         if(cache->policy == PIN_POLICY)
         {
             if(!getVictimPINBypass(cache, addr))
             {
-                struct CacheLine *newline = fillLine(cache, addr);
+                newline = fillLine(cache, addr);
                 if(op == 'w')
                     setFlags(newline, DIRTY);
             }
         }
         else
         {
-            struct CacheLine *newline = fillLine(cache, addr);
+            newline = fillLine(cache, addr);
             if(op == 'w')
                 setFlags(newline, DIRTY);
         }
 
+        newline->idx = node;
         cache->verticesMiss[node]++;
     }
     else
@@ -1173,12 +1212,20 @@ void AccessDoubleTaggedCacheFloat(struct DoubleTaggedCache *cache, uint64_t addr
 
 void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node)
 {
+    struct CacheLine *victim = NULL;
+
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
         if(inHotRegionAddrGRASP(accel_graph->hot_cache, addr))
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
+            victim = peekVictimPLRU(accel_graph->hot_cache, addr);
+            if(isValid(victim))
+            {
+                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+                Access(accel_graph->warm_cache, victim->addr, 'r', victim->idx);
+            }
         }
         else if(inWarmRegionAddrGRASP(accel_graph->warm_cache, addr))
         {
@@ -1207,12 +1254,19 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
 
 void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, float value)
 {
+    struct CacheLine *victim = NULL;
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
         if(value <= 0.0015)
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
+            victim = peekVictimPLRU(accel_graph->hot_cache, addr);
+            if(isValid(victim))
+            {
+                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+                Access(accel_graph->warm_cache, victim->addr, 'r', victim->idx);
+            }
         }
         else if(value > 0.0015 && value <= 0.015)
         {
@@ -1407,7 +1461,10 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
     avgDegrees /= num_vertices;
 
     // START initialize thresholds
-    thresholds[0] = (avgDegrees / 2);
+    if(avgDegrees <= 1)
+        thresholds[0] = 1;
+    else
+        thresholds[0] = (avgDegrees / 2);
     for ( i = 1; i < (num_buckets - 1); ++i)
     {
         thresholds[i] = thresholds[i - 1] * 2;
@@ -1423,11 +1480,12 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
         {
             if(degrees[v] <= thresholds[i])
             {
-                thresholds_count[i] += 1;
+                if(cache->vertices_accesses[v])
+                    thresholds_count[i] += 1;
                 thresholds_totalDegrees[i]  += degrees[v];
                 thresholds_totalReuses[i]   += cache->vertices_total_reuse[v];
                 thresholds_totalMisses[i]   += cache->verticesMiss[v];
-                thresholds_totalAccesses[i] +=  cache->vertices_accesses[v];
+                thresholds_totalAccesses[i] += cache->vertices_accesses[v];
                 break;
             }
         }
@@ -1440,7 +1498,7 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
         {
             thresholds_avgDegrees[i]   = (float)thresholds_totalDegrees[i]  / thresholds_count[i];
             // thresholds_avgReuses[i]    = (float)thresholds_totalReuses[i]   / thresholds_totalAccesses[i];
-            thresholds_avgMisses[i]    = (float)thresholds_totalMisses[i]   / thresholds_count[i];
+            thresholds_avgMisses[i]    = (float)thresholds_totalMisses[i]    / thresholds_count[i];
             thresholds_avgAccesses[i]  = (float)thresholds_totalAccesses[i]  / thresholds_count[i];
         }
 
@@ -1452,8 +1510,8 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
         thresholds_totalAccess += thresholds_totalAccesses[i];
         thresholds_totalCount  += thresholds_count[i];
         thresholds_totalDegree += thresholds_totalDegrees[i];
-        thresholds_totalReuse += thresholds_totalReuses[i];
-        thresholds_totalMiss +=  thresholds_totalMisses[i];
+        thresholds_totalReuse  += thresholds_totalReuses[i];
+        thresholds_totalMiss   += thresholds_totalMisses[i];
     }
 
     printf(" -----------------------------------------------------------------------------------------------------------------------------\n");

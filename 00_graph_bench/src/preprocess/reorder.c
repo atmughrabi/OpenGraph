@@ -353,7 +353,10 @@ struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeLis
     }
 
     // START initialize thresholds
-    thresholds[0] = (edgeList->avg_degree / 2);
+    if(edgeList->avg_degree <= 1)
+        thresholds[0] = 1;
+    else
+        thresholds[0] = (edgeList->avg_degree / 2);
     for ( i = 1; i < (num_buckets - 1); ++i)
     {
         thresholds[i] = thresholds[i - 1] * 2;
@@ -512,7 +515,10 @@ struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edg
     }
 
     // START initialize thresholds
-    thresholds[0] = (edgeList->avg_degree);
+    if(edgeList->avg_degree <= 1)
+        thresholds[0] = 1;
+    else
+        thresholds[0] = (edgeList->avg_degree / 2);
     for ( i = 1; i < (num_buckets - 1); ++i)
     {
         thresholds[i] = thresholds[i - 1] * 2;

@@ -46,6 +46,10 @@
 #define L1_ASSOC    8
 
 // #define BLOCKSIZE   128
+// #define L1_SIZE     (262144 + 262144 + (262144/2))
+// #define L1_ASSOC    8
+
+// #define BLOCKSIZE   128
 // #define L1_SIZE     524288
 // #define L1_ASSOC    8
 
@@ -105,6 +109,7 @@ struct PropertyRegion
 
 struct CacheLine
 {
+    uint32_t idx;
     uint64_t addr;
     uint64_t tag;
     uint8_t Flags; // 0:invalid, 1:valid, 2:dirty
@@ -138,10 +143,12 @@ struct Cache
     uint32_t *verticesHit;
     uint64_t *vertices_base_reuse;
     uint64_t *vertices_total_reuse;
-    float *vertices_total_avg_reuse;
-    uint32_t *vertices_total_avg_count;
     uint32_t *vertices_accesses;
     uint32_t  numVertices;
+
+    uint32_t  num_buckets;
+    uint64_t *thresholds_count;
+    uint64_t *thresholds_totalDegrees;
 };
 
 
@@ -223,6 +230,7 @@ struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimPIN(struct Cache *cache, uint64_t addr);
 uint8_t getVictimPINBypass(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr);
 
 // ********************************************************************************************
 // ***************         INSERTION POLICIES                                    **************
