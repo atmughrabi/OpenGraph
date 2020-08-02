@@ -12,18 +12,7 @@
 #define PLRU_POLICY 5
 #define GRASPXP_POLICY 6
 
-// GRASP EXPRESS (GRASP-XP)
-// CHOOSE global Policys
-// #define POLICY LRU_POLICY
-// #define POLICY GRASP_POLICY
-#define POLICY LFU_POLICY
-// #define POLICY SRRIP_POLICY
-// #define POLICY PIN_POLICY
-// #define POLICY PLRU_POLICY
 
-#ifndef POLICY
-#define POLICY GRASP_POLICY
-#endif
 
 //CAPI PSL CACHE default CONFIGS
 #define PSL_BLOCKSIZE 128
@@ -32,12 +21,27 @@
 #define PSL_POLICY PLRU_POLICY
 #define HOT_POLICY PLRU_POLICY
 #define WARM_POLICY PLRU_POLICY
+
+
 //GRASP/Ref_cache default configs
+// GRASP EXPRESS (GRASP-XP)
+// CHOOSE global Policys
+// #define POLICY LRU_POLICY
+// #define POLICY GRASP_POLICY
+// #define POLICY LFU_POLICY
+#define POLICY SRRIP_POLICY
+// #define POLICY PIN_POLICY
+// #define POLICY PLRU_POLICY
+
+#ifndef POLICY
+#define POLICY GRASP_POLICY
+#endif
+
 // #define BLOCKSIZE 64
 // #define L1_SIZE 1048576
 // #define L1_ASSOC 16
 
-#define BLOCKSIZE 128
+#define BLOCKSIZE 64
 #define L1_SIZE 524288
 #define L1_ASSOC 8
 
@@ -128,8 +132,10 @@ struct Cache
     //counters for graph performance on the cache
     uint32_t *verticesMiss;
     uint32_t *verticesHit;
-    uint32_t *vertices_base_reuse;
-    uint32_t *vertices_total_reuse;
+    uint64_t *vertices_base_reuse;
+    uint64_t *vertices_total_reuse;
+    float *vertices_total_avg_reuse;
+    uint32_t *vertices_total_avg_count;
     uint32_t *vertices_accesses;
     uint32_t  numVertices;
 };
@@ -250,23 +256,9 @@ void updateAgeSRRIP(struct Cache *cache);
 void updateAgePIN(struct Cache *cache);
 void updateAgePLRU(struct Cache *cache);
 
-// ********************************************************************************************
-// ***************               Stats output                                    **************
-// ********************************************************************************************
-
-// void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache);
-void printStats(struct Cache *cache);
-void printStatsCache(struct Cache *cache);
-void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees);
-void printStatsGraphCache(struct Cache *cache, uint32_t *in_degree, uint32_t *out_degree);
-void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degree, uint32_t *out_degree);
-void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache, uint32_t *in_degree, uint32_t *out_degree);
-
-struct Cache *newCache( uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions);
-void freeCache(struct Cache *cache);
 
 // ********************************************************************************************
-// ***************               Cache comparison                                **************
+// ***************               Cache Orignzation                                **************
 // ********************************************************************************************
 
 struct DoubleTaggedCache *newDoubleTaggedCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices,  uint32_t policy, uint32_t numPropertyReg);
@@ -281,7 +273,11 @@ struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, 
 void initAccelGraphCacheRegion(struct AccelGraphCache *cache, struct PropertyMetaData *propertyMetaData);
 void freeAccelGraphCache(struct AccelGraphCache *cache);
 
-void online_cache_graph_stats(struct Cache *cache, uint32_t node);
+// ********************************************************************************************
+// ***************               ACCElGraph Policy                               **************
+// ********************************************************************************************
+void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node);
+void AccessAccelGraphExpress(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node);
 
 // ********************************************************************************************
 // ***************               GRASP Policy                                    **************
@@ -290,6 +286,22 @@ void online_cache_graph_stats(struct Cache *cache, uint32_t node);
 void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData);
 uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line);
 uint32_t inWarmRegion(struct Cache *cache, struct CacheLine *line);
-uint32_t inHotRegionAddr(struct Cache *cache, uint64_t addr);
+uint32_t inHotRegionAddrGRASP(struct Cache *cache, uint64_t addr);
+uint32_t inWarmRegionAddrGRASP(struct Cache *cache, uint64_t addr);
+
+// ********************************************************************************************
+// ***************               Stats output                                    **************
+// ********************************************************************************************
+void online_cache_graph_stats(struct Cache *cache, uint32_t node);
+// void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache);
+void printStats(struct Cache *cache);
+void printStatsCache(struct Cache *cache);
+void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees);
+void printStatsGraphCache(struct Cache *cache, uint32_t *in_degree, uint32_t *out_degree);
+void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degree, uint32_t *out_degree);
+void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache, uint32_t *in_degree, uint32_t *out_degree);
+
+struct Cache *newCache( uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions);
+void freeCache(struct Cache *cache);
 
 #endif
