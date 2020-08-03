@@ -38,7 +38,7 @@ void freePageRankStats(struct PageRankStats *stats);
 
 
 // ********************************************************************************************
-// ***************					Auxiliary functions  	  					 **************
+// ***************                  Auxiliary functions                          **************
 // ********************************************************************************************
 
 void addAtomicFixedPoint(uint64_t *num, uint64_t value);
@@ -53,7 +53,7 @@ void resetWorkList(uint8_t *workList, uint32_t size);
 void setWorkList(uint8_t *workList,  uint32_t size);
 
 // ********************************************************************************************
-// ***************					GRID DataStructure							 **************
+// ***************                  GRID DataStructure                           **************
 // ********************************************************************************************
 
 struct PageRankStats *pageRankGraphGrid(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphGrid *graph);
@@ -63,7 +63,7 @@ struct PageRankStats *pageRankPullRowFixedPointGraphGrid(double epsilon,  uint32
 struct PageRankStats *pageRankPushColumnFixedPointGraphGrid(double epsilon,  uint32_t iterations, struct GraphGrid *graph);
 
 // ********************************************************************************************
-// ***************					CSR DataStructure							 **************
+// ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
 struct PageRankStats *pageRankGraphCSR(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph);
@@ -90,7 +90,7 @@ struct PageRankStats *pageRankDataDrivenPullPushGraphCSR(double epsilon,  uint32
 // void pageRankDataDrivenPullPushFixedPointGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR* graph);
 
 // ********************************************************************************************
-// ***************					ArrayList DataStructure					     **************
+// ***************                  ArrayList DataStructure                      **************
 // ********************************************************************************************
 
 struct PageRankStats *pageRankGraphAdjArrayList(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphAdjArrayList *graph);
@@ -105,7 +105,7 @@ struct PageRankStats *pageRankDataDrivenPushGraphAdjArrayList(double epsilon,  u
 struct PageRankStats *pageRankDataDrivenPullPushGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
 
 // ********************************************************************************************
-// ***************					LinkedList DataStructure					 **************
+// ***************                  LinkedList DataStructure                     **************
 // ********************************************************************************************
 
 struct PageRankStats *pageRankGraphAdjLinkedList(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphAdjLinkedList *graph);

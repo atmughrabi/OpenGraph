@@ -19,20 +19,20 @@
 #define PSL_L1_SIZE   262144
 #define PSL_L1_ASSOC  8
 #define PSL_POLICY    PLRU_POLICY
-#define HOT_POLICY    PLRU_POLICY
-#define WARM_POLICY   PLRU_POLICY
+#define HOT_POLICY    GRASPXP_POLICY
+#define WARM_POLICY   GRASPXP_POLICY
 
 
 //GRASP/Ref_cache default configs
 // GRASP EXPRESS (GRASP-XP)
 // CHOOSE global Policys
 // #define POLICY LRU_POLICY
-#define POLICY GRASP_POLICY
+// #define POLICY GRASP_POLICY
 // #define POLICY LFU_POLICY
 // #define POLICY SRRIP_POLICY
 // #define POLICY PIN_POLICY
 // #define POLICY PLRU_POLICY
-// #define POLICY GRASPXP_POLICY
+#define POLICY GRASPXP_POLICY
 
 #ifndef POLICY
 #define POLICY GRASP_POLICY
@@ -82,13 +82,11 @@
 #define RRPV_INIT DEFAULT_INSERT_RRPV
 
 // GRASP-XP Policy Constants RRIP (re-refernece insertion prediction)
-#define NUM_BITS_XPRRIP 3
+#define NUM_BITS_XPRRIP 8
 
 #define DEFAULT_INSERT_XPRRPV ((1 << NUM_BITS_XPRRIP) - 1)
-#define COLD_INSERT_XPRRPV DEFAULT_INSERT_XPRRPV
-#define WARM_INSERT_XPRRPV DEFAULT_INSERT_XPRRPV - 1
-#define HOT_INSERT_XPRRPV  1
-#define HOT_HIT_XPRRPV  0
+#define COLD_INSERT_XPRRPV  DEFAULT_INSERT_XPRRPV - 1
+#define HOT_INSERT_XPRRPV 1
 #define XPRRPV_INIT DEFAULT_INSERT_XPRRPV
 
 // SRRIP Policy Constants RRIP (re-refernece insertion prediction)
@@ -128,8 +126,9 @@ struct CacheLine
     uint8_t freq;  // LFU   POLICY 1
     uint8_t RRPV;  // GRASP POLICY 2
     uint8_t SRRPV; // SRRPV POLICY 3
-    uint8_t PIN;   // PIN POLICY 4
-    uint8_t PLRU;   // PLRU POLICY 4
+    uint8_t PIN;   // PIN   POLICY 4
+    uint8_t PLRU;  // PLRU  POLICY 5
+    uint8_t XPRRPV;// GRASP POLICY 6
 };
 
 struct Cache
@@ -192,6 +191,7 @@ uint8_t getRRPV(struct CacheLine *cacheLine);
 uint8_t getSRRPV(struct CacheLine *cacheLine);
 uint8_t getPIN(struct CacheLine *cacheLine);
 uint8_t getPLRU(struct CacheLine *cacheLine);
+uint8_t getXPRRPV(struct CacheLine *cacheLine);
 
 void setFlags(struct CacheLine *cacheLine, uint8_t flags);
 void setTag(struct CacheLine *cacheLine, uint64_t a);
@@ -202,6 +202,7 @@ void setRRPV(struct CacheLine *cacheLine, uint8_t RRPV);
 void setSRRPV(struct CacheLine *cacheLine, uint8_t SRRPV);
 void setPIN(struct CacheLine *cacheLine, uint8_t PIN);
 void setPLRU(struct CacheLine *cacheLine, uint8_t PLRU);
+void setXPRRPV(struct CacheLine *cacheLine, uint8_t XPRRPV);
 
 void invalidate(struct CacheLine *cacheLine);
 uint32_t isValid(struct CacheLine *cacheLine);
@@ -245,6 +246,7 @@ struct CacheLine *getVictimPIN(struct Cache *cache, uint64_t addr);
 uint8_t getVictimPINBypass(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr);
 struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *getVictimGRASPXP(struct Cache *cache, uint64_t addr);
 
 // ********************************************************************************************
 // ***************         INSERTION POLICIES                                    **************
@@ -257,6 +259,7 @@ void updateInsertGRASP(struct Cache *cache, struct CacheLine *line);
 void updateInsertSRRIP(struct Cache *cache, struct CacheLine *line);
 void updateInsertPIN(struct Cache *cache, struct CacheLine *line);
 void updateInsertPLRU(struct Cache *cache, struct CacheLine *line);
+void updateInsertGRASPXP(struct Cache *cache, struct CacheLine *line);
 
 // ********************************************************************************************
 // ***************         PROMOTION POLICIES                                    **************
@@ -269,6 +272,7 @@ void updatePromoteGRASP(struct Cache *cache, struct CacheLine *line);
 void updatePromoteSRRIP(struct Cache *cache, struct CacheLine *line);
 void updatePromotePIN(struct Cache *cache, struct CacheLine *line);
 void updatePromotePLRU(struct Cache *cache, struct CacheLine *line);
+void updatePromoteGRASPXP(struct Cache *cache, struct CacheLine *line);
 
 // ********************************************************************************************
 // ***************         AGING POLICIES                                        **************
@@ -281,6 +285,7 @@ void updateAgeGRASP(struct Cache *cache);
 void updateAgeSRRIP(struct Cache *cache);
 void updateAgePIN(struct Cache *cache);
 void updateAgePLRU(struct Cache *cache);
+void updateAgeGRASPXP(struct Cache *cache);
 
 // ********************************************************************************************
 // ***************               Cache Orignzation                                **************
@@ -317,6 +322,8 @@ void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  *degrees);
 void setAccelGraphCacheThresholdDegreeAvg(struct AccelGraphCache *cache, uint32_t  *degrees);
 void setDoubleTaggedCacheThresholdDegreeAvg(struct DoubleTaggedCache *cache, uint32_t  *degrees);
 void setCacheRegionDegreeAvg(struct Cache *cache);
+uint64_t getCacheRegionAddrGRASPXP(struct Cache *cache, uint64_t addr);
+uint64_t getCacheRegionGRASPXP(struct Cache *cache, struct CacheLine *line);
 // ********************************************************************************************
 // ***************               GRASP Policy                                    **************
 // ********************************************************************************************

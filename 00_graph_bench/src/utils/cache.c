@@ -66,6 +66,13 @@ uint8_t getPLRU(struct CacheLine *cacheLine)
 {
     return cacheLine->PLRU;
 }
+uint8_t getXPRRPV(struct CacheLine *cacheLine)
+{
+    return cacheLine->XPRRPV;
+}
+
+
+
 void setSeq(struct CacheLine *cacheLine, uint64_t Seq)
 {
     cacheLine->seq = Seq;
@@ -90,6 +97,13 @@ void setPLRU(struct CacheLine *cacheLine, uint8_t PLRU)
 {
     cacheLine->PLRU = PLRU;
 }
+void setXPRRPV(struct CacheLine *cacheLine, uint8_t XPRRPV)
+{
+    cacheLine->XPRRPV = XPRRPV;
+}
+
+
+
 void setFlags(struct CacheLine *cacheLine, uint8_t flags)
 {
     cacheLine->Flags = flags;
@@ -104,15 +118,16 @@ void setAddr(struct CacheLine *cacheLine, uint64_t addr)
 }
 void invalidate(struct CacheLine *cacheLine)
 {
-    cacheLine->idx = 0;
-    cacheLine->seq = 0;
-    cacheLine->tag = 0;    //useful function
-    cacheLine->Flags = INVALID;
-    cacheLine->RRPV = RRPV_INIT;
-    cacheLine->SRRPV = SRRPV_INIT;
-    cacheLine->PIN = 0;
-    cacheLine->PLRU = 0;
-    cacheLine->freq = 0;
+    cacheLine->idx    = 0;
+    cacheLine->seq    = 0;
+    cacheLine->tag    = 0;    //useful function
+    cacheLine->Flags  = INVALID;
+    cacheLine->RRPV   = RRPV_INIT;
+    cacheLine->SRRPV  = SRRPV_INIT;
+    cacheLine->PIN    = 0;
+    cacheLine->PLRU   = 0;
+    cacheLine->freq   = 0;
+    cacheLine->XPRRPV = XPRRPV_INIT;
 }
 uint32_t isValid(struct CacheLine *cacheLine)
 {
@@ -492,6 +507,9 @@ void updateAgingPolicy(struct Cache *cache)
     case LFU_POLICY:
         updateAgeLFU(cache);
         break;
+    case GRASPXP_POLICY:
+        updateAgeGRASPXP(cache);
+        break;
     default :
         updateAgeLRU(cache);
     }
@@ -517,6 +535,25 @@ void updateAgeLFU(struct Cache *cache)
                 if(freq > 0)
                     freq--;
                 setFreq(&(cache->cacheLines[i][j]), freq);
+            }
+        }
+    }
+}
+
+void updateAgeGRASPXP(struct Cache *cache)
+{
+    uint64_t i, j;
+    uint8_t XPRRPV = 0;
+    for(i = 0; i < cache->sets; i++)
+    {
+        for(j = 0; j < cache->assoc; j++)
+        {
+            if(isValid(&(cache->cacheLines[i][j])))
+            {
+                XPRRPV = getXPRRPV(&(cache->cacheLines[i][j]));
+                if(XPRRPV > 0)
+                    XPRRPV--;
+                setXPRRPV(&(cache->cacheLines[i][j]), XPRRPV);
             }
         }
     }
@@ -554,6 +591,9 @@ void updateInsertionPolicy(struct Cache *cache, struct CacheLine *line)
         break;
     case PLRU_POLICY:
         updateInsertPLRU(cache, line);
+        break;
+    case GRASPXP_POLICY:
+        updateInsertGRASPXP(cache, line);
         break;
     default :
         updateInsertLRU(cache, line);
@@ -633,6 +673,13 @@ void updateInsertPLRU(struct Cache *cache, struct CacheLine *line)
     }
 
     setPLRU(line, PLRU);
+}
+
+void updateInsertGRASPXP(struct Cache *cache, struct CacheLine *line)
+{
+    uint8_t XPRRPV = 0;
+    XPRRPV = (uint8_t)getCacheRegionGRASPXP(cache, line);
+    setXPRRPV(line, XPRRPV);
 }
 
 uint32_t inHotRegion(struct Cache *cache, struct CacheLine *line)
@@ -724,6 +771,9 @@ void updatePromotionPolicy(struct Cache *cache, struct CacheLine *line)
     case PLRU_POLICY:
         updatePromotePLRU(cache, line);
         break;
+    case GRASPXP_POLICY:
+        updatePromoteGRASPXP(cache, line);
+        break;
     default :
         updatePromoteLRU(cache, line);
     }
@@ -796,6 +846,33 @@ void updatePromotePLRU(struct Cache *cache, struct CacheLine *line)
     setPLRU(line, PLRU);
 }
 
+void updatePromoteGRASPXP(struct Cache *cache, struct CacheLine *line)
+{
+    uint8_t XPRRPV = getXPRRPV(line);
+    uint32_t v;
+    uint32_t i;
+    uint32_t avg;
+    // uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        for ( i = 1; i < (cache->num_buckets + 1); ++i)
+        {
+            if((line->addr >=  cache->regions_avgDegrees[v][i - 1]) && (line->addr < cache->regions_avgDegrees[v][i]))
+            {
+                avg = cache->thresholds_totalDegrees[i] / cache->thresholds_count[i];
+                if(XPRRPV > avg)
+                    XPRRPV -= avg;
+                else
+                    XPRRPV = 0;
+                break;
+            }
+        }
+    }
+
+    setXPRRPV(line, XPRRPV);
+}
+
 // ********************************************************************************************
 // ***************         VICTIM EVICTION POLICIES                              **************
 // ********************************************************************************************
@@ -823,6 +900,9 @@ struct CacheLine *getVictimPolicy(struct Cache *cache, uint64_t addr)
         break;
     case PLRU_POLICY:
         victim = getVictimPLRU(cache, addr);
+        break;
+    case GRASPXP_POLICY:
+        victim = getVictimGRASPXP(cache, addr);
         break;
     default :
         victim = getVictimLRU(cache, addr);
@@ -928,7 +1008,7 @@ struct CacheLine *getVictimGRASP(struct Cache *cache, uint64_t addr)
     if (min < DEFAULT_INSERT_RRPV)
     {
         int diff = DEFAULT_INSERT_RRPV - min;
-        for(j = 1; j < cache->assoc; j++)
+        for(j = 0; j < cache->assoc; j++)
         {
             uint8_t RRPV = getRRPV(&(cache->cacheLines[i][j])) + diff;
             setRRPV(&(cache->cacheLines[i][j]), RRPV);
@@ -958,30 +1038,54 @@ struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr)
         }
     }
 
-    do
+    // do
+    // {
+    //     for(j = 0; j < cache->assoc; j++)
+    //     {
+    //         if(getSRRPV(&(cache->cacheLines[i][j])) == SRRPV_INIT)
+    //         {
+    //             victim = j;
+    //             min = getSRRPV(&(cache->cacheLines[i][j]));
+    //             break;
+    //         }
+    //     }
+
+    //     if(!min)
+    //     {
+    //         for(j = 0; j < cache->assoc; j++)
+    //         {
+    //             uint8_t SRRPV = getSRRPV(&(cache->cacheLines[i][j])) + 1;
+    //             if(SRRPV <= SRRPV_INIT)
+    //                 setSRRPV(&(cache->cacheLines[i][j]), SRRPV);
+    //         }
+    //     }
+
+    // }
+    // while(!min);
+
+    victim = 0;
+    min = getSRRPV(&(cache->cacheLines[i][0]));
+
+    for(j = 1; j < cache->assoc; j++)
     {
+        if(getSRRPV(&(cache->cacheLines[i][j])) > min)
+        {
+            victim = j;
+            min = getSRRPV(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+
+    if (min < SRRPV_INIT)
+    {
+        int diff = SRRPV_INIT - min;
         for(j = 0; j < cache->assoc; j++)
         {
-            if(getSRRPV(&(cache->cacheLines[i][j])) == SRRPV_INIT)
-            {
-                victim = j;
-                min = getSRRPV(&(cache->cacheLines[i][j]));
-                break;
-            }
+            uint8_t SRRPV = getSRRPV(&(cache->cacheLines[i][j])) + (diff);
+            setSRRPV(&(cache->cacheLines[i][j]), SRRPV);
+            assert(SRRPV <= SRRPV_INIT);
         }
-
-        if(!min)
-        {
-            for(j = 0; j < cache->assoc; j++)
-            {
-                uint8_t SRRPV = getSRRPV(&(cache->cacheLines[i][j])) + 1;
-                if(SRRPV <= SRRPV_INIT)
-                    setSRRPV(&(cache->cacheLines[i][j]), SRRPV);
-            }
-        }
-
     }
-    while(!min);
 
     assert(min != SRRPV_INIT || min != 0);
     assert(victim != cache->assoc);
@@ -1110,6 +1214,108 @@ struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr)
 }
 
 
+struct CacheLine *getVictimGRASPXP(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = 0;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    // do
+    // {
+    //     for(j = 0; j < cache->assoc; j++)
+    //     {
+    //         if(getXPRRPV(&(cache->cacheLines[i][j])) == 0)
+    //         {
+    //             victim = j;
+    //             min = getXPRRPV(&(cache->cacheLines[i][j]));
+    //             break;
+    //         }
+    //     }
+
+    //     if(min)
+    //     {
+    //         for(j = 0; j < cache->assoc; j++)
+    //         {
+    //             uint8_t XPRRPV = getXPRRPV(&(cache->cacheLines[i][j])) - 1;
+    //             if(XPRRPV > 0)
+    //                 setXPRRPV(&(cache->cacheLines[i][j]), XPRRPV);
+    //         }
+    //     }
+
+    // }
+    // while(min);
+
+    victim = 0;
+    min = getXPRRPV(&(cache->cacheLines[i][0]));
+
+    for(j = 1; j < cache->assoc; j++)
+    {
+        if(getXPRRPV(&(cache->cacheLines[i][j])) > min)
+        {
+            victim = j;
+            min = getXPRRPV(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+
+    if (min < XPRRPV_INIT)
+    {
+        int diff = XPRRPV_INIT - min;
+        for(j = 0; j < cache->assoc; j++)
+        {
+            uint8_t XPRRPV = getXPRRPV(&(cache->cacheLines[i][j])) + diff;
+            setXPRRPV(&(cache->cacheLines[i][j]), XPRRPV);
+            assert(XPRRPV <= XPRRPV_INIT);
+        }
+    }
+
+    assert(min != XPRRPV_INIT || min != 0);
+    assert(victim != cache->assoc);
+
+    // victim = 0;
+    // min = getXPRRPV(&(cache->cacheLines[i][0]));
+
+    // for(j = 1; j < cache->assoc; j++)
+    // {
+    //     if(getXPRRPV(&(cache->cacheLines[i][j])) < min)
+    //     {
+    //         victim = j;
+    //         min = getXPRRPV(&(cache->cacheLines[i][j]));
+    //     }
+    // }
+    // assert(victim != cache->assoc);
+
+    // if (min != XPRRPV_INIT)
+    // {
+    //     int diff = min;
+    //     for(j = 0; j < cache->assoc; j++)
+    //     {
+    //         uint8_t XPRRPV = getXPRRPV(&(cache->cacheLines[i][j])) - diff;
+    //         setXPRRPV(&(cache->cacheLines[i][j]), XPRRPV);
+    //     }
+    // }
+
+    // min = getXPRRPV(&(cache->cacheLines[i][victim]));
+    // assert(min == 0);
+    // assert(victim != cache->assoc);
+
+    cache->evictions++;
+    cache->cacheLines[i][victim].addr = addr;
+    return &(cache->cacheLines[i][victim]);
+}
+
+
 // ********************************************************************************************
 // ***************         Cacheline lookups                                     **************
 // ********************************************************************************************
@@ -1209,6 +1415,7 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
             if(!getVictimPINBypass(cache, addr))
             {
                 newline = fillLine(cache, addr);
+                newline->idx = node;
                 if(op == 'w')
                     setFlags(newline, DIRTY);
             }
@@ -1216,11 +1423,12 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
         else
         {
             newline = fillLine(cache, addr);
+            newline->idx = node;
             if(op == 'w')
                 setFlags(newline, DIRTY);
         }
 
-        newline->idx = node;
+
         cache->verticesMiss[node]++;
     }
     else
@@ -1247,7 +1455,7 @@ void AccessDoubleTaggedCacheFloat(struct DoubleTaggedCache *cache, uint64_t addr
 
 void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node)
 {
-    struct CacheLine *victim = NULL;
+    // struct CacheLine *victim = NULL;
 
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
@@ -1255,12 +1463,12 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
-            victim = peekVictimPLRU(accel_graph->hot_cache, addr);
-            if(isValid(victim))
-            {
-                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-                Access(accel_graph->warm_cache, victim->addr, 'w', victim->idx);
-            }
+            // victim = peekVictimPLRU(accel_graph->hot_cache, addr);
+            // if(isValid(victim))
+            // {
+            //     // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+            //     Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
+            // }
         }
         else if(inWarmRegionAddrGRASP(accel_graph->warm_cache, addr))
         {
@@ -1289,19 +1497,19 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
 
 void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, float value)
 {
-    struct CacheLine *victim = NULL;
+    // struct CacheLine *victim = NULL;
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
         if(value <= 0.0015)
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
-            victim = peekVictimPLRU(accel_graph->hot_cache, addr);
-            if(isValid(victim))
-            {
-                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-                Access(accel_graph->warm_cache, victim->addr, 'w', victim->idx);
-            }
+            // victim = peekVictimPLRU(accel_graph->hot_cache, addr);
+            // if(isValid(victim))
+            // {
+            //     // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+            //     Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
+            // }
         }
         else if(value > 0.0015 && value <= 0.015)
         {
@@ -1331,6 +1539,47 @@ void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t 
 // ***************               GRASP-XP Policy                                 **************
 // ********************************************************************************************
 
+uint64_t getCacheRegionGRASPXP(struct Cache *cache, struct CacheLine *line)
+{
+    uint32_t v;
+    uint32_t i;
+    // uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        for ( i = 1; i < (cache->num_buckets + 1); ++i)
+        {
+            if((line->addr >=  cache->regions_avgDegrees[v][i - 1]) && (line->addr < cache->regions_avgDegrees[v][i]))
+            {
+                return cache->thresholds_avgDegrees[i - 1];
+            }
+        }
+    }
+
+    return 0;
+}
+
+uint64_t getCacheRegionAddrGRASPXP(struct Cache *cache, uint64_t addr)
+{
+    uint32_t v;
+    uint32_t i;
+    // uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        for ( i = 1; i < (cache->num_buckets + 1); ++i)
+        {
+            if((addr >=  cache->regions_avgDegrees[v][i - 1]) && (addr < cache->regions_avgDegrees[v][i]))
+            {
+                return cache->thresholds_avgDegrees[i - 1];
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 void setCacheRegionDegreeAvg(struct Cache *cache)
 {
     uint32_t v;
@@ -1342,7 +1591,7 @@ void setCacheRegionDegreeAvg(struct Cache *cache)
         cache->regions_avgDegrees[v][0] = cache->propertyRegions[v].base_address;
         for ( i = 1; i < (cache->num_buckets + 1); ++i)
         {
-            cache->regions_avgDegrees[v][i] = cache->regions_avgDegrees[v][i-1] + (cache->thresholds_count[i - 1] * cache->propertyRegions[v].data_type_size);
+            cache->regions_avgDegrees[v][i] = cache->regions_avgDegrees[v][i - 1] + (cache->thresholds_count[i - 1] * cache->propertyRegions[v].data_type_size);
         }
     }
 }
@@ -1366,6 +1615,7 @@ void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  *degrees)
     uint32_t v;
     uint32_t i;
     uint64_t  avgDegrees = 0;
+    uint64_t  totalDegrees = 0;
     float *thresholds_avgDegrees;
     thresholds_avgDegrees    = (float *) my_malloc(cache->num_buckets * sizeof(float));
 
@@ -1402,11 +1652,18 @@ void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  *degrees)
         }
     }
 
+    // collect stats perbucket
+    for (v = 0; v < cache->numVertices; ++v)
+    {
+        totalDegrees += degrees[v];
+    }
+
+
     for ( i = 0; i < cache->num_buckets; ++i)
     {
         if(cache->thresholds_count[i])
         {
-            thresholds_avgDegrees[i] = (float)cache->thresholds_totalDegrees[i]  / cache->thresholds_count[i];
+            thresholds_avgDegrees[i] = XPRRPV_INIT * ((float)cache->thresholds_totalDegrees[i] / totalDegrees);
         }
         else
         {
@@ -1421,7 +1678,7 @@ void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  *degrees)
 
     for ( i = 0; i < cache->num_buckets; ++i)
     {
-        cache->thresholds_avgDegrees[i]   = quantize_8(thresholds_avgDegrees[i], rDivD_params.scale, rDivD_params.zero);
+        cache->thresholds_avgDegrees[i]   =  quantize_8(thresholds_avgDegrees[i], rDivD_params.scale, rDivD_params.zero);
     }
 
     setCacheRegionDegreeAvg(cache);
@@ -1509,6 +1766,9 @@ void printStatsCache(struct Cache *cache)
         break;
     case PLRU_POLICY:
         printf("| %-51s | \n", "PLRU_POLICY");
+        break;
+    case GRASPXP_POLICY:
+        printf("| %-51s | \n", "GRASPXP_POLICY");
         break;
     default :
         printf("| %-51s | \n", "LRU_POLICY");
@@ -1741,7 +2001,6 @@ void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degre
     missRateWrite       = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
 
     printf("\n====================== cache Stats Accel Graph =======================\n");
-
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Simulation results (Cache)");
     printf(" -----------------------------------------------------\n");
