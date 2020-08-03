@@ -185,6 +185,8 @@ void pageRankPullGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
 
         // Access(cache->ref_cache, (uint64_t) & (out_degree[v]), 'r', v);
         // Access(cache->ref_cache, (uint64_t) & (edges_idx[v]), 'r', v);
+        // AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (out_degree[v]), 'r', v, out_degree[v]);
+        // AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (edges_idx[v]), 'r', v, edges_idx[v]);
 
         for(j = edge_idx ; j <  (edge_idx + degree) ; j++)
         {
@@ -192,6 +194,7 @@ void pageRankPullGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
 
             // Access(cache->accel_graph->cold_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
             // Access(cache->ref_cache, (uint64_t) & (sorted_edges_array[j]), 'r', u);
+            // AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (sorted_edges_array[j]), 'r', u, sorted_edges_array[j]);
 
             nodeIncomingPR += riDividedOnDiClause[u]; // pageRanks[v]/graph->vertices[v].out_degree;
             AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u, riDividedOnDiClause[u]);

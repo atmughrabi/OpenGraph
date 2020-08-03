@@ -1420,6 +1420,7 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
     float *thresholds_avgDegrees;
     float *thresholds_avgReuses;
     float *thresholds_avgMisses;
+    float  Access_percentage;
 
     uint64_t thresholds_totalAccess  = 0;
     uint64_t thresholds_totalCount   = 0;
@@ -1449,7 +1450,7 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
         thresholds_avgReuses[i]     = 0.0f;
         thresholds_avgMisses[i]     = 0.0f;
         thresholds_totalAccesses[i] = 0;
-        thresholds_avgAccesses[i]   = 0;
+        thresholds_avgAccesses[i]   = 0.0f;
     }
 
     for (v = 0; v < num_vertices; ++v)
@@ -1516,11 +1517,12 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
     }
 
     printf(" -----------------------------------------------------------------------------------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-15s | %-15s | %-15s | %-15s | %-15s | \n", "<= Threshold", "Count(V)", "totalAccess(E)", "avgAccesses", "avgDegrees", "avgReuse CL/Axs", "avgMisses");
+    printf("| %-15s | %-15s | %-15s | %-15s | %-15s | %-15s | %-15s | \n", "<= Threshold", "Count(V)", "totalAccess(E)", "(%)Accesses", "avgDegrees", "avgReuse CL/Axs", "avgMisses");
     printf(" -----------------------------------------------------------------------------------------------------------------------------\n");
     for ( i = 0; i < num_buckets; ++i)
     {
-        printf("| %-15lu | %-15lu | %-15lu | %-15.2f | %-15.2f | %-15.2f | %-15.2f |\n", thresholds[i], thresholds_count[i], thresholds_totalAccesses[i], thresholds_avgAccesses[i], thresholds_avgDegrees[i], thresholds_avgReuses[i], thresholds_avgMisses[i]);
+        Access_percentage = 100 * (float)(thresholds_totalAccesses[i] / (float)thresholds_totalAccess);
+        printf("| %-15lu | %-15lu | %-15lu | %-15.2f | %-15.2f | %-15.2f | %-15.2f |\n", thresholds[i], thresholds_count[i], thresholds_totalAccesses[i], Access_percentage, thresholds_avgDegrees[i], thresholds_avgReuses[i], thresholds_avgMisses[i]);
     }
     printf(" -----------------------------------------------------------------------------------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | %-15s | %-15s |  %-15s | %-15s | \n", "avgDegrees", "Total Count(V)", "totalAccess", "totalDegrees",  "avgDegrees", "totalReuse", "totalMisses");
