@@ -32,6 +32,7 @@
 // #define POLICY SRRIP_POLICY
 // #define POLICY PIN_POLICY
 // #define POLICY PLRU_POLICY
+// #define POLICY GRASPXP_POLICY
 
 #ifndef POLICY
 #define POLICY GRASP_POLICY
