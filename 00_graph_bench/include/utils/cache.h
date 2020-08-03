@@ -19,20 +19,20 @@
 #define PSL_L1_SIZE   262144
 #define PSL_L1_ASSOC  8
 #define PSL_POLICY    PLRU_POLICY
-#define HOT_POLICY    GRASPXP_POLICY
-#define WARM_POLICY   GRASPXP_POLICY
+#define WARM_POLICY   PLRU_POLICY
+#define HOT_POLICY    PLRU_POLICY
 
 
 //GRASP/Ref_cache default configs
 // GRASP EXPRESS (GRASP-XP)
 // CHOOSE global Policys
 // #define POLICY LRU_POLICY
-// #define POLICY GRASP_POLICY
-// #define POLICY LFU_POLICY
 // #define POLICY SRRIP_POLICY
+// #define POLICY LFU_POLICY
+#define POLICY GRASP_POLICY
 // #define POLICY PIN_POLICY
 // #define POLICY PLRU_POLICY
-#define POLICY GRASPXP_POLICY
+// #define POLICY GRASPXP_POLICY
 
 #ifndef POLICY
 #define POLICY GRASP_POLICY
@@ -90,7 +90,7 @@
 #define XPRRPV_INIT DEFAULT_INSERT_XPRRPV
 
 // SRRIP Policy Constants RRIP (re-refernece insertion prediction)
-#define NUM_BITS_SRRIP 2
+#define NUM_BITS_SRRIP 8
 
 #define SRRPV_INIT ((1 << NUM_BITS_SRRIP) - 1)
 #define DEFAULT_INSERT_SRRPV (SRRPV_INIT - 1)
@@ -245,8 +245,19 @@ struct CacheLine *getVictimSRRIP(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimPIN(struct Cache *cache, uint64_t addr);
 uint8_t getVictimPINBypass(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr);
-struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr);
 struct CacheLine *getVictimGRASPXP(struct Cache *cache, uint64_t addr);
+
+// ********************************************************************************************
+// ***************         VICTIM PEEK POLICIES                                  **************
+// ********************************************************************************************
+struct CacheLine *peekVictimPolicy(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimLFU(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimGRASP(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimSRRIP(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimPIN(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr);
+struct CacheLine *peekVictimGRASPXP(struct Cache *cache, uint64_t addr);
 
 // ********************************************************************************************
 // ***************         INSERTION POLICIES                                    **************

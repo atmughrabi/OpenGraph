@@ -227,7 +227,7 @@ struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, 
     struct AccelGraphCache *cache = (struct AccelGraphCache *) my_malloc(sizeof(struct AccelGraphCache));
 
     cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, PSL_POLICY, numPropertyRegions);
-    cache->warm_cache = newCache( l1_size, 8, 4, num_vertices, WARM_POLICY, numPropertyRegions);
+    cache->warm_cache = newCache( l1_size, 16, 4, num_vertices, WARM_POLICY, numPropertyRegions);
     cache->hot_cache  = newCache( l1_size, 8, 4, num_vertices, HOT_POLICY, numPropertyRegions);
 
     return cache;
@@ -400,8 +400,8 @@ void initCache(struct Cache *cache, int s, int a, int b, int p)
     cache->cacheLines = (struct CacheLine **) my_malloc(cache->sets * sizeof(struct CacheLine *));
     for(i = 0; i < cache->sets; i++)
     {
-        cache->cacheLines[i] = (struct CacheLine *) my_malloc(cache->assoc * sizeof(struct CacheLine));
-        for(j = 0; j < cache->assoc; j++)
+        cache->cacheLines[i] = (struct CacheLine *) my_malloc((cache->assoc + 1) * sizeof(struct CacheLine));
+        for(j = 0; j < cache->assoc + 1; j++)
         {
             invalidate(&(cache->cacheLines[i][j]));
         }
@@ -413,6 +413,7 @@ void online_cache_graph_stats(struct Cache *cache, uint32_t node)
     uint32_t first_Access = 0;
     uint32_t i;
     uint32_t v;
+
     cache->vertices_accesses[node]++;
     cache->access_counter++;
 
@@ -1186,34 +1187,6 @@ struct CacheLine *getVictimPLRU(struct Cache *cache, uint64_t addr)
     return &(cache->cacheLines[i][victim]);
 }
 
-
-struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr)
-{
-    uint64_t i, j, victim;
-    victim = cache->assoc;
-    i      = calcIndex(cache, addr);
-
-    for(j = 0; j < cache->assoc; j++)
-    {
-        if(isValid(&(cache->cacheLines[i][j])) == 0)
-        {
-            return &(cache->cacheLines[i][j]);
-        }
-    }
-
-    for(j = 0; j < cache->assoc; j++)
-    {
-        if(!getPLRU(&(cache->cacheLines[i][j])))
-        {
-            victim = j;
-            break;
-        }
-    }
-    assert(victim != cache->assoc);
-    return &(cache->cacheLines[i][victim]);
-}
-
-
 struct CacheLine *getVictimGRASPXP(struct Cache *cache, uint64_t addr)
 {
     uint64_t i, j, victim, min;
@@ -1315,6 +1288,249 @@ struct CacheLine *getVictimGRASPXP(struct Cache *cache, uint64_t addr)
     return &(cache->cacheLines[i][victim]);
 }
 
+// ********************************************************************************************
+// ***************         VICTIM PEEK POLICIES                                  **************
+// ********************************************************************************************
+
+struct CacheLine *peekVictimPolicy(struct Cache *cache, uint64_t addr)
+{
+    struct CacheLine *victim = NULL;
+
+    switch(cache->policy)
+    {
+    case LRU_POLICY:
+        victim = peekVictimLRU(cache, addr);
+        break;
+    case LFU_POLICY:
+        victim = peekVictimLFU(cache, addr);
+        break;
+    case GRASP_POLICY:
+        victim = peekVictimGRASP(cache, addr);
+        break;
+    case SRRIP_POLICY:
+        victim = peekVictimSRRIP(cache, addr);
+        break;
+    case PIN_POLICY:
+        victim = peekVictimPIN(cache, addr);
+        break;
+    case PLRU_POLICY:
+        victim = peekVictimPLRU(cache, addr);
+        break;
+    case GRASPXP_POLICY:
+        victim = peekVictimGRASPXP(cache, addr);
+        break;
+    default :
+        victim = peekVictimLRU(cache, addr);
+    }
+
+    return victim;
+}
+
+/*return an invalid line as LRU, if any, otherwise return LRU line*/
+struct CacheLine *peekVictimLRU(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = cache->currentCycle;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            cache->cacheLines[i][j].addr = addr;
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(getSeq(&(cache->cacheLines[i][j])) <= min)
+        {
+            victim = j;
+            min = getSeq(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+    return &(cache->cacheLines[i][victim]);
+}
+
+struct CacheLine *peekVictimLFU(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = FREQ_MAX;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(getFreq(&(cache->cacheLines[i][j])) <= min)
+        {
+            victim = j;
+            min = getFreq(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+    return &(cache->cacheLines[i][victim]);
+}
+
+struct CacheLine *peekVictimGRASP(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = 0;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    victim = 0;
+    min = getRRPV(&(cache->cacheLines[i][0]));
+
+    for(j = 1; j < cache->assoc; j++)
+    {
+        if(getRRPV(&(cache->cacheLines[i][j])) > min)
+        {
+            victim = j;
+            min = getRRPV(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+    return &(cache->cacheLines[i][victim]);
+}
+
+struct CacheLine *peekVictimSRRIP(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = 0;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    victim = 0;
+    min = getSRRPV(&(cache->cacheLines[i][0]));
+
+    for(j = 1; j < cache->assoc; j++)
+    {
+        if(getSRRPV(&(cache->cacheLines[i][j])) > min)
+        {
+            victim = j;
+            min = getSRRPV(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+    return &(cache->cacheLines[i][victim]);
+}
+
+/*return an invalid line as LRU, if any, otherwise return LRU line*/
+struct CacheLine *peekVictimPIN(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = cache->currentCycle;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(!getPIN(&(cache->cacheLines[i][j])) && (getSeq(&(cache->cacheLines[i][j])) <= min))
+        {
+            victim = j;
+            min = getSeq(&(cache->cacheLines[i][j]));
+        }
+    }
+    // assert(victim != cache->assoc);
+    return &(cache->cacheLines[i][victim]);
+}
+
+
+struct CacheLine *peekVictimPLRU(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim;
+    victim = cache->assoc;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(!getPLRU(&(cache->cacheLines[i][j])))
+        {
+            victim = j;
+            break;
+        }
+    }
+    assert(victim != cache->assoc);
+    return &(cache->cacheLines[i][victim]);
+}
+
+
+struct CacheLine *peekVictimGRASPXP(struct Cache *cache, uint64_t addr)
+{
+    uint64_t i, j, victim, min;
+
+    victim = cache->assoc;
+    min    = 0;
+    i      = calcIndex(cache, addr);
+
+    for(j = 0; j < cache->assoc; j++)
+    {
+        if(isValid(&(cache->cacheLines[i][j])) == 0)
+        {
+            return &(cache->cacheLines[i][j]);
+        }
+    }
+
+    victim = 0;
+    min = getXPRRPV(&(cache->cacheLines[i][0]));
+
+    for(j = 1; j < cache->assoc; j++)
+    {
+        if(getXPRRPV(&(cache->cacheLines[i][j])) > min)
+        {
+            victim = j;
+            min = getXPRRPV(&(cache->cacheLines[i][j]));
+        }
+    }
+    assert(victim != cache->assoc);
+    return &(cache->cacheLines[i][victim]);
+}
+
 
 // ********************************************************************************************
 // ***************         Cacheline lookups                                     **************
@@ -1380,6 +1596,7 @@ struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
 void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 {
 
+
     online_cache_graph_stats(cache, node);
     cache->currentCycle++;
     /*per cache global counter to maintain LRU order among cache ways, updated on every cache access*/
@@ -1403,7 +1620,7 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
         {
             cache->writeMisses++;
         }
-        else
+        else if(op == 'r')
         {
             cache->readMisses++;
         }
@@ -1449,13 +1666,14 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 void AccessDoubleTaggedCacheFloat(struct DoubleTaggedCache *cache, uint64_t addr, unsigned char op, uint32_t node, float value)
 {
     // AccessAccelGraphExpressFloat(cache->accel_graph, addr, op, node, value);
+
     AccessAccelGraphGRASP(cache->accel_graph, addr, op, node);
     Access(cache->ref_cache, addr, op, node);
 }
 
 void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node)
 {
-    // struct CacheLine *victim = NULL;
+    struct CacheLine *victim = NULL;
 
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
@@ -1463,12 +1681,12 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
-            // victim = peekVictimPLRU(accel_graph->hot_cache, addr);
-            // if(isValid(victim))
-            // {
-            //     // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-            //     Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
-            // }
+            victim = peekVictimPolicy(accel_graph->hot_cache, addr);
+            if(isValid(victim))
+            {
+                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+                Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
+            }
         }
         else if(inWarmRegionAddrGRASP(accel_graph->warm_cache, addr))
         {
@@ -1497,19 +1715,20 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
 
 void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, float value)
 {
-    // struct CacheLine *victim = NULL;
+    struct CacheLine *victim = NULL;
+
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
         if(value <= 0.0015)
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
-            // victim = peekVictimPLRU(accel_graph->hot_cache, addr);
-            // if(isValid(victim))
-            // {
-            //     // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-            //     Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
-            // }
+            victim = peekVictimPolicy(accel_graph->hot_cache, addr);
+            if(isValid(victim))
+            {
+                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+                Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
+            }
         }
         else if(value > 0.0015 && value <= 0.015)
         {
@@ -1734,7 +1953,7 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
 
 void printStatsCache(struct Cache *cache)
 {
-    float missRate = (double)((getWM(cache) + getRM(cache)) * 100) / (cache->currentCycle_cache); //calculate miss rate
+    float missRate = (double)((getWM(cache) + getRM(cache)) * 100) / (getReads(cache) + getWrites(cache)); //calculate miss rate
     missRate       = roundf(missRate * 100) / 100;                                                //rounding miss rate
 
     float missRateRead = (double)((getRM(cache)) * 100) / (getReads(cache));   //calculate miss rate
@@ -1779,7 +1998,7 @@ void printStatsCache(struct Cache *cache)
     printf("| %-21s | %'-27lu | \n", "Block Size",    cache->lineSize);
     printf("| %-21s | %'-27lu | \n", "Associativity", cache->assoc);
     printf(" -----------------------------------------------------\n");
-    printf("| %-21s | %'-27lu | \n", "Reads/Writes", cache->currentCycle_cache );
+    printf("| %-21s | %'-27lu | \n", "Reads/Writes", (getReads(cache) + getWrites(cache)) );
     printf("| %-21s | %'-27lu | \n", "Reads/Writes misses", (getWM(cache) + getRM(cache)));
     printf("| %-21s | %-27.2f | \n", "Miss rate(%)", missRate);
     printf(" -----------------------------------------------------\n");
