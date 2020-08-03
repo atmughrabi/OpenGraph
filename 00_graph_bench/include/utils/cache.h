@@ -81,6 +81,16 @@
 #define HOT_HIT_RRPV  0
 #define RRPV_INIT DEFAULT_INSERT_RRPV
 
+// GRASP-XP Policy Constants RRIP (re-refernece insertion prediction)
+#define NUM_BITS_XPRRIP 3
+
+#define DEFAULT_INSERT_XPRRPV ((1 << NUM_BITS_XPRRIP) - 1)
+#define COLD_INSERT_XPRRPV DEFAULT_INSERT_XPRRPV
+#define WARM_INSERT_XPRRPV DEFAULT_INSERT_XPRRPV - 1
+#define HOT_INSERT_XPRRPV  1
+#define HOT_HIT_XPRRPV  0
+#define XPRRPV_INIT DEFAULT_INSERT_XPRRPV
+
 // SRRIP Policy Constants RRIP (re-refernece insertion prediction)
 #define NUM_BITS_SRRIP 2
 
@@ -148,8 +158,11 @@ struct Cache
     uint32_t  numVertices;
 
     uint32_t  num_buckets;
+    uint64_t *thresholds;
     uint64_t *thresholds_count;
     uint64_t *thresholds_totalDegrees;
+    uint64_t *thresholds_avgDegrees;
+    uint64_t **regions_avgDegrees;
 };
 
 
@@ -297,6 +310,13 @@ void AccessAccelGraphExpressUInt64(struct AccelGraphCache *accel_graph, uint64_t
 void AccessAccelGraphExpressUInt32(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, uint32_t value);
 void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, float value);
 
+// ********************************************************************************************
+// ***************               GRASP-XP Policy                                 **************
+// ********************************************************************************************
+void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  *degrees);
+void setAccelGraphCacheThresholdDegreeAvg(struct AccelGraphCache *cache, uint32_t  *degrees);
+void setDoubleTaggedCacheThresholdDegreeAvg(struct DoubleTaggedCache *cache, uint32_t  *degrees);
+void setCacheRegionDegreeAvg(struct Cache *cache);
 // ********************************************************************************************
 // ***************               GRASP Policy                                    **************
 // ********************************************************************************************

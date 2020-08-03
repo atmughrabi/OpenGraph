@@ -916,6 +916,7 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     propertyMetaData[1].data_type_size = sizeof(float);
 
     initDoubleTaggedCacheRegion(cache, propertyMetaData);
+    setDoubleTaggedCacheThresholdDegreeAvg(cache, graph->vertices->out_degree);
 #endif
 
 #if DIRECTED

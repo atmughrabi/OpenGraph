@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <omp.h>
 
+#include "quantization.h"
 #include "myMalloc.h"
 #include "cache.h"
 
@@ -243,12 +244,38 @@ void freeAccelGraphCache(struct AccelGraphCache *cache)
 struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, uint32_t num_vertices, uint32_t policy, uint32_t numPropertyRegions)
 {
     uint64_t i;
+    uint64_t j;
 
     struct Cache *cache = ( struct Cache *) my_malloc(sizeof(struct Cache));
     initCache(cache, l1_size, l1_assoc, blocksize, policy);
 
+    cache->num_buckets         = 11;
     cache->numPropertyRegions  = numPropertyRegions;
     cache->propertyRegions     = (struct PropertyRegion *)my_malloc(sizeof(struct PropertyRegion) * numPropertyRegions);
+
+    cache->thresholds              = (uint64_t *)my_malloc(sizeof(uint64_t) * cache->num_buckets );
+    cache->thresholds_count        = (uint64_t *)my_malloc(sizeof(uint64_t) * cache->num_buckets );
+    cache->thresholds_totalDegrees = (uint64_t *)my_malloc(sizeof(uint64_t) * cache->num_buckets );
+    cache->thresholds_avgDegrees   = (uint64_t *)my_malloc(sizeof(uint64_t) * cache->num_buckets );
+    cache->regions_avgDegrees      = (uint64_t **)my_malloc(sizeof(uint64_t *) * numPropertyRegions);
+
+
+    for(i = 0; i < cache->numPropertyRegions; i++)
+    {
+        cache->regions_avgDegrees[i] = (uint64_t *)my_malloc(sizeof(uint64_t) * (cache->num_buckets + 1) );
+        for(j = 0; j < (cache->num_buckets + 1); j++)
+        {
+            cache->regions_avgDegrees[i][j] = 0;
+        }
+    }
+
+    for(i = 0; i < cache->num_buckets ; i++)
+    {
+        cache->thresholds[i]               = 0;
+        cache->thresholds_count[i]         = 0;
+        cache->thresholds_totalDegrees[i]  = 0;
+        cache->thresholds_avgDegrees[i]    = 0;
+    }
 
     for(i = 0; i < numPropertyRegions; i++)
     {
@@ -277,15 +304,6 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
     return cache;
 }
 
-
-void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  num_buckets)
-{
-
-    cache->num_buckets             = num_buckets;
-    cache->thresholds_count        = (uint64_t *)my_malloc(sizeof(uint64_t) * num_buckets);
-    cache->thresholds_totalDegrees = (uint64_t *)my_malloc(sizeof(uint64_t) * num_buckets);
-}
-
 void freeCache(struct Cache *cache)
 {
     uint64_t i;
@@ -304,6 +322,23 @@ void freeCache(struct Cache *cache)
             free(cache->vertices_total_reuse);
         if(cache->vertices_accesses)
             free(cache->vertices_accesses);
+        if(cache->thresholds)
+            free(cache->thresholds);
+        if(cache->thresholds_count)
+            free(cache->thresholds_count);
+        if(cache->thresholds_totalDegrees)
+            free(cache->thresholds_totalDegrees);
+        if(cache->thresholds_avgDegrees)
+            free(cache->thresholds_avgDegrees);
+
+        for(i = 0; i < cache->numPropertyRegions; i++)
+        {
+            if(cache->regions_avgDegrees[i])
+                free(cache->regions_avgDegrees[i]);
+        }
+
+        if(cache->regions_avgDegrees)
+            free(cache->regions_avgDegrees);
 
         if(cache->cacheLines)
         {
@@ -1293,6 +1328,107 @@ void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t 
 }
 
 // ********************************************************************************************
+// ***************               GRASP-XP Policy                                 **************
+// ********************************************************************************************
+
+void setCacheRegionDegreeAvg(struct Cache *cache)
+{
+    uint32_t v;
+    uint32_t i;
+    // uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
+
+    for (v = 0; v < cache->numPropertyRegions; ++v)
+    {
+        cache->regions_avgDegrees[v][0] = cache->propertyRegions[v].base_address;
+        for ( i = 1; i < (cache->num_buckets + 1); ++i)
+        {
+            cache->regions_avgDegrees[v][i] = cache->regions_avgDegrees[v][i-1] + (cache->thresholds_count[i - 1] * cache->propertyRegions[v].data_type_size);
+        }
+    }
+}
+
+void setDoubleTaggedCacheThresholdDegreeAvg(struct DoubleTaggedCache *cache, uint32_t  *degrees)
+{
+    setAccelGraphCacheThresholdDegreeAvg(cache->accel_graph, degrees);
+    setCacheThresholdDegreeAvg(cache->ref_cache, degrees);
+}
+
+
+void setAccelGraphCacheThresholdDegreeAvg(struct AccelGraphCache *cache, uint32_t  *degrees)
+{
+    setCacheThresholdDegreeAvg(cache->cold_cache, degrees);
+    setCacheThresholdDegreeAvg(cache->warm_cache, degrees);
+    setCacheThresholdDegreeAvg(cache->hot_cache, degrees);
+}
+
+void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  *degrees)
+{
+    uint32_t v;
+    uint32_t i;
+    uint64_t  avgDegrees = 0;
+    float *thresholds_avgDegrees;
+    thresholds_avgDegrees    = (float *) my_malloc(cache->num_buckets * sizeof(float));
+
+    for (v = 0; v < cache->numVertices; ++v)
+    {
+        avgDegrees +=  degrees[v];
+    }
+
+    avgDegrees /= cache->numVertices;
+
+    // START initialize thresholds
+    if(avgDegrees <= 1)
+        cache->thresholds[0] = 1;
+    else
+        cache->thresholds[0] = (avgDegrees / 2);
+    for ( i = 1; i < (cache->num_buckets - 1); ++i)
+    {
+        cache->thresholds[i] = cache->thresholds[i - 1] * 2;
+    }
+    cache->thresholds[cache->num_buckets - 1] = UINT32_MAX;
+    // END initialize thresholds
+
+    // collect stats perbucket
+    for (v = 0; v < cache->numVertices; ++v)
+    {
+        for ( i = 0; i < cache->num_buckets; ++i)
+        {
+            if(degrees[v] <= cache->thresholds[i])
+            {
+                cache->thresholds_count[i] += 1;
+                cache->thresholds_totalDegrees[i]  += degrees[v];
+                break;
+            }
+        }
+    }
+
+    for ( i = 0; i < cache->num_buckets; ++i)
+    {
+        if(cache->thresholds_count[i])
+        {
+            thresholds_avgDegrees[i] = (float)cache->thresholds_totalDegrees[i]  / cache->thresholds_count[i];
+        }
+        else
+        {
+            thresholds_avgDegrees[i] = 0;
+        }
+    }
+
+    struct quant_params_8 rDivD_params;
+    getMinMax_8(&rDivD_params, thresholds_avgDegrees, cache->num_buckets);
+    rDivD_params.scale = GetScale_8(rDivD_params.min, rDivD_params.max);
+    rDivD_params.zero = 0;
+
+    for ( i = 0; i < cache->num_buckets; ++i)
+    {
+        cache->thresholds_avgDegrees[i]   = quantize_8(thresholds_avgDegrees[i], rDivD_params.scale, rDivD_params.zero);
+    }
+
+    setCacheRegionDegreeAvg(cache);
+    free(thresholds_avgDegrees);
+}
+
+// ********************************************************************************************
 // ***************               GRASP Policy                                    **************
 // ********************************************************************************************
 
@@ -1406,7 +1542,7 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
     uint32_t  i = 0;
     uint32_t  v = 0;
     uint64_t  avgDegrees = 0;
-    uint32_t  num_buckets = 11;
+    uint32_t  num_buckets = cache->num_buckets;
     uint32_t  num_vertices = cache->numVertices;
 
     uint64_t *thresholds;
