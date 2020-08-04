@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include <omp.h>
 
 #include "myMalloc.h"
 #include "fixedPoint.h"
@@ -176,6 +177,7 @@ void pageRankPullGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
     uint32_t degree;
     uint32_t edge_idx;
 
+    // #pragma omp parallel for private(v,j,u,degree,edge_idx) schedule(static, 8)
     for(v = 0; v < num_vertices; v++)
     {
 
@@ -197,10 +199,17 @@ void pageRankPullGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
             // AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (sorted_edges_array[j]), 'r', u, sorted_edges_array[j]);
 
             nodeIncomingPR += riDividedOnDiClause[u]; // pageRanks[v]/graph->vertices[v].out_degree;
+            // #pragma omp critical
+            // {
             AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u, riDividedOnDiClause[u]);
+            // }
         }
         pageRanksNext[v] = nodeIncomingPR;
+
+        // #pragma omp critical
+        // {
         AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (pageRanksNext[v]), 'w', v, pageRanksNext[v]);
+        // }
     }
 
 

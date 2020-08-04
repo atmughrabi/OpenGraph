@@ -21,6 +21,7 @@ struct  EdgeList
 
 
 uint32_t maxTwoIntegers(uint32_t num1, uint32_t num2);
+float maxTwoFloats(float num1, float num2);
 void edgeListPrint(struct EdgeList *edgeList);
 void freeEdgeList( struct EdgeList *edgeList);
 char *readEdgeListstxt(const char *fname, uint32_t weighted);

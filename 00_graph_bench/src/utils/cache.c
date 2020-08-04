@@ -274,6 +274,11 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
     cache->thresholds_avgDegrees   = (uint64_t *)my_malloc(sizeof(uint64_t) * cache->num_buckets );
     cache->regions_avgDegrees      = (uint64_t **)my_malloc(sizeof(uint64_t *) * numPropertyRegions);
 
+    cache->verticesMiss = NULL;
+    cache->verticesHit  = NULL;
+    cache->vertices_base_reuse  = NULL;
+    cache->vertices_total_reuse = NULL;
+    cache->vertices_accesses    = NULL;
 
     for(i = 0; i < cache->numPropertyRegions; i++)
     {
@@ -301,11 +306,15 @@ struct Cache *newCache(uint32_t l1_size, uint32_t l1_assoc, uint32_t blocksize, 
     }
 
     cache->numVertices  = num_vertices;
-    cache->verticesMiss = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
-    cache->verticesHit  = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
-    cache->vertices_base_reuse  = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
-    cache->vertices_total_reuse = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
-    cache->vertices_accesses    = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
+
+    if(cache->numVertices)
+    {
+        cache->verticesMiss = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
+        cache->verticesHit  = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
+        cache->vertices_base_reuse  = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
+        cache->vertices_total_reuse = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
+        cache->vertices_accesses    = (uint64_t *)my_malloc(sizeof(uint64_t) * num_vertices);
+    }
 
     for(i = 0; i < num_vertices; i++)
     {
@@ -1596,8 +1605,8 @@ struct CacheLine *fillLine(struct Cache *cache, uint64_t addr)
 void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
 {
 
-
-    online_cache_graph_stats(cache, node);
+    if(node < cache->numVertices)
+        online_cache_graph_stats(cache, node);
     cache->currentCycle++;
     /*per cache global counter to maintain LRU order among cache ways, updated on every cache access*/
 
@@ -1645,8 +1654,8 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
                 setFlags(newline, DIRTY);
         }
 
-
-        cache->verticesMiss[node]++;
+        if(node < cache->numVertices)
+            cache->verticesMiss[node]++;
     }
     else
     {
@@ -1655,7 +1664,8 @@ void Access(struct Cache *cache, uint64_t addr, unsigned char op, uint32_t node)
         if(op == 'w')
             setFlags(line, DIRTY);
 
-        cache->verticesHit[node]++;
+        if(node < cache->numVertices)
+            cache->verticesHit[node]++;
     }
 }
 
@@ -1817,8 +1827,11 @@ void setCacheRegionDegreeAvg(struct Cache *cache)
 
 void setDoubleTaggedCacheThresholdDegreeAvg(struct DoubleTaggedCache *cache, uint32_t  *degrees)
 {
-    setAccelGraphCacheThresholdDegreeAvg(cache->accel_graph, degrees);
-    setCacheThresholdDegreeAvg(cache->ref_cache, degrees);
+    if(cache->ref_cache->numVertices)
+    {
+        setAccelGraphCacheThresholdDegreeAvg(cache->accel_graph, degrees);
+        setCacheThresholdDegreeAvg(cache->ref_cache, degrees);
+    }
 }
 
 
@@ -2024,6 +2037,9 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
     uint32_t  num_buckets = cache->num_buckets;
     uint32_t  num_vertices = cache->numVertices;
 
+    if(!num_vertices)
+        return;
+
     uint64_t *thresholds;
     uint64_t *thresholds_count;
     uint64_t *thresholds_totalAccesses;
@@ -2201,7 +2217,9 @@ void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degre
 
     uint64_t writesMisses_cold = getWM(cache->cold_cache);
 
-    uint64_t ReadWrite_total   = getReads(cache->cold_cache) + getWrites(cache->cold_cache) + readsHits_hot + readsHits_warm + writesHits_hot + writesHits_warm;
+    uint64_t ReadWriteHotCold_total = readsHits_hot + readsHits_warm + writesHits_hot + writesHits_warm;
+
+    uint64_t ReadWrite_total   = getReads(cache->cold_cache) + getWrites(cache->cold_cache) + ReadWriteHotCold_total;
     uint64_t ReadWriteMisses_total = readsMisses_cold + writesMisses_cold;
 
     uint64_t Read_total       = getReads(cache->cold_cache) + readsHits_hot + readsHits_warm;
@@ -2209,6 +2227,8 @@ void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degre
 
     uint64_t Write_total       = getWrites(cache->cold_cache) + writesHits_hot + writesHits_warm;
     uint64_t WriteMisses_total =  writesMisses_cold;
+
+
 
     float missRate = (double)(ReadWriteMisses_total * 100) / (ReadWrite_total); //calculate miss rate
     missRate       = roundf(missRate * 100) / 100;
@@ -2219,9 +2239,14 @@ void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degre
     float missRateWrite = (double)((WriteMisses_total) * 100) / (Write_total); //calculate miss rate
     missRateWrite       = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
 
+    float commReduction = (1.0f - ((double)((ReadWrite_total - ReadWriteHotCold_total)) / (double)ReadWrite_total)) * 100;
+    commReduction       = roundf(commReduction * 100) / 100;
+
     printf("\n====================== cache Stats Accel Graph =======================\n");
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Simulation results (Cache)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %-27.2f | \n", "PSL Comm Improved(%)", commReduction);
     printf(" -----------------------------------------------------\n");
     printf("| %-21s | %'-27lu | \n", "Reads/Writes", ReadWrite_total);
     printf("| %-21s | %'-27lu | \n", "Reads/Writes misses", ReadWriteMisses_total);
@@ -2250,6 +2275,40 @@ void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degre
 
 void printStatsDoubleTaggedCache(struct DoubleTaggedCache *cache, uint32_t *in_degree, uint32_t *out_degree)
 {
+    uint64_t readsHits_hot    = getReads(cache->accel_graph->hot_cache)  - getRM(cache->accel_graph->hot_cache);
+    uint64_t readsHits_warm   = getReads(cache->accel_graph->warm_cache) - getRM(cache->accel_graph->warm_cache);
+
+    uint64_t readsMisses_cold = getRM(cache->accel_graph->cold_cache);
+
+    uint64_t writesHits_hot   = getWrites(cache->accel_graph->hot_cache)  - getWM(cache->accel_graph->hot_cache);
+    uint64_t writesHits_warm  = getWrites(cache->accel_graph->warm_cache) - getWM(cache->accel_graph->warm_cache);
+
+    uint64_t writesMisses_cold = getWM(cache->accel_graph->cold_cache);
+
+    uint64_t ReadWriteHotCold_total = readsHits_hot + readsHits_warm + writesHits_hot + writesHits_warm;
+
+    uint64_t ReadWrite_total   = getReads(cache->accel_graph->cold_cache) + getWrites(cache->accel_graph->cold_cache) + ReadWriteHotCold_total;
+    uint64_t ReadWriteMisses_total = readsMisses_cold + writesMisses_cold;
+
+    float missRate = (double)(ReadWriteMisses_total * 100) / (ReadWrite_total); //calculate miss rate
+    missRate       = roundf(missRate * 100) / 100;
+
+
+    uint64_t readsMisses_ref = getRM(cache->ref_cache);
+
+    uint64_t writesMisses_ref = getWM(cache->ref_cache);
+
+    uint64_t ReadWrite_total_ref   = getReads(cache->ref_cache) + getWrites(cache->ref_cache);
+    uint64_t ReadWriteMisses_total_ref = readsMisses_ref + writesMisses_ref;
+
+    float missRate_ref = (double)(ReadWriteMisses_total_ref * 100) / (ReadWrite_total_ref); //calculate miss rate
+    missRate_ref       = roundf(missRate_ref * 100) / 100;
+
+    float missRate_perf = 100 * (1.0 - (missRate / missRate_ref));
+    printf("\n============ Cache Stats AccelGraph (Baseline:ref_cache) =============\n");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-21s | %-27.2f | \n", "MissRate Improved(%)", missRate_perf);
+    printf(" -----------------------------------------------------\n");
     printStatsAccelGraphCache(cache->accel_graph, in_degree, out_degree);
     printf("\n======================================================================\n");
     printf("\n===================== cache Stats (ref_cache Stats)  =================\n");

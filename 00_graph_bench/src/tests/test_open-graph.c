@@ -19,19 +19,7 @@
 #include <argp.h>
 #include <stdbool.h>
 #include <omp.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <argp.h>
-#include <stdbool.h>
-#include <omp.h>
-
+#include <assert.h>
 
 #include "graphStats.h"
 #include "edgeList.h"
@@ -56,7 +44,6 @@
 #include "connectedComponents.h"
 #include "triangleCount.h"
 
-#include <assert.h>
 #include "graphTest.h"
 
 uint64_t afu_config;

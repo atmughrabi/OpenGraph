@@ -27,7 +27,7 @@ void *aligned_malloc( size_t size )
     // void *dataOut = aligned_alloc(CACHELINE_BYTES, size);
     void *dataOut = NULL ;
     int err = posix_memalign(
-      (void**)&dataOut, CACHELINE_BYTES, size);
+                  (void **)&dataOut, CACHELINE_BYTES, size);
 
     assert(err == 0 && "Error, aligned_alloc!");
     // if ( !dataOut )
@@ -56,6 +56,7 @@ void *my_malloc( size_t size )
 
     // void *dataOut = aligned_alloc(CACHELINE_BYTES, size);
     void *dataOut = NULL;
+
 #if ALIGNED
     dataOut =   aligned_malloc(size);
 #else

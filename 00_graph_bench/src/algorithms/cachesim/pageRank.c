@@ -888,6 +888,7 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     double error_total = 0.0;
     // uint32_t j;
     uint32_t v;
+
     // uint32_t u;
     // uint32_t degree;
     // uint32_t edge_idx;
@@ -903,9 +904,11 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     float *riDividedOnDiClause = (float *) my_malloc(graph->num_vertices * sizeof(float));
 
 #ifdef CACHE_HARNESS
-    uint32_t numPropertyRegions = 1;
-    struct PropertyMetaData *propertyMetaData = (struct PropertyMetaData *) my_malloc(graph->num_vertices * sizeof(struct PropertyMetaData));
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, graph->num_vertices, POLICY, numPropertyRegions);
+    uint32_t num_vertices = graph->num_vertices;
+    // uint32_t num_vertices = 0;
+    uint32_t numPropertyRegions = 2;
+    struct PropertyMetaData *propertyMetaData = (struct PropertyMetaData *) my_malloc(numPropertyRegions * sizeof(struct PropertyMetaData));
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, num_vertices, POLICY, 1);
 
     propertyMetaData[0].base_address = (uint64_t)&riDividedOnDiClause[0];
     propertyMetaData[0].size = graph->num_vertices;
@@ -926,8 +929,6 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     vertices = graph->vertices;
     sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
 #endif
-
-
 
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting Page Rank Pull (tolerance/epsilon)");
@@ -1025,7 +1026,8 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
 #ifdef CACHE_HARNESS
     printStatsDoubleTaggedCache(cache, graph->vertices->in_degree, graph->vertices->out_degree);
     freeDoubleTaggedCache(cache);
-    free(propertyMetaData);
+    if(propertyMetaData)
+        free(propertyMetaData);
 #endif
 
 

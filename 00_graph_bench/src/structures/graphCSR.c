@@ -111,7 +111,7 @@ struct GraphCSR *graphCSRNew(uint32_t V, uint32_t E, uint8_t inverse)
     graphCSR->num_vertices = V;
     graphCSR->num_edges = E;
     graphCSR->avg_degree = E / V;
-
+    graphCSR->max_weight = 0;
     graphCSR->vertices = newVertexArray(V);
 
 #if DIRECTED
