@@ -351,7 +351,7 @@ debug-cache: app-cache
 run-cache: MODE 		= -DCACHE_HARNESS
 run-cache: INTEGRATION 	= cachesim
 run-cache: app-cache
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim  -f $(FILE_BIN) $(ARGS)
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim -f $(FILE_BIN) $(ARGS)
 
 .PHONY: run-openmp
 run-openmp: INTEGRATION = openmp
@@ -361,6 +361,11 @@ run-openmp: app-openmp
 .PHONY: convert
 convert: INTEGRATION = openmp
 convert: app-openmp
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT)
+
+.PHONY: convert-w
+convert-w: INTEGRATION = openmp
+convert-w: app-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -w -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT)
 
 .PHONY: stats-openmp

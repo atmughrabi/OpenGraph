@@ -83,9 +83,11 @@ void writeEdgeListToTXTFile(struct EdgeList *edgeList, const char *fname)
 
     for(i = 0; i < edgeList->num_edges; i++)
     {
-
+#if WEIGHTED
+        fprintf(fp, "%u %u %f\n", edgeList->edges_array_src[i], edgeList->edges_array_dest[i], edgeList->edges_array_weight[i]);
+#else
         fprintf(fp, "%u %u\n", edgeList->edges_array_src[i], edgeList->edges_array_dest[i]);
-
+#endif
     }
 
     fclose (fp);
@@ -183,7 +185,9 @@ struct EdgeList *removeDulpicatesSelfLoopEdges( struct EdgeList *edgeList)
 
     tempEdgeList->num_edges = j;
     tempEdgeList->num_vertices = edgeList->num_vertices ;
+#if WEIGHTED
     tempEdgeList->max_weight = edgeList->max_weight ;
+#endif
     tempEdgeList->avg_degree = tempEdgeList->num_edges / tempEdgeList->num_vertices ;
     freeEdgeList(edgeList);
     return tempEdgeList;
@@ -219,10 +223,8 @@ char *readEdgeListstxt(const char *fname, uint32_t weighted)
     FILE *pText, *pBinary;
     uint32_t size = 0, i;
     uint32_t src = 0, dest = 0;
-
-#if WEIGHTED
     float weight = 1.0;
-#endif
+
 
     char *fname_txt = (char *) malloc((strlen(fname) + 10) * sizeof(char));
     char *fname_bin = (char *) malloc((strlen(fname) + 10) * sizeof(char));
@@ -264,15 +266,22 @@ char *readEdgeListstxt(const char *fname, uint32_t weighted)
 #if WEIGHTED
         if(weighted)
         {
-            i = fscanf(pText, "%u\t%u\n", &src, &dest);
-            weight = generateRandFloat(mt19937var);
+            i = fscanf(pText, "%u\t%u\t%f\n", &src, &dest, &weight);
         }
         else
         {
-            i = fscanf(pText, "%u\t%u\t%f\n", &src, &dest, &weight);
+            i = fscanf(pText, "%u\t%u\n", &src, &dest);
+            weight = generateRandFloat(mt19937var);
         }
 #else
-        i = fscanf(pText, "%u\t%u\n", &src, &dest);
+        if(weighted)
+        {
+            i = fscanf(pText, "%u\t%u\t%f\n", &src, &dest, &weight);
+        }
+        else
+        {
+            i = fscanf(pText, "%u\t%u\n", &src, &dest);
+        }
 #endif
 
         if( i == EOF )
@@ -304,7 +313,9 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
     struct stat fs;
     char *buf_addr;
     uint32_t  *buf_pointer;
+#if WEIGHTED
     float    *buf_pointer_float;
+#endif
     uint32_t  src = 0, dest = 0;
     uint32_t offset = 0;
     uint32_t offset_size;
@@ -333,23 +344,33 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 
 
     buf_pointer = (uint32_t *) buf_addr;
-    buf_pointer_float = (float *) buf_addr;
 
 #if WEIGHTED
-    if(weighted)
-    {
-        offset = 2;
-        offset_size = (2 * sizeof(uint32_t));
-    }
-    else
+    buf_pointer_float = (float *) buf_addr;
+#endif
+
+#if WEIGHTED
+    if(weighted) 
     {
         offset = 3;
         offset_size = (2 * sizeof(uint32_t)) + sizeof(float);
     }
-
+    else
+    {
+        offset = 2;
+        offset_size = (2 * sizeof(uint32_t));
+    }
 #else
-    offset = 2;
-    offset_size = (2 * sizeof(uint32_t));
+    if(weighted) // you will skip the weights
+    {
+        offset = 3;
+        offset_size = (2 * sizeof(uint32_t)) + sizeof(float);
+    }
+    else
+    {
+        offset = 2;
+        offset_size = (2 * sizeof(uint32_t));
+    }
 #endif
 
     uint32_t num_edges = (uint64_t)fs.st_size / offset_size;
@@ -402,12 +423,12 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 #if WEIGHTED
                 if(weighted)
                 {
-                    edgeList->edges_array_weight[i] = generateRandFloat(mt19937var);
+                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
                     edgeList->edges_array_weight[i + (num_edges)] = edgeList->edges_array_weight[i];
                 }
                 else
                 {
-                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
+                    edgeList->edges_array_weight[i] = generateRandFloat(mt19937var);
                     edgeList->edges_array_weight[i + (num_edges)] = edgeList->edges_array_weight[i];
                 }
 #endif
@@ -421,12 +442,11 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 #if WEIGHTED
                 if(weighted)
                 {
-                    edgeList->edges_array_weight[i] =  generateRandFloat(mt19937var);
+                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
                 }
                 else
                 {
-                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
-
+                    edgeList->edges_array_weight[i] =  generateRandFloat(mt19937var);
                 }
 #endif
             } // symmetric
@@ -442,12 +462,12 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 #if WEIGHTED
                 if(weighted)
                 {
-                    edgeList->edges_array_weight[i] = generateRandFloat(mt19937var);
+                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
                     edgeList->edges_array_weight[i + (num_edges)] = edgeList->edges_array_weight[i];
                 }
                 else
                 {
-                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
+                    edgeList->edges_array_weight[i] = generateRandFloat(mt19937var);
                     edgeList->edges_array_weight[i + (num_edges)] = edgeList->edges_array_weight[i];
                 }
 #endif
@@ -459,11 +479,11 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 #if WEIGHTED
                 if(weighted)
                 {
-                    edgeList->edges_array_weight[i] = generateRandFloat(mt19937var);
+                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
                 }
                 else
                 {
-                    edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
+                    edgeList->edges_array_weight[i] = generateRandFloat(mt19937var);
                 }
 #endif
             }// symmetric
@@ -495,11 +515,11 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 #if WEIGHTED
             if(weighted)
             {
-                edgeList->edges_array_weight[i] =  generateRandFloat(mt19937var);
+                edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
             }
             else
             {
-                edgeList->edges_array_weight[i] = buf_pointer_float[((offset) * i) + 2];
+                edgeList->edges_array_weight[i] =  generateRandFloat(mt19937var);
             }
 #endif
         }

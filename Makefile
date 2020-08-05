@@ -181,6 +181,10 @@ run-openmp:
 convert:
 	$(MAKE) convert $(MAKE_ARGS)
 
+.PHONY: convert-w
+convert-w:
+	$(MAKE) convert-w $(MAKE_ARGS)
+
 .PHONY: stats-openmp
 stats-openmp: graph-openmp
 	$(MAKE) stats-openmp $(MAKE_ARGS)

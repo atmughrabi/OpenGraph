@@ -111,7 +111,11 @@ struct GraphCSR *graphCSRNew(uint32_t V, uint32_t E, uint8_t inverse)
     graphCSR->num_vertices = V;
     graphCSR->num_edges = E;
     graphCSR->avg_degree = E / V;
+
+#if WEIGHTED
     graphCSR->max_weight = 0;
+#endif
+
     graphCSR->vertices = newVertexArray(V);
 
 #if DIRECTED
@@ -156,7 +160,7 @@ struct GraphCSR *graphCSRPreProcessingStep (struct Arguments *arguments)
 {
 
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
-
+   
     Start(timer);
     struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted); // read edglist from binary file
     Stop(timer);

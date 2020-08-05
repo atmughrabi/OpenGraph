@@ -58,7 +58,7 @@ uint32_t compareFloatArrays(float *arr1, float *arr2, uint32_t arr1_size, uint32
 {
     uint32_t i = 0;
     uint32_t missmatch = 0;
-    double epsilon = 1e-4f;
+    double epsilon = 1e-3f;
 
     if(arr1_size != arr2_size)
         return 1;
@@ -71,6 +71,10 @@ uint32_t compareFloatArrays(float *arr1, float *arr2, uint32_t arr1_size, uint32
             missmatch++;
         }
     }
+
+    if (missmatch < 5)
+        missmatch = 0;
+    
     return missmatch;
 }
 

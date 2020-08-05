@@ -201,7 +201,7 @@ void pageRankPullGraphCSRKernelCache(struct DoubleTaggedCache *cache, float *riD
             nodeIncomingPR += riDividedOnDiClause[u]; // pageRanks[v]/graph->vertices[v].out_degree;
             // #pragma omp critical
             // {
-            AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (riDividedOnDiClause[u]), 'r', u, riDividedOnDiClause[u]);
+            AccessDoubleTaggedCacheFloat(cache, (uint64_t) & (riDividedOnDiClause[u]) , 'r', u, riDividedOnDiClause[u]);
             // }
         }
         pageRanksNext[v] = nodeIncomingPR;

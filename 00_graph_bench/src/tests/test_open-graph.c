@@ -80,7 +80,7 @@ main (int argc, char **argv)
     arguments.sort = 0;
     arguments.lmode = 0;
     arguments.symmetric = 0;
-    arguments.weighted = 0;
+    arguments.weighted = 1;
     arguments.delta = 1;
     arguments.numThreads = 4;
     arguments.fnameb = "../01_test_graphs/Gnutella/graph.wbin";

@@ -52,6 +52,8 @@ void generateGraphPrintMessageWithtime(const char *msg, double time)
 
 }
 
+
+
 void writeSerializedGraphDataStructure(struct Arguments *arguments)  // for now this only support graph CSR
 {
 
@@ -64,7 +66,11 @@ void writeSerializedGraphDataStructure(struct Arguments *arguments)  // for now 
         Start(timer);
         arguments->fnameb = readEdgeListstxt(arguments->fnameb, arguments->weighted);
         arguments->fnameb_format = 1; // now you have a bin file
-        arguments->weighted = 0; // no need to generate weights again this affects readedgelistbin
+#if WEIGHTED
+        arguments->weighted = 1; // no need to generate weights again this affects readedgelistbin
+#else
+        arguments->weighted = 0;
+#endif
         Stop(timer);
         generateGraphPrintMessageWithtime("Serialize EdgeList text to binary (Seconds)", Seconds(timer));
     }
@@ -72,9 +78,17 @@ void writeSerializedGraphDataStructure(struct Arguments *arguments)  // for now 
     {
         Start(timer);
         struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted);  // read edglist from binary file
+
+        if(arguments->lmode)
+            edgeList = reorderGraphProcess(edgeList, arguments);
+
         writeEdgeListToTXTFile(edgeList, arguments->fnameb);
         arguments->fnameb_format = 1; // now you have a bin file
-        arguments->weighted = 0; // no need to generate weights again this affects readedgelistbin
+#if WEIGHTED
+        arguments->weighted = 1; // no need to generate weights again this affects readedgelistbin
+#else
+        arguments->weighted = 0;
+#endif
         Stop(timer);
         generateGraphPrintMessageWithtime("Serialize EdgeList binary to text (Seconds)", Seconds(timer));
 
@@ -88,7 +102,11 @@ void writeSerializedGraphDataStructure(struct Arguments *arguments)  // for now 
         Start(timer);
         arguments->fnameb = readEdgeListstxt(arguments->fnameb, arguments->weighted);
         arguments->fnameb_format = 1; // now you have a bin file
-        arguments->weighted = 0; // no need to generate weights again this affects readedgelistbin
+#if WEIGHTED
+        arguments->weighted = 1; // no need to generate weights again this affects readedgelistbin
+#else
+        arguments->weighted = 0;
+#endif
         Stop(timer);
         generateGraphPrintMessageWithtime("Serialize EdgeList text to binary (Seconds)", Seconds(timer));
 
@@ -131,11 +149,37 @@ void writeSerializedGraphDataStructure(struct Arguments *arguments)  // for now 
         Stop(timer);
         generateGraphPrintMessageWithtime("Free Graph CSR (Seconds)", Seconds(timer));
     }
+    else if(arguments->fnameb_format == 0 && arguments->convert_format == 0)
+    {
+        Start(timer);
+        arguments->fnameb = readEdgeListstxt(arguments->fnameb, arguments->weighted);
+        arguments->fnameb_format = 1; // now you have a bin file
+#if WEIGHTED
+        arguments->weighted = 1; // no need to generate weights again this affects readedgelistbin
+#else
+        arguments->weighted = 0;
+#endif
+        struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted);
+
+        if(arguments->lmode)
+            edgeList = reorderGraphProcess(edgeList, arguments);
+
+        writeEdgeListToTXTFile(edgeList, arguments->fnameb);
+        Stop(timer);
+
+        generateGraphPrintMessageWithtime("INPUT and OUTPUT Same format", Seconds(timer));
+
+
+    }
     else if(arguments->fnameb_format == arguments->convert_format)    // for now it edge list is text only convert to binary
     {
 
         Start(timer);
+
+
+
         Stop(timer);
+
         generateGraphPrintMessageWithtime("INPUT and OUTPUT Same format no need to serialize", Seconds(timer));
     }
 
