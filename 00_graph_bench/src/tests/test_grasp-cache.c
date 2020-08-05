@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
             res = fread(&key, 1, 25, fp);
             res = fread(&val, 8, 1, fp);
             printf("<--%u %35s %20lu\n", i, key, val);
-            propertyMetaData[i].size = val - propertyMetaData[0].base_address;
+            propertyMetaData[i].size = val - propertyMetaData[i].base_address;
         }
         initDoubleTaggedCacheRegion(cache, propertyMetaData);
         res = fread(&total_addresses, 8, 1, fp);

@@ -226,8 +226,8 @@ struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, 
 {
     struct AccelGraphCache *cache = (struct AccelGraphCache *) my_malloc(sizeof(struct AccelGraphCache));
 
-    cache->cold_cache = newCache( PSL_L1_SIZE, PSL_L1_ASSOC, PSL_BLOCKSIZE, num_vertices, PSL_POLICY, numPropertyRegions);
-    cache->warm_cache = newCache( WARM_POLICY, WARM_L1_ASSOC, WARM_BLOCKSIZE, num_vertices, WARM_POLICY, numPropertyRegions);
+    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, policy, numPropertyRegions);
+    cache->warm_cache = newCache( WARM_L1_SIZE, WARM_L1_ASSOC, WARM_BLOCKSIZE, num_vertices, WARM_POLICY, numPropertyRegions);
     cache->hot_cache  = newCache( HOT_L1_SIZE, HOT_L1_ASSOC, HOT_BLOCKSIZE, num_vertices, HOT_POLICY, numPropertyRegions);
 
     return cache;
@@ -1683,7 +1683,7 @@ void AccessDoubleTaggedCacheFloat(struct DoubleTaggedCache *cache, uint64_t addr
 
 void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node)
 {
-    struct CacheLine *victim = NULL;
+    // struct CacheLine *victim = NULL;
 
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
@@ -1691,12 +1691,12 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
-            victim = peekVictimPolicy(accel_graph->hot_cache, addr);
-            if(isValid(victim))
-            {
-                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-                Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
-            }
+            // victim = peekVictimPolicy(accel_graph->hot_cache, addr);
+            // if(isValid(victim))
+            // {
+            //     // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+            //     Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
+            // }
         }
         else if(inWarmRegionAddrGRASP(accel_graph->warm_cache, addr))
         {
@@ -1725,7 +1725,7 @@ void AccessAccelGraphGRASP(struct AccelGraphCache *accel_graph, uint64_t addr, u
 
 void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t addr, unsigned char op, uint32_t node, float value)
 {
-    struct CacheLine *victim = NULL;
+    // struct CacheLine *victim = NULL;
 
     if(checkInCache(accel_graph->warm_cache, addr) && checkInCache(accel_graph->hot_cache, addr))
     {
@@ -1733,12 +1733,12 @@ void AccessAccelGraphExpressFloat(struct AccelGraphCache *accel_graph, uint64_t 
         {
             Access(accel_graph->cold_cache, addr, op, node);
             Access(accel_graph->hot_cache, addr, op, node);
-            victim = peekVictimPolicy(accel_graph->hot_cache, addr);
-            if(isValid(victim))
-            {
-                // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
-                Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
-            }
+            // victim = peekVictimPolicy(accel_graph->hot_cache, addr);
+            // if(isValid(victim))
+            // {
+            //     // Prefetch(accel_graph->warm_cache, victim->addr, 'r', victim_node);
+            //     Access(accel_graph->warm_cache, victim->addr, 'd', victim->idx);
+            // }
         }
         else if(value > 0.0015 && value <= 0.015)
         {
@@ -1928,12 +1928,12 @@ void setCacheThresholdDegreeAvg(struct Cache *cache, uint32_t  *degrees)
 void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData *propertyMetaData, uint64_t size)
 {
     uint32_t v;
-    uint64_t total_properties_size = 0;
+    // uint64_t total_properties_size = 0;
     uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
 
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
-        total_properties_size += (propertyMetaData[v].size);
+        // total_properties_size += (propertyMetaData[v].size);
         cache->propertyRegions[v].base_address = propertyMetaData[v].base_address;
         cache->propertyRegions[v].size = propertyMetaData[v].size;
         cache->propertyRegions[v].data_type_size = propertyMetaData[v].data_type_size;
