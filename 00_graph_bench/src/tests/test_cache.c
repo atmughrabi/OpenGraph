@@ -16,6 +16,17 @@
 
 int main(int argc, char *argv[])
 {
+    char *benchmarks_test[7] =
+    {
+        "../04_test_graphs/test/graph.wbin",
+        "../04_test_graphs/v51_e1021/graph.wbin",
+        "../04_test_graphs/v300_e2730/graph.wbin",
+        "../04_test_graphs/amazon/graph.wbin",
+        "../04_test_graphs/dblp/graph.wbin",
+        "../04_test_graphs/euall/graph.wbin",
+        "../04_test_graphs/Gnutella/graph.wbin"
+    };
+
 
     uint32_t num_vertices = 0;
     uint32_t numPropertyRegions = 2;

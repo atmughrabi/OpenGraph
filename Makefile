@@ -2,10 +2,10 @@
 #       		 GENERAL DIRECTOIRES   	    			#
 #########################################################
 # globals binaary /bin/accel-graph name doesn't need to match main/accel-graph.c
-APP                        = open-graph
+APP                        ?= open-graph
 
 # test name needs to match the file name test/test_accel-graph.c
-export APP_TEST          ?=  test_open-graph
+export APP_TEST            ?=  test_open-graph
 # export APP_TEST          ?=  pagerRank-accuracy-report
 # export APP_TEST          ?=  pagerRank-capi-report
 # export APP_TEST          ?=  test_cache
