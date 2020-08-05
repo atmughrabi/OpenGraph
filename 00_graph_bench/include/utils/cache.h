@@ -15,12 +15,22 @@
 
 
 //CAPI PSL CACHE default CONFIGS
-#define PSL_BLOCKSIZE 128
-#define PSL_L1_SIZE   262144
+
+// #define PSL_L1_SIZE   262144
+#define PSL_L1_SIZE   524288
 #define PSL_L1_ASSOC  8
 #define PSL_POLICY    PLRU_POLICY
-#define WARM_POLICY   PLRU_POLICY
+#define PSL_BLOCKSIZE 128
+
+#define WARM_L1_SIZE  524288
+#define WARM_L1_ASSOC  8
+#define WARM_POLICY    PLRU_POLICY
+#define WARM_BLOCKSIZE 4
+
+#define HOT_L1_SIZE   524288
+#define HOT_L1_ASSOC  8
 #define HOT_POLICY    PLRU_POLICY
+#define HOT_BLOCKSIZE 4
 
 
 //GRASP/Ref_cache default configs
@@ -38,13 +48,13 @@
 #define POLICY GRASP_POLICY
 #endif
 
-// #define BLOCKSIZE   64
-// #define L1_SIZE     1048576
-// #define L1_ASSOC    16
+#define BLOCKSIZE   64
+#define L1_SIZE     1048576
+#define L1_ASSOC    16
 
-#define BLOCKSIZE   128
-#define L1_SIZE     786432
-#define L1_ASSOC    8
+// #define BLOCKSIZE   128
+// #define L1_SIZE     786432
+// #define L1_ASSOC    8
 
 // #define BLOCKSIZE   128
 // #define L1_SIZE     (262144 + 262144 + (262144/2))

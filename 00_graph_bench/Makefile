@@ -396,6 +396,7 @@ run-test: INTEGRATION = openmp
 run-test: run-test-openmp
 
 .PHONY: run-test-openmp
+run-test-openmp: INTEGRATION = openmp
 run-test-openmp: test-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
 

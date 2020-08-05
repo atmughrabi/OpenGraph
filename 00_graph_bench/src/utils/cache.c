@@ -226,9 +226,9 @@ struct AccelGraphCache *newAccelGraphCache(uint32_t l1_size, uint32_t l1_assoc, 
 {
     struct AccelGraphCache *cache = (struct AccelGraphCache *) my_malloc(sizeof(struct AccelGraphCache));
 
-    cache->cold_cache = newCache( l1_size, l1_assoc, blocksize, num_vertices, PSL_POLICY, numPropertyRegions);
-    cache->warm_cache = newCache( l1_size, 16, 4, num_vertices, WARM_POLICY, numPropertyRegions);
-    cache->hot_cache  = newCache( l1_size, 8, 4, num_vertices, HOT_POLICY, numPropertyRegions);
+    cache->cold_cache = newCache( PSL_L1_SIZE, PSL_L1_ASSOC, PSL_BLOCKSIZE, num_vertices, PSL_POLICY, numPropertyRegions);
+    cache->warm_cache = newCache( WARM_POLICY, WARM_L1_ASSOC, WARM_BLOCKSIZE, num_vertices, WARM_POLICY, numPropertyRegions);
+    cache->hot_cache  = newCache( HOT_L1_SIZE, HOT_L1_ASSOC, HOT_BLOCKSIZE, num_vertices, HOT_POLICY, numPropertyRegions);
 
     return cache;
 }
@@ -1929,7 +1929,7 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
 {
     uint32_t v;
     uint64_t total_properties_size = 0;
-    // uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
+    uint32_t property_fraction = 100 / cache->numPropertyRegions; //classical vs ratio of array size in bytes
 
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
@@ -1941,8 +1941,8 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
 
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
-        // cache->propertyRegions[v].fraction    = 100; // classical vs ratio of array size in bytes
-        cache->propertyRegions[v].fraction    = (uint64_t)(((uint64_t)(propertyMetaData[v].size) * 100) / total_properties_size );
+        cache->propertyRegions[v].fraction    = property_fraction; // classical vs ratio of array size in bytes
+        // cache->propertyRegions[v].fraction    = (uint64_t)(((uint64_t)(propertyMetaData[v].size) * 100) / total_properties_size );
         cache->propertyRegions[v].lower_bound = propertyMetaData[v].base_address;
         cache->propertyRegions[v].upper_bound = propertyMetaData[v].base_address + (uint64_t)(propertyMetaData[v].size);
 
