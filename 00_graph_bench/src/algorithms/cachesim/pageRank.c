@@ -908,14 +908,14 @@ struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations,
     // uint32_t num_vertices = 0;
     uint32_t numPropertyRegions = 2;
     struct PropertyMetaData *propertyMetaData = (struct PropertyMetaData *) my_malloc(numPropertyRegions * sizeof(struct PropertyMetaData));
-    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, num_vertices, POLICY, 1);
+    struct DoubleTaggedCache *cache = newDoubleTaggedCache(L1_SIZE,  L1_ASSOC,  BLOCKSIZE, num_vertices, POLICY, numPropertyRegions);
 
     propertyMetaData[0].base_address = (uint64_t)&riDividedOnDiClause[0];
-    propertyMetaData[0].size = graph->num_vertices;
+    propertyMetaData[0].size = graph->num_vertices * sizeof(float);
     propertyMetaData[0].data_type_size = sizeof(float);
 
     propertyMetaData[1].base_address = (uint64_t)&pageRanksNext[0];
-    propertyMetaData[1].size = graph->num_vertices;
+    propertyMetaData[1].size = graph->num_vertices * sizeof(float);
     propertyMetaData[1].data_type_size = sizeof(float);
 
     initDoubleTaggedCacheRegion(cache, propertyMetaData);

@@ -45,7 +45,7 @@ void radixSortCountSortEdgesByRanks (uint32_t **pageRanksFP, uint32_t **pageRank
     uint32_t u = 0;
     uint32_t i = 0;
     uint32_t j = 0;
-    uint32_t P = omp_get_max_threads();  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
@@ -153,15 +153,15 @@ uint32_t *radixSortEdgesByPageRank (float *pageRanks, uint32_t *labels, uint32_t
     uint32_t *pageRanksFPTemp = NULL;
     uint32_t *labelsTemp = NULL;
 
-    buckets_count = (uint32_t *) my_malloc(P * buckets * sizeof(uint32_t));
-    pageRanksFP = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    buckets_count   = (uint32_t *) my_malloc(P * buckets * sizeof(uint32_t));
+    pageRanksFP     = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
     pageRanksFPTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
-    labelsTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+    labelsTemp      = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
     #pragma omp parallel for
     for(v = 0; v < num_vertices; v++)
     {
-        pageRanksFP[v] = FLOAT_2_U(*(uint32_t *)&pageRanks[v]);
+        pageRanksFP[v] = FloatToFixed32SORT(pageRanks[v]);
         pageRanksFPTemp[v] = 0;
         labelsTemp[v] = 0;
     }
@@ -172,10 +172,10 @@ uint32_t *radixSortEdgesByPageRank (float *pageRanks, uint32_t *labels, uint32_t
     }
 
 
-    free(buckets_count);
-    free(pageRanksFP);
-    free(pageRanksFPTemp);
-    free(labelsTemp);
+    // free(buckets_count);
+    // free(pageRanksFP);
+    // free(pageRanksFPTemp);
+    // free(labelsTemp);
 
     //  for(v = 0; v < num_vertices; v++)
     // {

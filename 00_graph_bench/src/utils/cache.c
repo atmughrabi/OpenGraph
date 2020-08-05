@@ -1933,7 +1933,7 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
 
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
-        total_properties_size += (propertyMetaData[v].size * propertyMetaData[v].data_type_size);
+        total_properties_size += (propertyMetaData[v].size);
         cache->propertyRegions[v].base_address = propertyMetaData[v].base_address;
         cache->propertyRegions[v].size = propertyMetaData[v].size;
         cache->propertyRegions[v].data_type_size = propertyMetaData[v].data_type_size;
@@ -1942,9 +1942,9 @@ void initialzeCachePropertyRegions (struct Cache *cache, struct PropertyMetaData
     for (v = 0; v < cache->numPropertyRegions; ++v)
     {
         // cache->propertyRegions[v].fraction    = 100; // classical vs ratio of array size in bytes
-        cache->propertyRegions[v].fraction    = (uint64_t)(((uint64_t)(propertyMetaData[v].size * propertyMetaData[v].data_type_size) * 100) / total_properties_size );
+        cache->propertyRegions[v].fraction    = (uint64_t)(((uint64_t)(propertyMetaData[v].size) * 100) / total_properties_size );
         cache->propertyRegions[v].lower_bound = propertyMetaData[v].base_address;
-        cache->propertyRegions[v].upper_bound = propertyMetaData[v].base_address + (uint64_t)(propertyMetaData[v].size * propertyMetaData[v].data_type_size);
+        cache->propertyRegions[v].upper_bound = propertyMetaData[v].base_address + (uint64_t)(propertyMetaData[v].size);
 
         cache->propertyRegions[v].hot_bound = cache->propertyRegions[v].lower_bound + ((uint64_t)(size * cache->propertyRegions[v].fraction) / 100);
         if(cache->propertyRegions[v].hot_bound > cache->propertyRegions[v].upper_bound)
@@ -2178,10 +2178,14 @@ void printStatsGraphReuse(struct Cache *cache, uint32_t *degrees)
 void printStatsGraphCache(struct Cache *cache, uint32_t *in_degree, uint32_t *out_degree)
 {
     printStatsCache(cache);
-    printf("\n======================  Reuse stats Out Degree =======================\n");
-    printStatsGraphReuse(cache, out_degree);
-    // printf("\n======================  Reuse stats In Degree  =======================\n");
-    // printStatsGraphReuse(cache, in_degree);
+
+    if(cache->numVertices)
+    {
+        printf("\n======================  Reuse stats Out Degree =======================\n");
+        printStatsGraphReuse(cache, out_degree);
+        // printf("\n======================  Reuse stats In Degree  =======================\n");
+        // printStatsGraphReuse(cache, in_degree);
+    }
     uint32_t v;
 
     printf("\n=====================      Property Regions          =================\n");
@@ -2190,8 +2194,8 @@ void printStatsGraphCache(struct Cache *cache, uint32_t *in_degree, uint32_t *ou
         printf(" -----------------------------------------------------\n");
         printf("| %-25s | %-24u| \n", "ID", v);
         printf(" -----------------------------------------------------\n");
-        printf("| %-25s | %-24u| \n", "size", cache->propertyRegions[v].size);
-        printf("| %-25s | %-24u| \n", "data_type_size", cache->propertyRegions[v].data_type_size);
+        printf("| %-25s | %-24u| \n", "size (Bytes)", cache->propertyRegions[v].size);
+        printf("| %-25s | %-24u| \n", "data_type_size (Bytes)", cache->propertyRegions[v].data_type_size);
         printf("| %-25s | 0x%-22lx| \n", "base_address", cache->propertyRegions[v].base_address);
         printf(" -----------------------------------------------------\n");
         printf("| %-25s | %-24u| \n", "fraction", cache->propertyRegions[v].fraction );
@@ -2242,11 +2246,11 @@ void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degre
     float commReduction = (1.0f - ((double)((ReadWrite_total - ReadWriteHotCold_total)) / (double)ReadWrite_total)) * 100;
     commReduction       = roundf(commReduction * 100) / 100;
 
+    printf("| %-21s | %-27.2f | \n", "PSL Comm Improved(%)", commReduction);
+    printf(" -----------------------------------------------------\n");
     printf("\n====================== cache Stats Accel Graph =======================\n");
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Simulation results (Cache)");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-21s | %-27.2f | \n", "PSL Comm Improved(%)", commReduction);
     printf(" -----------------------------------------------------\n");
     printf("| %-21s | %'-27lu | \n", "Reads/Writes", ReadWrite_total);
     printf("| %-21s | %'-27lu | \n", "Reads/Writes misses", ReadWriteMisses_total);

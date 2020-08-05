@@ -118,20 +118,17 @@ main (int argc, char **argv)
         for(arguments.datastructure = 0 ; arguments.datastructure < 4; arguments.datastructure++)
         {
 
-
-
             if(arguments.algorithm == 7)  // Triangle counting depends on order
             {
 
                 arguments.sort = 1;
-                arguments.lmode = 3;
+                arguments.lmode = 2;
             }
-
-            if(arguments.algorithm == 8)  // Triangle counting depends on order
+            if(arguments.algorithm == 8)  // Incremental aggregation order
             {
 
                 arguments.sort = 1;
-                arguments.lmode = 8;
+                arguments.lmode = 2;
             }
 
             graph = generateGraphDataStructure(&arguments);
@@ -173,7 +170,6 @@ main (int argc, char **argv)
                 freeGraphStatsGeneral(ref_data, arguments.algorithm);
                 arguments.trials--;
 
-                printf("%s\n", "whlwehwelkwerljr" );
             }
 
 

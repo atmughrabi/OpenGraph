@@ -15,6 +15,7 @@
 #define SCALEF_8  6 // 1/2^16
 #define SCALEF_16 14 // 1/2^16
 
+#define SCALEF_S 20 // 1/2^16
 #define SCALEF 16 // 1/2^16
 #define SCALED 32 // 1/2^32
 #define EPSILON 1  // smallest possible increment or decrement you can perform
@@ -29,6 +30,7 @@
 #define FloatToFixed16(num)	    (uint16_t)((num) * (float)((uint16_t)(1) << SCALEF_16) + (float)(num >= 0 ? 0.5 : -0.5))
 #define FloatToFixed32(num)	    (uint32_t)((num) * (float)((uint32_t)(1) << SCALEF) + (float)(num >= 0 ? 0.5 : -0.5))
 #define DoubleToFixed32(num)	(uint32_t)((num) * (double)((uint32_t)(1)<< SCALEF) + (double)(num >= 0 ? 0.5 : -0.5))
+#define FloatToFixed32SORT(num)	    (uint32_t)((num) * (float)((uint32_t)(1) << SCALEF_S) + (float)(num >= 0 ? 0.5 : -0.5))
 
 #define FloatToFixed64(num)	    (uint64_t)((num) * (float)((uint64_t)(1) <<SCALED) + (float)(num >= 0 ? 0.5 : -0.5))
 #define DoubleToFixed64(num)	(uint64_t)((num) * (double)((uint64_t)(1)<<SCALED) + (double)(num >= 0 ? 0.5 : -0.5))
