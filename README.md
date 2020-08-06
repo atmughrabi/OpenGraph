@@ -253,9 +253,10 @@ benchmarking suite for various graph processing algorithms using pure C.
                              [10]-(random)-degree  
                              [11]-LoadFromFile
 
-  -n,                              --num-threads=[DEFAULT:MAX]
+  -n, --num-threads=[DEFAULT:MAX]
                                                           
                              Default:max number of threads the system has
+  
   -o, --sort=[DEFAULT:0]
                                                           
                              [0]-radix-src 
@@ -265,8 +266,10 @@ benchmarking suite for various graph processing algorithms using pure C.
 
   -p, --direction=[DEFAULT:0]
                                                           
-[0]-PULL, [1]-PUSH,[2]-HYBRID. NOTE: Please
-                             consult the function switch table for each
+                             [0]-PULL, 
+                             [1]-PUSH,
+                             [2]-HYBRID. 
+                             NOTE: Please consult the function switch table for each
                              algorithm.
 
   -r, --root=[DEFAULT:0]
