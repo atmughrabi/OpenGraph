@@ -11,6 +11,10 @@ struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels);
 struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments *arguments);
 uint32_t *reorderGraphGenerateInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t lmode);
 
+// ********************************************************************************************
+// ***************                  AccelGraph relabel                               **************
+// ********************************************************************************************
+
 
 // ********************************************************************************************
 // ***************                  Degree relabel                               **************

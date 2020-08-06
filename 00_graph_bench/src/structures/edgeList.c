@@ -357,8 +357,8 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
     }
     else
     {
-        offset = 2;
-        offset_size = (2 * sizeof(uint32_t));
+        offset = 3;
+        offset_size = (2 * sizeof(uint32_t)) + sizeof(float);
     }
 #else
     if(weighted) // you will skip the weights

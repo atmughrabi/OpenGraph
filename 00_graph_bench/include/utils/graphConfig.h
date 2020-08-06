@@ -5,7 +5,7 @@
 #include "mt19937.h"
 
 
-#define WEIGHTED 1
+#define WEIGHTED 0
 #define DIRECTED 1
 
 extern  uint64_t afu_config;

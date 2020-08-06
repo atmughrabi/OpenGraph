@@ -222,7 +222,11 @@ void *generateGraphDataStructure(struct Arguments *arguments)
         Start(timer);
         arguments->fnameb = readEdgeListstxt(arguments->fnameb, arguments->weighted);
         arguments->fnameb_format = 1; // now you have a bin file
-        arguments->weighted = 0; // no need to generate weights again this affects readedgelistbin
+#if WEIGHTED
+        arguments->weighted = 1; // no need to generate weights again this affects readedgelistbin
+#else
+        arguments->weighted = 0;
+#endif
         Stop(timer);
         generateGraphPrintMessageWithtime("Serialize EdgeList text to binary (Seconds)", Seconds(timer));
     }

@@ -117,7 +117,7 @@ static struct argp_option options[] =
     },
     {
         "generate-weights",  'w', 0,      0,
-        "\nGenerate random weights don't load from graph file. Check ->graphConfig.h #define WEIGHTED 1 beforehand then recompile using this option.\n"
+        "\nLoad or Generate weights. Check ->graphConfig.h #define WEIGHTED 1 beforehand then recompile using this option.\n"
     },
     {
         "symmetrize",        's', 0,      0,
@@ -136,11 +136,11 @@ static struct argp_option options[] =
         "\nYou bin vertices's histogram according to this parameter, if you have a large graph you want to illustrate.\n"
     },
     {
-        "verbosity",    'j', "[DEFAULT:0]\n",      0,
+        "verbosity",        'j', "[DEFAULT:0]\n",      0,
         "\nFor now it controls the output of .perf file and PageRank .stats (needs --stats enabled) files\nPageRank .stat [1:top-k results] [2:top-k results and top-k ranked vertices listed.\n"
     },
     {
-        "remove-duplicate", 'k', 0,      0,
+        "remove-duplicate",      'k', 0,      0,
         "\nRemovers duplicate edges and self loops from the graph.\n"
     },
     {
@@ -270,7 +270,7 @@ main (int argc, char **argv)
     arguments.sort = 0;
     arguments.lmode = 0;
     arguments.symmetric = 0;
-    arguments.weighted = 1;
+    arguments.weighted = 0;
     arguments.delta = 1;
     arguments.numThreads = omp_get_max_threads();
     arguments.fnameb = NULL;
