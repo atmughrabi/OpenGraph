@@ -146,8 +146,6 @@ struct BFSStats *newBFSStatsGraphAdjLinkedList(struct GraphAdjLinkedList *graph)
     return stats;
 }
 
-
-
 void freeBFSStats(struct BFSStats *stats)
 {
 
@@ -163,8 +161,6 @@ void freeBFSStats(struct BFSStats *stats)
     }
 
 }
-
-
 
 // ********************************************************************************************
 // ***************                  CSR DataStructure                            **************

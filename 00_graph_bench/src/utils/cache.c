@@ -2239,14 +2239,22 @@ void printStatsAccelGraphCache(struct AccelGraphCache *cache, uint32_t *in_degre
 
     float missRateRead = (double)((ReadMisses_total) * 100) / (Read_total); //calculate miss rate
     missRateRead       = roundf(missRateRead * 100) / 100;
-
     float missRateWrite = (double)((WriteMisses_total) * 100) / (Write_total); //calculate miss rate
     missRateWrite       = roundf(missRateWrite * 100) / 100;                            //rounding miss rate
-
     float commReduction = (1.0f - ((double)((ReadWrite_total - ReadWriteHotCold_total)) / (double)ReadWrite_total)) * 100;
     commReduction       = roundf(commReduction * 100) / 100;
 
+    float commCold = (((double)((ReadWrite_total - ReadWriteHotCold_total)) / (double)ReadWrite_total)) * 100;
+    commCold       = roundf(commCold * 100) / 100;
+    float commWarm = (((double)((readsHits_warm + writesHits_warm)) / (double)ReadWrite_total)) * 100;
+    commWarm       = roundf(commWarm * 100) / 100;
+    float commHot = (((double)((readsHits_hot + writesHits_hot)) / (double)ReadWrite_total)) * 100;
+    commHot       = roundf(commHot * 100) / 100;
+
     printf("| %-21s | %-27.2f | \n", "PSL Comm Improved(%)", commReduction);
+    printf("| %-21s | %-27.2f | \n", "Cold Comm Cache(%)  ", commCold);
+    printf("| %-21s | %-27.2f | \n", "Warm Comm Cache(%)  ", commWarm);
+    printf("| %-21s | %-27.2f | \n", "Hot Comm Cache(%)   ", commHot);
     printf(" -----------------------------------------------------\n");
     printf("\n====================== cache Stats Accel Graph =======================\n");
     printf(" -----------------------------------------------------\n");

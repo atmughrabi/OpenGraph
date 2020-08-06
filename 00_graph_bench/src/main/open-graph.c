@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------------
 // Author : Abdullah Mughrabi
 // Email  : atmughra@ncsu.edu||atmughrabi@gmail.com
-// File   : accel-graph.c
+// File   : open-graph.c
 // Create : 2019-06-21 17:15:17
 // Revise : 2019-09-28 15:37:28
 // Editor : Abdullah Mughrabi
@@ -29,18 +29,6 @@
 #include "graphStats.h"
 #include "edgeList.h"
 
-
-// "   mm                        ""#             mmm                       #     \n"
-// "   ##    mmm    mmm    mmm     #           m"   "  m mm   mmm   mmmm   # mm  \n"
-// "  #  #  #"  "  #"  "  #"  #    #           #   mm  #"  " "   #  #" "#  #"  # \n"
-// "  #mm#  #      #      #""""    #     """   #    #  #     m"""#  #   #  #   # \n"
-// " #    # "#mm"  "#mm"  "#mm"    "mm          "mmm"  #     "mm"#  ##m#"  #   # \n"
-// "                                                                #            \n"
-
-uint64_t afu_config;
-uint64_t cu_config;
-uint64_t afu_config_2;
-uint64_t cu_config_2;
 
 int numThreads;
 mt19937state *mt19937var;
@@ -69,7 +57,7 @@ static struct argp_option options[] =
     },
     {
         "algorithm",         'a', "[DEFAULT:0]\n",      0,
-        "\n[0]-BFS, [1]-Page-rank, [2]-SSSP-DeltaStepping, [3]-SSSP-BellmanFord, [4]-DFS,[5]-SPMV, [6]-Connected-Components, [7]-Triangle Counting, [8-BUGGY]-IncrementalAggregation.\n"
+        "\n[0]-BFS, [1]-Page-rank, [2]-SSSP-DeltaStepping, [3]-SSSP-BellmanFord, [4]-DFS,[5]-SPMV, [6]-Connected-Components, [7]-Betweenness-Centrality, [8]-Triangle Counting, [9-BUGGY]-IncrementalAggregation.\n"
     },
     {
         "data-structure",    'd', "[DEFAULT:0]\n",      0,
@@ -143,7 +131,7 @@ static struct argp_option options[] =
         "remove-duplicate",      'k', 0,      0,
         "\nRemovers duplicate edges and self loops from the graph.\n"
     },
-    {
+     {
         "afu-config",            'm', "[DEFAULT:0x1]\n",      0,
         "\nCAPI FPGA integration: AFU-Control buffers(read/write/prefetcher) arbitration 0x01 round robin 0x10 fixed priority.\n"
     },
@@ -163,7 +151,6 @@ parse_opt (int key, char *arg, struct argp_state *state)
     /* Get the input argument from argp_parse, which we
        know is a pointer to our arguments structure. */
     struct Arguments *arguments = state->input;
-    char *eptr;
 
     switch (key)
     {
@@ -230,12 +217,6 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case 'k':
         arguments->dflag = 1;
         break;
-    case 'm':
-        arguments->afu_config = strtoll(arg, &eptr, 0);
-        break;
-    case 'q':
-        arguments->cu_config = strtoll(arg, &eptr, 0);
-        break;
 
     default:
         return ARGP_ERR_UNKNOWN;
@@ -287,10 +268,6 @@ main (int argc, char **argv)
 
     // numThreads =  omp_get_max_threads();
     numThreads =  arguments.numThreads;
-    afu_config =  arguments.afu_config;
-    cu_config  =  arguments.cu_config;
-    afu_config_2  =  arguments.afu_config_2;
-    cu_config_2   =  arguments.cu_config_2;
 
     struct Timer *timer = (struct Timer *) my_malloc(sizeof(struct Timer));
 

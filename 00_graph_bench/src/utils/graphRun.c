@@ -35,6 +35,8 @@
 #include "SPMV.h"
 #include "connectedComponents.h"
 #include "triangleCount.h"
+#include "betweennessCentrality.h"
+
 
 #include "reorder.h"
 #include "graphStats.h"
@@ -373,6 +375,13 @@ void runGraphAlgorithms(void *graph, struct Arguments *arguments)
             struct IncrementalAggregationStats *stats = runIncrementalAggregationAlgorithm(graph,  arguments->datastructure);
             time_total += stats->time_total;
             freeIncrementalAggregationStats(stats);
+        }
+        break;
+        case 9: // Betweenness Centrality
+        {
+            struct BetweennessCentralityStats *stats = runBetweennessCentralityAlgorithm(graph,  arguments->datastructure, arguments->pushpull);
+            time_total += stats->time_total;
+            freeBetweennessCentralityStats(stats);
         }
         break;
         default: // BFS
@@ -792,6 +801,49 @@ struct IncrementalAggregationStats *runIncrementalAggregationAlgorithm(void *gra
 
 }
 
+
+struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph, uint32_t datastructure, uint32_t pushpull)
+{
+    struct GraphCSR *graphCSR = NULL;
+    // struct GraphGrid *graphGrid = NULL;
+    // struct GraphAdjLinkedList *graphAdjLinkedList = NULL;
+    // struct GraphAdjArrayList *graphAdjArrayList = NULL;
+    struct BetweennessCentralityStats *stats = NULL;
+
+    switch (datastructure)
+    {
+    case 0: // CSR
+        graphCSR = (struct GraphCSR *)graph;
+        stats = betweennessCentralityGraphCSR(pushpull, graphCSR);
+        break;
+
+    case 1: // Grid
+        // graphGrid = (struct GraphGrid *)graph;
+        generateGraphPrintMessageWithtime("NOT YET IMPLEMENTED", 0);
+        break;
+
+    case 2: // Adj Linked List
+        // graphAdjLinkedList = (struct GraphAdjLinkedList *)graph;
+
+        generateGraphPrintMessageWithtime("NOT YET IMPLEMENTED", 0);
+        break;
+
+    case 3: // Adj Array List
+        // graphAdjArrayList = (struct GraphAdjArrayList *)graph;
+
+        generateGraphPrintMessageWithtime("NOT YET IMPLEMENTED", 0);
+        break;
+
+
+    default:// CSR
+        graphCSR = (struct GraphCSR *)graph;
+        stats = betweennessCentralityGraphCSR(pushpull, graphCSR);
+        break;
+    }
+
+    return stats;
+
+}
 
 
 struct PageRankStats *runPageRankAlgorithm(void *graph, uint32_t datastructure, double epsilon, uint32_t iterations, uint32_t pushpull)

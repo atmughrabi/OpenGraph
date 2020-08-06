@@ -42,6 +42,7 @@ struct Arguments
     char *fnameb;
     uint32_t fnameb_format;
     uint32_t convert_format;
+    
     uint64_t afu_config; // parameters to pass for CAPI integration
     uint64_t cu_config;  // parameters to pass for CAPI integration
     uint64_t afu_config_2; // parameters to pass for CAPI integration
