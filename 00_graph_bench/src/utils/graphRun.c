@@ -205,18 +205,18 @@ void *generateGraphDataStructure(struct Arguments *arguments)
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     void *graph = NULL;
 
-    if(arguments->algorithm == 7)  // Triangle counting depends on order
+    if(arguments->algorithm == 8)  // Triangle counting depends on order
     {
 
         arguments->sort = 1;
-        arguments->lmode = 2;
+        // arguments->lmode = 2;
     }
 
-    if(arguments->algorithm == 8)  // Incremental aggregation order
+    if(arguments->algorithm == 9)  // Incremental aggregation order
     {
 
         arguments->sort = 1;
-        arguments->lmode = 2;
+        // arguments->lmode = 2;
     }
 
     if(arguments->fnameb_format == 0)  // for now it edge list is text only convert to binary
@@ -363,27 +363,28 @@ void runGraphAlgorithms(void *graph, struct Arguments *arguments)
             freeCCStats(stats);
         }
         break;
-        case 7: // Triangle Counting
-        {
-            struct TCStats *stats = runTriangleCountAlgorithm(graph, arguments->datastructure, arguments->pushpull);
-            time_total += stats->time_total;
-            freeTCStats(stats);
-        }
-        break;
-        case 8: // incremental Aggregation
-        {
-            struct IncrementalAggregationStats *stats = runIncrementalAggregationAlgorithm(graph,  arguments->datastructure);
-            time_total += stats->time_total;
-            freeIncrementalAggregationStats(stats);
-        }
-        break;
-        case 9: // Betweenness Centrality
+        case 7: // Betweenness Centrality
         {
             struct BetweennessCentralityStats *stats = runBetweennessCentralityAlgorithm(graph,  arguments->datastructure, arguments->pushpull);
             time_total += stats->time_total;
             freeBetweennessCentralityStats(stats);
         }
         break;
+        case 8: // Triangle Counting
+        {
+            struct TCStats *stats = runTriangleCountAlgorithm(graph, arguments->datastructure, arguments->pushpull);
+            time_total += stats->time_total;
+            freeTCStats(stats);
+        }
+        break;
+        case 9: // incremental Aggregation
+        {
+            struct IncrementalAggregationStats *stats = runIncrementalAggregationAlgorithm(graph,  arguments->datastructure);
+            time_total += stats->time_total;
+            freeIncrementalAggregationStats(stats);
+        }
+        break;
+
         default: // BFS
         {
             struct BFSStats *stats = runBreadthFirstSearchAlgorithm(graph,  arguments->datastructure,  arguments->root, arguments->pushpull);

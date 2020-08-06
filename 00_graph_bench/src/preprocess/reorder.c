@@ -866,25 +866,25 @@ uint32_t *reorderGraphGenerateInOutDegrees(uint32_t *degrees, struct EdgeList *e
 
         switch(lmode)
         {
-        case 1  :
-        case 4  :
-        case 6  :
-        case 8  :
+        case 1 :
+        case 4 :
+        case 6 :
+        case 8 :
         {
             #pragma omp atomic update
             degrees[src]++;
         } // degree
         break;
-        case 2  :
-        case 5  :
-        case 7  :
+        case 2 :
+        case 5 :
+        case 7 :
         case 9 :
         {
             #pragma omp atomic update
             degrees[dest]++;
         }
         break;
-        case 3  :
+        case 3 :
         {
             #pragma omp atomic update
             degrees[dest]++;
