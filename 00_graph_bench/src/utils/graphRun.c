@@ -365,7 +365,7 @@ void runGraphAlgorithms(void *graph, struct Arguments *arguments)
         break;
         case 7: // Betweenness Centrality
         {
-            struct BetweennessCentralityStats *stats = runBetweennessCentralityAlgorithm(graph,  arguments->datastructure, arguments->pushpull);
+            struct BetweennessCentralityStats *stats = runBetweennessCentralityAlgorithm(graph,  arguments->datastructure, arguments->iterations, arguments->pushpull);
             time_total += stats->time_total;
             freeBetweennessCentralityStats(stats);
         }
@@ -803,7 +803,7 @@ struct IncrementalAggregationStats *runIncrementalAggregationAlgorithm(void *gra
 }
 
 
-struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph, uint32_t datastructure, uint32_t pushpull)
+struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph, uint32_t datastructure, uint32_t iterations, uint32_t pushpull)
 {
     struct GraphCSR *graphCSR = NULL;
     // struct GraphGrid *graphGrid = NULL;
@@ -815,7 +815,7 @@ struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph
     {
     case 0: // CSR
         graphCSR = (struct GraphCSR *)graph;
-        stats = betweennessCentralityGraphCSR(pushpull, graphCSR);
+        stats = betweennessCentralityGraphCSR(iterations, pushpull, graphCSR);
         break;
 
     case 1: // Grid
@@ -838,9 +838,12 @@ struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph
 
     default:// CSR
         graphCSR = (struct GraphCSR *)graph;
-        stats = betweennessCentralityGraphCSR(pushpull, graphCSR);
+        stats = betweennessCentralityGraphCSR(iterations, pushpull, graphCSR);
         break;
     }
+
+    // if you want to output pageranks and rankins sorted use this
+    stats->realRanks = radixSortEdgesByPageRank (stats->betweennessCentrality, stats->realRanks, stats->num_vertices);
 
     return stats;
 

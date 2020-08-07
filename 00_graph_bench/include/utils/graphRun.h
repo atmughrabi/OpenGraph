@@ -50,7 +50,7 @@ struct SSSPStats *runSSSPAlgorithm(void *graph, uint32_t datastructure, uint32_t
 struct SPMVStats *runSPMVAlgorithm(void *graph, uint32_t datastructure, uint32_t iterations, uint32_t pushpull);
 struct CCStats *runConnectedComponentsAlgorithm(void *graph, uint32_t datastructure, uint32_t iterations, uint32_t pushpull);
 struct TCStats *runTriangleCountAlgorithm(void *graph, uint32_t datastructure, uint32_t pushpull);
-struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph, uint32_t datastructure, uint32_t pushpull);
+struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph, uint32_t datastructure, uint32_t iterations, uint32_t pushpull);
 
 
 #endif

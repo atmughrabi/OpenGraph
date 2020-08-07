@@ -26,6 +26,7 @@ struct BetweennessCentralityStats
 {
     struct Predecessor *stack;
     uint32_t *distances;
+    uint32_t *realRanks;
     int *parents;
     int *sigma;
     float    *dependency;
@@ -50,6 +51,7 @@ void clearBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
 // ********************************************************************************************
 // ***************					Auxiliary functions  	  					 **************
 // ********************************************************************************************
+uint32_t generateRandomRootBetweennessCentrality(struct GraphCSR *graph);
 void copyBitmapToStack(struct Bitmap *q_bitmap, struct Predecessor *stack, uint32_t num_vertices);
 struct Predecessor *creatNewPredecessorList(uint32_t *degrees, uint32_t num_vertices);
 struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t source, struct GraphCSR *graph, struct BetweennessCentralityStats *stats);
@@ -59,8 +61,8 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
 // ***************					CSR DataStructure							 **************
 // ********************************************************************************************
 
-struct BetweennessCentralityStats *betweennessCentralityGraphCSR(uint32_t pushpull, struct GraphCSR *graph);
-struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(struct GraphCSR *graph);
+struct BetweennessCentralityStats *betweennessCentralityGraphCSR(uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph);
+struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t iterations, struct GraphCSR *graph);
 
 
 #endif
