@@ -87,7 +87,7 @@ void printRanksBetweennessCentralityStats(struct BetweennessCentralityStats *sta
 
     uint32_t vertex_id;
     uint32_t v;
-    uint32_t topK = 5;
+    uint32_t topK = 10;
     float bc;
 
     if(topK > stats->num_vertices)
@@ -163,7 +163,7 @@ void freeBetweennessCentralityStats(struct BetweennessCentralityStats *stats)
 }
 
 // ********************************************************************************************
-// ***************					Auxiliary functions  	  					 **************
+// ***************                  Auxiliary functions                          **************
 // ********************************************************************************************
 
 uint32_t generateRandomRootBetweennessCentrality(struct GraphCSR *graph)
@@ -262,12 +262,12 @@ struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t
         swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
         clearBitmap(sharedFrontierQueue->q_bitmap_next);
         stats->processed_nodes += nf;
-       
+
 
     } // end while
 
     freeArrayQueue(sharedFrontierQueue);
-  
+
     return stats;
 }
 
@@ -319,7 +319,7 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
                 u = sorted_edges_array[j];
                 if(getBit(bitmapCurr, u))
                 {
-                    stats->parents[v] = u;
+                    // stats->parents[v] = u;
                     stats->distances[v] = stats->distances[u] + 1;
 
                     if(stats->distances[v] == stats->distances[u] + 1)
@@ -342,7 +342,7 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
 }
 
 // ********************************************************************************************
-// ***************					CSR DataStructure							 **************
+// ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
 struct BetweennessCentralityStats *betweennessCentralityGraphCSR(uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph)
@@ -391,6 +391,8 @@ struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t
 
         stats = betweennessCentralityBFSPullGraphCSR(s, graph, stats);
 
+
+        // #pragma omp parallel for
         for (t = stats->stack->degree - 1; t > 0; t--)
         {
             w = stats->stack->nodes[t];
@@ -417,7 +419,7 @@ struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t
     Stop(timer);
 
     printf(" -----------------------------------------------------\n");
-    printf("| %-15s | %-33f | \n", "Avg.Time", Seconds(timer) / iterations);
+    printf("| %-15s | %-33f | \n", "Avg.Time", Seconds(timer));
     printf(" -----------------------------------------------------\n");
 
     free(timer);
