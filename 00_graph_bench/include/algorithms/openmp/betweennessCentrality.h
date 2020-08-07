@@ -5,6 +5,7 @@
 
 #include "graphConfig.h"
 #include "edgeList.h"
+#include "bitmap.h"
 
 #include "graphCSR.h"
 #include "graphGrid.h"
@@ -15,12 +16,21 @@
 // ********************************************************************************************
 // ***************                  Stats DataStructure                          **************
 // ********************************************************************************************
+struct Predecessor
+{
+    uint32_t *nodes;
+    uint32_t  degree;
+};
 
 struct BetweennessCentralityStats
 {
+    struct Predecessor *stack;
     uint32_t *distances;
     int *parents;
-    float    *scores;
+    int *sigma;
+    float    *dependency;
+    float    *betweennessCentrality;
+    struct Predecessor *predecessors;
     uint32_t  iteration;
     uint32_t  processed_nodes;
     uint32_t  num_vertices;
@@ -35,13 +45,15 @@ struct BetweennessCentralityStats *newBetweennessCentralityStatsGraphAdjArrayLis
 struct BetweennessCentralityStats *newBetweennessCentralityStatsGraphAdjLinkedList(struct GraphAdjLinkedList *graph);
 
 void freeBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
-
+void clearBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
 
 // ********************************************************************************************
 // ***************					Auxiliary functions  	  					 **************
 // ********************************************************************************************
-
-
+void copyBitmapToStack(struct Bitmap *q_bitmap, struct Predecessor *stack, uint32_t num_vertices);
+struct Predecessor *creatNewPredecessorList(uint32_t *degrees, uint32_t num_vertices);
+struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t source, struct GraphCSR *graph, struct BetweennessCentralityStats *stats);
+uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struct Bitmap *bitmapCurr, struct Bitmap *bitmapNext, struct BetweennessCentralityStats *stats);
 
 // ********************************************************************************************
 // ***************					CSR DataStructure							 **************

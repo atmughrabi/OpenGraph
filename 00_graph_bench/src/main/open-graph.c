@@ -131,7 +131,7 @@ static struct argp_option options[] =
         "remove-duplicate",      'k', 0,      0,
         "\nRemovers duplicate edges and self loops from the graph.\n"
     },
-     {
+    {
         "afu-config",            'm', "[DEFAULT:0x1]\n",      0,
         "\nCAPI FPGA integration: AFU-Control buffers(read/write/prefetcher) arbitration 0x01 round robin 0x10 fixed priority.\n"
     },
@@ -268,6 +268,9 @@ main (int argc, char **argv)
 
     // numThreads =  omp_get_max_threads();
     numThreads =  arguments.numThreads;
+
+    if(arguments.dflag)
+        arguments.sort = 1;
 
     struct Timer *timer = (struct Timer *) my_malloc(sizeof(struct Timer));
 
