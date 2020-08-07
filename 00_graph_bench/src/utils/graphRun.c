@@ -844,7 +844,7 @@ struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph
 
     // if you want to output pageranks and rankins sorted use this
     stats->realRanks = radixSortEdgesByPageRank (stats->betweennessCentrality, stats->realRanks, stats->num_vertices);
-
+    printRanksBetweennessCentralityStats(stats);
     return stats;
 
 }

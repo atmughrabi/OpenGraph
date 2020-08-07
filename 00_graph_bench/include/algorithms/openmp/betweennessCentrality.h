@@ -47,7 +47,7 @@ struct BetweennessCentralityStats *newBetweennessCentralityStatsGraphAdjLinkedLi
 
 void freeBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
 void clearBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
-
+void printRanksBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
 // ********************************************************************************************
 // ***************					Auxiliary functions  	  					 **************
 // ********************************************************************************************

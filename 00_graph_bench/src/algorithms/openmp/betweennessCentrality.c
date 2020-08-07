@@ -82,6 +82,28 @@ struct BetweennessCentralityStats *newBetweennessCentralityStatsGraphCSR(struct 
 }
 
 
+void printRanksBetweennessCentralityStats(struct BetweennessCentralityStats *stats)
+{
+
+    uint32_t vertex_id;
+    uint32_t v;
+    uint32_t topK = 5;
+    float bc;
+
+    if(topK > stats->num_vertices)
+        topK = stats->num_vertices;
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-33s | \n", "Vertex(id)",  "Betweenness Centrality");
+    for(vertex_id = stats->num_vertices - 1; vertex_id > stats->num_vertices - topK ; vertex_id--)
+    {
+        v = stats->realRanks[vertex_id];
+        bc = stats->betweennessCentrality[v];
+        printf("| %-15u | %-33f | \n", v,  bc);
+    }
+    printf(" -----------------------------------------------------\n");
+}
+
 void clearBetweennessCentralityStats(struct BetweennessCentralityStats *stats)
 {
 
@@ -180,6 +202,7 @@ struct Predecessor *creatNewPredecessorList(uint32_t *degrees, uint32_t num_vert
 void copyBitmapToStack(struct Bitmap *q_bitmap, struct Predecessor *stack, uint32_t num_vertices)
 {
     uint32_t v;
+
     for (v = 0; v < num_vertices; ++v)
     {
         if(getBit(q_bitmap, v))
@@ -204,17 +227,10 @@ void copyBitmapToStack(struct Bitmap *q_bitmap, struct Predecessor *stack, uint3
 struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t source, struct GraphCSR *graph, struct BetweennessCentralityStats *stats)
 {
 
-    // printf(" -----------------------------------------------------\n");
-    // printf("| %-51s | \n", "(SOURCE NODE)");
-    // printf(" -----------------------------------------------------\n");
-    // printf("| %-51u | \n", source);
-    // printf(" -----------------------------------------------------\n");
-    // printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
-    // printf(" -----------------------------------------------------\n");
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-33u | \n", "SOURCE NODE", source);
-    // printf(" -----------------------------------------------------\n");
 
     if(source > graph->num_vertices)
     {
@@ -224,14 +240,10 @@ struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t
         return stats;
     }
 
-    // struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
-    // struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
-
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
     uint32_t nf = 0; // number of vertices in sharedFrontierQueue
 
-    // Start(timer_inner);
     setBit(sharedFrontierQueue->q_bitmap_next, source);
     sharedFrontierQueue->q_bitmap_next->numSetBits = 1;
     stats->parents[source] = source;
@@ -241,44 +253,21 @@ struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t
 
     swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
     clearBitmap(sharedFrontierQueue->q_bitmap_next);
-    // Stop(timer_inner);
-    // stats->time_total +=  Seconds(timer_inner);
 
-    // printf("| BU %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
-
-    // Start(timer);
     while (sharedFrontierQueue->q_bitmap->numSetBits)
     {
-
-        // Start(timer_inner);
         nf = betweennessCentralityBottomUpStepGraphCSR(graph, sharedFrontierQueue->q_bitmap, sharedFrontierQueue->q_bitmap_next, stats);
         sharedFrontierQueue->q_bitmap_next->numSetBits = nf;
         copyBitmapToStack(sharedFrontierQueue->q_bitmap_next, stats->stack, stats->num_vertices);
         swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
         clearBitmap(sharedFrontierQueue->q_bitmap_next);
-        // Stop(timer_inner);
-
-        //stats
-        // stats->time_total +=  Seconds(timer_inner);
         stats->processed_nodes += nf;
-        // printf("| BU %-12u | %-15u | %-15f | \n", stats->iteration++, nf, Seconds(timer_inner));
+       
 
     } // end while
-    // Stop(timer);
-    // stats->time_total =  Seconds(timer);
-
-    // printf(" -----------------------------------------------------\n");
-    // printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
-    // printf(" -----------------------------------------------------\n");
-    // printf(" -----------------------------------------------------\n");
-    // printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
-    // printf(" -----------------------------------------------------\n");
-
 
     freeArrayQueue(sharedFrontierQueue);
-    // free(timer);
-    // free(timer_inner);
-
+  
     return stats;
 }
 
@@ -306,9 +295,8 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
     struct Vertex *vertices = NULL;
     uint32_t *sorted_edges_array = NULL;
 
-    // uint32_t processed_nodes = bitmapCurr->numSetBits;
     uint32_t nf = 0; // number of vertices in sharedFrontierQueue
-    // stats->processed_nodes += processed_nodes;
+
 
 #if DIRECTED
     vertices = graph->inverse_vertices;
@@ -405,7 +393,6 @@ struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t
 
         for (t = stats->stack->degree - 1; t > 0; t--)
         {
-            // printf("%u \n", stats->stack->nodes[t] );
             w = stats->stack->nodes[t];
 
             for(u = 0 ; u < stats->predecessors[w].degree; u++)
@@ -426,7 +413,6 @@ struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t
         stats->time_total += Seconds(timer_inner);
 
         printf("| %-15s | %-15f | %-15u | \n", "Iter.Time", Seconds(timer_inner), stats->processed_nodes);
-
     }
     Stop(timer);
 
