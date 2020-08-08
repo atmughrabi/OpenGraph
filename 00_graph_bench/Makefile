@@ -31,7 +31,7 @@ STRUCT_DIR		  	?= structures
 PREPRO_DIR		  	?= preprocess
 ALGO_DIR		  	?= algorithms
 UTIL_DIR		  	?= utils
-CAPI_UTIL_DIR		?= capi_utils
+CACHE_DIR		  	?= cache
 
 # Folders needed when using CAPI
 
@@ -158,6 +158,7 @@ SRC_FILES_PREPRO	=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/*.c)
 SRC_FILES_STRUCT	=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/*.c)
 SRC_FILES_MAIN		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/*.c)
 SRC_FILES_TEST		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/*.c)
+SRC_FILES_CACHE		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(CACHE_DIR)/*.c)
 
 #create object file rules for the final binary target
 OBJ_FILES_ALGO_OPENMP 		= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/%.c,$(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp/%.o,$(SRC_FILES_ALGO_OPENMP))
@@ -169,13 +170,16 @@ OBJ_FILES_PREPRO 	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c,$(APP_DIR
 OBJ_FILES_STRUCT 	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)/%.o,$(SRC_FILES_STRUCT))
 OBJ_FILES_MAIN  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/%.o,$(SRC_FILES_MAIN))
 OBJ_FILES_TEST  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/%.o,$(SRC_FILES_TEST))
+OBJ_FILES_CACHE  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(CACHE_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(CACHE_DIR)/%.o,$(SRC_FILES_CACHE))
+
 
 CC				  = gcc
 
-OPENMP_INC = 	-I$(APP_DIR)/$(INC_DIR)/$(STRUCT_DIR)       \
+OPENMP_INC = 	-I$(APP_DIR)/$(INC_DIR)/$(STRUCT_DIR)               \
 				-I$(APP_DIR)/$(INC_DIR)/$(ALGO_DIR)/$(INTEGRATION) 	\
-				-I$(APP_DIR)/$(INC_DIR)/$(PREPRO_DIR)       \
-				-I$(APP_DIR)/$(INC_DIR)/$(UTIL_DIR)
+				-I$(APP_DIR)/$(INC_DIR)/$(PREPRO_DIR)               \
+				-I$(APP_DIR)/$(INC_DIR)/$(UTIL_DIR)                 \
+				-I$(APP_DIR)/$(INC_DIR)/$(CACHE_DIR)
 
 
 # flags
@@ -227,6 +231,7 @@ directories :
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)
+	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(CACHE_DIR)
 
 .PHONY: directories-openmp
 directories-openmp :
@@ -236,13 +241,13 @@ directories-openmp :
 directories-cache :
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/cachesim
 
-$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT)
+$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE)
 	@$(CC) $(CFLAGS) -o $@ $^  $(LFLAGS)
 
-$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_CACHE) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT)
+$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_CACHE) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE)
 	@$(CC) $(CFLAGS) -o $@ $^  $(LFLAGS)
 
-$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/$(APP_TEST).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT)
+$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/$(APP_TEST).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE)
 	@$(CC) $(CFLAGS) -o $@ $^  $(LFLAGS)
 
 $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o : $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/$(APP).c
@@ -259,6 +264,9 @@ $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp/%.o : $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)
 
 $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/cachesim/%.o : $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/cachesim/%.c
 	$(CC) $(CFLAGS) $(MODE) $(OPENMP_INC) -c -o $@ $<
+
+$(APP_DIR)/$(OBJ_DIR)/$(CACHE_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(CACHE_DIR)/%.c
+	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
 
 $(APP_DIR)/$(OBJ_DIR)/$(PREPRO_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c
 	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
