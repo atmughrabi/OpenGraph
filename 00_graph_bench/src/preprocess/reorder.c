@@ -32,7 +32,6 @@
 
 #include "graphCSR.h"
 #include "reorder.h"
-#include "epochReorder.h"
 
 
 void radixSortCountSortEdgesByRanks (uint32_t **pageRanksFP, uint32_t **pageRanksFPTemp, uint32_t **labels, uint32_t **labelsTemp, uint32_t radix, uint32_t buckets, uint32_t *buckets_count, uint32_t num_vertices)

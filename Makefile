@@ -5,14 +5,11 @@
 APP                        ?= open-graph
 
 # test name needs to match the file name test/test_accel-graph.c
-export APP_TEST          ?=  test_open-graph
+export APP_TEST            ?=  test_open-graph
 # export APP_TEST          ?=  pagerRank-accuracy-report
-# export APP_TEST          ?=  pagerRank-capi-report
-# export APP_TEST          ?=  test_cache
 
 # dirs Root app
 export APP_DIR              ?= .
-
 
 export BENCHMARKS_DIR_LOCAL ?= 01_test_graphs
 
@@ -37,8 +34,6 @@ export STRUCT_DIR		  	= structures
 export PREPRO_DIR		  	= preprocess
 export ALGO_DIR		  		= algorithms
 export UTIL_DIR		  		= utils
-export CAPI_UTIL_DIR		= capi_utils
-
 
 #contains the tests use make run-test to compile what in this directory
 export TEST_DIR		  	= tests

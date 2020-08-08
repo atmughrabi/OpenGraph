@@ -4,14 +4,8 @@
 #include <stdint.h>
 #include "mt19937.h"
 
-
 #define WEIGHTED 0
 #define DIRECTED 1
-
-extern  uint64_t afu_config;
-extern  uint64_t cu_config;
-extern  uint64_t afu_config_2;
-extern  uint64_t cu_config_2;
 
 extern int numThreads;
 extern mt19937state *mt19937var;
