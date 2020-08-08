@@ -31,7 +31,6 @@ STRUCT_DIR		  	?= structures
 PREPRO_DIR		  	?= preprocess
 ALGO_DIR		  	?= algorithms
 UTIL_DIR		  	?= utils
-CACHE_DIR		  	?= cache
 
 # Folders needed when using CAPI
 
@@ -151,26 +150,22 @@ ARGS ?= z $(FILE_FORMAT) -d $(DATA_STRUCTURES) -a $(ALGORITHMS) -r $(ROOT) -n $(
 
 #each implementation is contained in a separate folder. when you compile for openmp for example the files in openmp folder gets included
 SRC_FILES_ALGO_OPENMP		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/*.c)
-SRC_FILES_ALGO_CACHE		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/cachesim/*.c)
+
 
 SRC_FILES_UTIL		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/*.c)
 SRC_FILES_PREPRO	=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/*.c)
 SRC_FILES_STRUCT	=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/*.c)
 SRC_FILES_MAIN		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/*.c)
 SRC_FILES_TEST		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/*.c)
-SRC_FILES_CACHE		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(CACHE_DIR)/*.c)
 
 #create object file rules for the final binary target
 OBJ_FILES_ALGO_OPENMP 		= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/%.c,$(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp/%.o,$(SRC_FILES_ALGO_OPENMP))
-OBJ_FILES_ALGO_CACHE 		= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/cachesim/%.c,$(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/cachesim/%.o,$(SRC_FILES_ALGO_CACHE))
-
 
 OBJ_FILES_UTIL 		= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(UTIL_DIR)/%.o,$(SRC_FILES_UTIL))
 OBJ_FILES_PREPRO 	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(PREPRO_DIR)/%.o,$(SRC_FILES_PREPRO))
 OBJ_FILES_STRUCT 	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)/%.o,$(SRC_FILES_STRUCT))
 OBJ_FILES_MAIN  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/%.o,$(SRC_FILES_MAIN))
 OBJ_FILES_TEST  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/%.o,$(SRC_FILES_TEST))
-OBJ_FILES_CACHE  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(CACHE_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(CACHE_DIR)/%.o,$(SRC_FILES_CACHE))
 
 
 CC				  = gcc
@@ -178,8 +173,7 @@ CC				  = gcc
 OPENMP_INC = 	-I$(APP_DIR)/$(INC_DIR)/$(STRUCT_DIR)               \
 				-I$(APP_DIR)/$(INC_DIR)/$(ALGO_DIR)/$(INTEGRATION) 	\
 				-I$(APP_DIR)/$(INC_DIR)/$(PREPRO_DIR)               \
-				-I$(APP_DIR)/$(INC_DIR)/$(UTIL_DIR)                 \
-				-I$(APP_DIR)/$(INC_DIR)/$(CACHE_DIR)
+				-I$(APP_DIR)/$(INC_DIR)/$(UTIL_DIR)                 
 
 
 # flags
@@ -210,18 +204,6 @@ test-openmp : directories directories-openmp $(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-o
 	@echo " * DONE!! NOTHING ELSE TO COMPILE ---> TEST: ./$(word 3,$^)"
 	@echo " ****************************************************************************** \n"
 
-.PHONY: app-cache
-app-cache : directories directories-cache $(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim
-	@echo "\n ******************************************************************************  "
-	@echo " * DONE!! NOTHING ELSE TO COMPILE ---> AccelGraph: ./$(word 3,$^)"
-	@echo " ******************************************************************************  \n"
-
-.PHONY: test-cache
-test-cache : directories directories-cache $(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-cachesim
-	@echo "\n ******************************************************************************  "
-	@echo " * DONE!! NOTHING ELSE TO COMPILE ---> TEST: ./$(word 3,$^)"
-	@echo " ****************************************************************************** \n"
-
 .PHONY: directories
 directories :
 	@mkdir -p $(APP_DIR)/$(BIN_DIR)
@@ -237,14 +219,8 @@ directories :
 directories-openmp :
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp
 
-.PHONY: directories-cache
-directories-cache :
-	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/cachesim
 
 $(APP_DIR)/$(BIN_DIR)/$(APP)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE)
-	@$(CC) $(CFLAGS) -o $@ $^  $(LFLAGS)
-
-$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_CACHE) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE)
 	@$(CC) $(CFLAGS) -o $@ $^  $(LFLAGS)
 
 $(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/$(APP_TEST).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE)
@@ -260,12 +236,6 @@ $(APP_DIR)/$(OBJ_DIR)/$(UTIL_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/%.c
 	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
 
 $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp/%.o : $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/%.c
-	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
-
-$(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/cachesim/%.o : $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/cachesim/%.c
-	$(CC) $(CFLAGS) $(MODE) $(OPENMP_INC) -c -o $@ $<
-
-$(APP_DIR)/$(OBJ_DIR)/$(CACHE_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(CACHE_DIR)/%.c
 	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
 
 $(APP_DIR)/$(OBJ_DIR)/$(PREPRO_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c
@@ -349,18 +319,6 @@ help: app-openmp
 .PHONY: run
 run: run-openmp
 
-.PHONY: debug-cache
-debug-cache: MODE 		= -DCACHE_HARNESS
-debug-cache: INTEGRATION 	= cachesim
-debug-cache: app-cache
-	gdb -ex=r --args ./$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim  -f $(FILE_BIN) $(ARGS)
-
-.PHONY: run-cache
-run-cache: MODE 		= -DCACHE_HARNESS
-run-cache: INTEGRATION 	= cachesim
-run-cache: app-cache
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-cachesim -f $(FILE_BIN) $(ARGS)
-
 .PHONY: run-openmp
 run-openmp: INTEGRATION = openmp
 run-openmp: app-openmp
@@ -422,6 +380,7 @@ debug-test-openmp: test-openmp
 debug-memory-test-openmp: INTEGRATION = openmp
 debug-memory-test-openmp: test-openmp
 	valgrind --leak-check=full --show-leak-kinds=all ./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
+
 # cache performance
 .PHONY: cachegrind-perf-openmp
 cachegrind-perf-openmp: INTEGRATION = openmp

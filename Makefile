@@ -38,7 +38,7 @@ export PREPRO_DIR		  	= preprocess
 export ALGO_DIR		  		= algorithms
 export UTIL_DIR		  		= utils
 export CAPI_UTIL_DIR		= capi_utils
-export CACHE_DIR		  	= cache
+
 
 #contains the tests use make run-test to compile what in this directory
 export TEST_DIR		  	= tests
@@ -164,14 +164,6 @@ help:
 .PHONY: run
 run:
 	$(MAKE) run $(MAKE_ARGS)
-
-.PHONY: run-cache
-run-cache:
-	$(MAKE) run-cache $(MAKE_ARGS)
-
-.PHONY: debug-cache
-debug-cache:
-	$(MAKE) debug-cache $(MAKE_ARGS)
 
 .PHONY: run-openmp
 run-openmp:
