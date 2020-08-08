@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/atmughrabi/OpenGraph.svg?token=L3reAtGHdEVVPvzcVqQ6&branch=master)](https://travis-ci.com/atmughrabi/OpenGraph)
+[![Build Status](https://travis-ci.com/atmughrabi/OpenGraph.svg?branch=master)](https://travis-ci.com/atmughrabi/OpenGraph)
 [<p align="center"><img src="./02_slides/fig/logo.png" width="650" ></p>](#opengraph-benchmark-suite)
 
 # OpenGraph Benchmark Suite
