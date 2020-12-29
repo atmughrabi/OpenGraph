@@ -12,7 +12,6 @@
 #include "graphAdjArrayList.h"
 #include "graphAdjLinkedList.h"
 
-
 // ********************************************************************************************
 // ***************                  Stats DataStructure                          **************
 // ********************************************************************************************
@@ -36,6 +35,7 @@ struct BetweennessCentralityStats
     uint32_t  processed_nodes;
     uint32_t  num_vertices;
     double time_total;
+
 };
 
 struct BetweennessCentralityStats *newBetweennessCentralityStatsGraphCSR(struct GraphCSR *graph);
@@ -49,20 +49,20 @@ void freeBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
 void clearBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
 void printRanksBetweennessCentralityStats(struct BetweennessCentralityStats *stats);
 // ********************************************************************************************
-// ***************					Auxiliary functions  	  					 **************
+// ***************                  Auxiliary functions                          **************
 // ********************************************************************************************
-uint32_t generateRandomRootBetweennessCentrality(struct GraphCSR *graph);
+uint32_t generateRandomRootBetweennessCentrality(mt19937state *mt19937var, struct GraphCSR *graph);
 void copyBitmapToStack(struct Bitmap *q_bitmap, struct Predecessor *stack, uint32_t num_vertices);
 struct Predecessor *creatNewPredecessorList(uint32_t *degrees, uint32_t num_vertices);
 struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t source, struct GraphCSR *graph, struct BetweennessCentralityStats *stats);
 uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struct Bitmap *bitmapCurr, struct Bitmap *bitmapNext, struct BetweennessCentralityStats *stats);
 
 // ********************************************************************************************
-// ***************					CSR DataStructure							 **************
+// ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
-struct BetweennessCentralityStats *betweennessCentralityGraphCSR(uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph);
-struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t iterations, struct GraphCSR *graph);
+struct BetweennessCentralityStats *betweennessCentralityGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
 
 #endif

@@ -9,7 +9,7 @@
 
 ![End-to-End Evaluation](./02_slides/fig/theme.png "OpenGraph")
 
-OpenGraph is an open source graph processing framework, designed as a modular benchmarking suite for graph processing algorithms. It provides an end to end evaluation infrastructure which includes the preprocessing stage (forming the graph structure) and the graph algorithm. The OpenMP part of OpenGraph has been developed on Ubuntu 16.04.6, with PowerPC/Intel architecture taken into account.
+OpenGraph is an open source graph processing framework, designed as a modular benchmarking suite for graph processing algorithms. It provides an end to end evaluation infrastructure which includes the preprocessing stage (forming the graph structure) and the graph algorithm. The OpenMP part of OpenGraph has been developed on Ubuntu 20.04.1, with PowerPC/Intel architecture taken into account.
 OpenGraph is coded using C giving the researcher full flexibility with modifying data structures and other algorithmic optimizations.
 
 * Presentations that explains end-to-end graph processing (implementation is inspired from these sources)
@@ -30,11 +30,13 @@ OpenGraph is coded using C giving the researcher full flexibility with modifying
 <!-- ## Details -->
 <!-- ### OpenGraph Supported Algorithms -->
 
-# Installation
+# Installation and Dependencies
 
-## Dependencies
+## CPU Mode
 
+[<img src="./02_slides/fig/openmp_logo.png" height="45" align="right" >](https://www.openmp.org/)
 ### OpenMP
+
 1. Judy Arrays
 ```console
 open@graph:~$ sudo apt-get install libjudy-dev
@@ -43,7 +45,8 @@ open@graph:~$ sudo apt-get install libjudy-dev
 ```console
 open@graph:~$ sudo apt-get install libomp-dev
 ```
-## Setting up the source code
+
+#### Setting up the source code
 
 1. Clone OpenGraph.
 ```console
@@ -58,30 +61,70 @@ open@graph:~$ cd OpenGraph/
 open@graph:~OpenGraph$ make
 ```
 
-# Running OpenGraph
+# Running OpenGraph 
+
+## CPU Mode
 
 [<img src="./02_slides/fig/openmp_logo.png" height="45" align="right" >](https://www.openmp.org/)
+### Initial compilation for the Graph framework with OpenMP
 
-## Initial compilation for the Graph framework with OpenMP
-
-1. (Optional) From the root directory go to the graph benchmark directory:
+1. The default compilation is `openmp` mode:
 ```console
-open@graph:~OpenGraph$ cd 00_graph_bench/
+open@graph:~OpenGraph$ make
 ```
-2. The default compilation is `openmp` mode:
+2. From the root directory you can modify the Makefile with the [(parameters)](#OpenGraph-options) you need for OpenMP:
 ```console
-open@graph:~OpenGraph/00_graph_bench$ make
-```
-3. From the root directory you can modify the Makefile with the [(parameters)](#opengraph-options) you need for OpenMP:
-```console
-open@graph:~OpenGraph/00_graph_bench$ make run
+open@graph:~OpenGraph$ make run
 ```
 * OR
 ```console
-open@graph:~OpenGraph/00_graph_bench$ make run-openmp
+open@graph:~OpenGraph$ make run-openmp
 ```
 
-## Graph structure Input (Edge list)
+* You can pass parameters modifying `Makefile` parameters (easiest way) - cross reference with [(parameters)](#OpenGraph-options) to pass the correct values.
+
+
+| PARAMETER  | FUNCTION | 
+| :--- | :--- |
+| ARGS  | arguments passed to open-graph |
+
+| PARAMETER  | FUNCTION | 
+| :--- | :--- |
+| *Graph Files Directory* |
+| FILE_BIN  | graph edge-list location |
+| FILE_LABEL  | graph edge-list reorder list | 
+
+| PARAMETER  | FUNCTION | 
+| :--- | :--- |
+| *Graph Structures PreProcessing* |
+| SORT_TYPE  | graph edge-list sort (count/radix) |
+| DATA_STRUCTURES  | CSR,GRID,LinkedList,ArrayList |
+| REORDER_LAYER1  | Reorder graph for cache optimization |
+
+| PARAMETER  | FUNCTION | 
+| :--- | :--- |
+| *Algorithms General* |
+| ALGORITHMS  | BFS, PR, DFS, etc |
+| PULL_PUSH  | Direction push,pull,hybrid |
+
+| PARAMETER  | FUNCTION | 
+| :--- | :--- |
+| *Algorithms Specific* |
+| ROOT  | source node for BFS, etc |
+| TOLERANCE  | PR tolerance for convergence |
+| NUM_ITERATIONS  | PR iterations or convergence |
+| DELTA  | SSSP delta step |
+
+| PARAMETER  | FUNCTION | 
+| :--- | :--- |
+| *General Performance* |
+| NUM_THREADS_PRE  | number of threads for the preprocess step (graph sorting, generation) |
+| NUM_THREADS_ALGO  | number of threads for the algorithm step (BFS,PR, etc) |
+| NUM_THREADS_KER  | (Optional) number of threads for the algorithm kernel (BFS,PR, etc) |
+| NUM_TRIALS  | number of trials for the same algorithms | 
+
+
+# Graph structure Input (Edge list)
 
 * If you open the Makefile you will see the convention for graph directories : `BENCHMARKS_DIR/GRAPH_NAME/graph.wbin`.
 * `.bin` stands to unweighted edge list, `.wbin` stands for wighted, `In binary format`. (This is only a convention you don't have to use it)
@@ -113,13 +156,27 @@ open@graph:~OpenGraph/00_graph_bench$ make run-openmp
 * `--graph-file-format` is the type of graph you are reading, `--convert-format` is the type of format you are converting to.
 * NOTE: you can read the file from text format without the convert step. By adding `--graph-file-format 0` to the argument list. The default is `1` assuming it is binary. please check `--help` for better explanation.
 * `--stats` is a flag that enables conversion. It used also for collecting stats about the graph (but this feature is on hold for now).
+* (unweighted graph)
 ```console
 open@graph:~OpenGraph/00_graph_bench$ make convert
 ```
-* OR
+* OR (weighted graph)
+```console
+open@graph:~OpenGraph/00_graph_bench$ make convert-w
+```
+* OR (weighted graph)
 ```console
 open@graph:~OpenGraph/00_graph_bench$ ./bin/open-graph-openmp  --generate-weights --stats --graph-file-format=0 --convert-format=1 --graph-file=../BENCHMARKS_DIR/GRAPH_NAME/graph
 ```
+
+* `Makefile` parameters
+
+| PARAMETER  | FUNCTION | 
+| :--- | :--- |
+| *File Formats* |
+| FILE_FORMAT  | the type of graph read |
+| CONVERT_FORMAT  | the type of graph converted |
+
 
 * OUTPUT: (weighted binary edge-list)
 *  ../BENCHMARKS_DIR/GRAPH_NAME/graph.wbin
@@ -165,10 +222,10 @@ Usage: open-graph-openmp [OPTION...]
 OpenGraph is an open source graph processing framework, it is designed to be a
 benchmarking suite for various graph processing algorithms using pure C.
 
-  -a, --algorithm=[DEFAULT:0]
-                                                                                       
+   -a, --algorithm=[DEFAULT:[0]-BFS]
+
                              [0]-BFS, 
-                             [1]-Page-Rank, 
+                             [1]-Page-rank, 
                              [2]-SSSP-DeltaStepping,
                              [3]-SSSP-BellmanFord, 
                              [4]-DFS,
@@ -178,12 +235,11 @@ benchmarking suite for various graph processing algorithms using pure C.
                              [8]-Triangle Counting,
                              [9-BUGGY]-IncrementalAggregation.
 
-  -b, --delta=[DELTA:1]
-                                                          
+  -b, --delta=[DEFAULT:1]    
                              SSSP Delta value [Default:1].
 
-  -c, --convert-format=[TEXT|BIN|CSR:1]
-                                                          
+  -c, --convert-format=[DEFAULT:[1]-binary-edgeList]
+
                              [serialize flag must be on --serialize to write]
                              Serialize graph text format (edge list format) to
                              binary graph file on load example:-f <graph file>
@@ -191,103 +247,165 @@ benchmarking suite for various graph processing algorithms using pure C.
                              CSR/Grid structure and want to save in a binary
                              file format to skip the preprocessing step for
                              future runs. 
-                             [0]-text edgeList 
-                             [1]-binary edgeList
-                             [2]-graphCSR binary
+                             [0]-text-edgeList, 
+                             [1]-binary-edgeList,
+                             [2]-graphCSR-binary.
 
-  -d, --data-structure=[DEFAULT:0]
-                                                          
+  -d, --data-structure=[DEFAULT:[0]-CSR]
+
                              [0]-CSR, 
                              [1]-Grid, 
-                             [2]-AdjLinkedList, 
-                             [3]-AdjArrayList 
-                             [4]-CSR bitmap frontiers.
-                             [5]-Grid bitmap frontiers.
+                             [2]-Adj LinkedList, 
+                             [3]-Adj ArrayList 
+                             [4-5] same order bitmap frontiers.
 
   -e, --tolerance=[EPSILON:0.0001]
-                                                          
+
                              Tolerance value of for page rank
                              [default:0.0001].
 
-  -f, --graph-file=<FILE>
-                                                          
+  -f, --graph-file=<FILE>    
+
                              Edge list represents the graph binary format to
                              run the algorithm textual format change
                              graph-file-format.
 
-  -g, --bin-size=[SIZE:512]
-                                                          
+  -F, --labels-file=<FILE>   
+                             Read and reorder vertex labels from a text file,
+                             Specify the file name for the new graph reorder,
+                             generated from Gorder, Rabbit-order, etc.
+
+  -g, --bin-size=[SIZE:512]  
                              You bin vertices's histogram according to this
                              parameter, if you have a large graph you want to
                              illustrate.
 
   -i, --num-iterations=[DEFAULT:20]
-                                                          
+
                              Number of iterations for page rank to converge
                              [default:20] SSSP-BellmanFord [default:V-1].
 
-  -j, --verbosity=[DEFAULT:0]
-                                                          
+  -j, --verbosity=[DEFAULT:[0:no stats output]
+
                              For now it controls the output of .perf file and
-                             PageRank .stats (needs --stats enabled) files
-                             PageRank .stat [1:top-k results] [2:top-k results
-                             and top-k ranked vertices listed.
+                             PageRank .stats (needs --stats enabled)
+                             filesPageRank .stat [1:top-k results] [2:top-k
+                             results and top-k ranked vertices listed.
 
   -k, --remove-duplicate     
                              Removers duplicate edges and self loops from the
                              graph.
 
-  -l, --light-reorder=[ORDER:0]
-                                                          
-                             Relabels the graph for better cache performance.
-                             [default:0]-no-reordering 
-                             [1]-out-degree
-                             [2]-in-degree 
-                             [3]-(in+out)-degree 
-                             [4]-DBG-out-degree 
-                             [5]-DBG-in-degree  
-                             [6]-HUBSort-out-degree  
-                             [7]-HUBSort-in-degree 
-                             [8]-HUBCluster-out-degree  
-                             [9]-HUBCluster-in-degree 
-                             [10]-(random)-degree  
-                             [11]-LoadFromFile
+  -K, --Kernel-num-threads=[DEFAULT:algo-num-threads]
 
-  -n, --num-threads=[DEFAULT:MAX]
-                                                          
-                             Default:max number of threads the system has
-  
-  -o, --sort=[DEFAULT:0]
-                                                          
-                             [0]-radix-src 
-                             [1]-radix-src-dest 
-                             [2]-count-src
+                             Number of threads for graph processing kernel
+                             (critical-path) (graph algorithm)
+
+  -l, --light-reorder-l1=[DEFAULT:[0]-no-reordering]
+
+                             Relabels the graph for better cache performance
+                             (first layer). 
+                             [0]-no-reordering, 
+                             [1]-out-degree,
+                             [2]-in-degree, 
+                             [3]-(in+out)-degree, 
+                             [4]-DBG-out,
+                             [5]-DBG-in, 
+                             [6]-HUBSort-out, 
+                             [7]-HUBSort-in,
+                             [8]-HUBCluster-out, 
+                             [9]-HUBCluster-in,
+                             [10]-(random)-degree,  
+                             [11]-LoadFromFile (used for Rabbit order).
+
+  -L, --light-reorder-l2=[DEFAULT:[0]-no-reordering]
+
+                             Relabels the graph for better cache performance
+                             (second layer). 
+                             [0]-no-reordering, 
+                             [1]-out-degree,
+                             [2]-in-degree, 
+                             [3]-(in+out)-degree, 
+                             [4]-DBG-out,
+                             [5]-DBG-in, 
+                             [6]-HUBSort-out, 
+                             [7]-HUBSort-in,
+                             [8]-HUBCluster-out, 
+                             [9]-HUBCluster-in,
+                             [10]-(random)-degree,  
+                             [11]-LoadFromFile (used for Rabbit order).
+
+ -O, --light-reorder-l3=[DEFAULT:[0]-no-reordering]
+
+                             Relabels the graph for better cache performance
+                             (third layer). 
+                             [0]-no-reordering, 
+                             [1]-out-degree,
+                             [2]-in-degree, 
+                             [3]-(in+out)-degree, 
+                             [4]-DBG-out,
+                             [5]-DBG-in, 
+                             [6]-HUBSort-out, 
+                             [7]-HUBSort-in,
+                             [8]-HUBCluster-out, 
+                             [9]-HUBCluster-in,
+                             [10]-(random)-degree,  
+                             [11]-LoadFromFile (used for Rabbit order).
+
+  -M, --mask-mode=[DEFAULT:[0:disabled]]
+
+                             Encodes [0:disabled] the last two bits of
+                             [1:out-degree]-Edgelist-labels
+                             [2:in-degree]-Edgelist-labels or
+                             [3:out-degree]-vertex-property-data
+                             [4:in-degree]-vertex-property-data with hot/cold
+                             hints [11:HOT]|[10:WARM]|[01:LUKEWARM]|[00:COLD]
+                             to specialize caching. The algorithm needs to
+                             support value unmask to work.
+
+  -n, --pre-num-threads=[DEFAULT:MAX]
+
+                             Number of threads for preprocessing (graph
+                             structure) step 
+
+  -N, --algo-num-threads=[DEFAULT:MAX]
+
+                             Number of threads for graph processing (graph
+                             algorithm)
+
+  -o, --sort=[DEFAULT:[0]-radix-src]
+
+                             [0]-radix-src, 
+                             [1]-radix-src-dest, 
+                             [2]-count-src,
                              [3]-count-src-dst.
 
-  -p, --direction=[DEFAULT:0]
-                                                          
+
+
+  -p, --direction=[DEFAULT:[0]-PULL]
+
                              [0]-PULL, 
                              [1]-PUSH,
                              [2]-HYBRID. 
+
                              NOTE: Please consult the function switch table for each
                              algorithm.
 
-  -r, --root=[DEFAULT:0]
-                                                          
+  -r, --root=[DEFAULT:0]     
                              BFS, DFS, SSSP root
+
   -s, --symmetrize           
                              Symmetric graph, create a set of incoming edges.
 
   -S, --stats                
                              Write algorithm stats to file. same directory as
-                             the graph.
-                             PageRank: Dumps top-k ranks matching using QPR
-                             similarity metrics.
+                             the graph.PageRank: Dumps top-k ranks matching
+                             using QPR similarity metrics.
 
-  -t, --num-trials=[DEFAULT:1]
-                                                          
+  -t, --num-trials=[DEFAULT:[1 Trial]]
+
                              Number of trials for whole run (graph algorithm
-                             run) [default:0].
+                             run) [default:1].
 
   -w, --generate-weights     
                              Load or Generate weights. Check ->graphConfig.h
@@ -298,20 +416,21 @@ benchmarking suite for various graph processing algorithms using pure C.
                              Enable file conversion/serialization use with
                              --convert-format.
 
-  -z, --graph-file-format=[TEXT|BIN|CSR:1]
-                                                          
+  -z, --graph-file-format=[DEFAULT:[1]-binary-edgeList]
+
                              Specify file format to be read, is it textual edge
                              list, or a binary file edge list. This is
                              specifically useful if you have Graph CSR/Grid
                              structure already saved in a binary file format to
                              skip the preprocessing step. 
-                             [0]-text-edgeList
-                             [1]-binary-edgeList 
-                             [2]-graphCSR-binary.
+                             [0]-text edgeList,
+                             [1]-binary edgeList, 
+                             [2]-graphCSR binary.
 
   -?, --help                 Give this help list
       --usage                Give a short usage message
   -V, --version              Print program version
+
 
 ```
 
@@ -362,7 +481,7 @@ benchmarking suite for various graph processing algorithms using pure C.
 
 * *`Makefile`* - Global makefile
 
-# Tasks TODO:
+# Tasks TODO CSR Graphs Only:
 
 - [x] Finish preprocessing sort
   - [x] Radix sort
@@ -387,7 +506,8 @@ benchmarking suite for various graph processing algorithms using pure C.
   - [x] BC    (Betweenness Centrality)
 - [x] Support testing
 
+
 Report bugs to:
 - <atmughrabi@gmail.com>
 - <atmughra@ncsu.edu>
-[<p align="right"> <img src="./02_slides/fig/logo1.png" width="200" ></p>](#opengraph-benchmark-suite)
+[<p align="right"> <img src="./02_slides/fig/logo1.png" width="200" ></p>](#OpenGraph-benchmark-suite)

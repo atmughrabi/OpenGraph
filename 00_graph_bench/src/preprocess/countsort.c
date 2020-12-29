@@ -37,23 +37,32 @@ struct EdgeList  *countSortEdgesBySource (struct EdgeList *edgeList)
     uint32_t num_edges = edgeList->num_edges;
     uint32_t i = 0;
     uint32_t j = 0;
-    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = 1;  // 32/8 8 bit radix needs 4 iterations
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
     uint32_t base = 0;
 
 
-    uint32_t *vertex_count = (uint32_t *) my_malloc( P * num_vertices * sizeof(uint32_t));
+    uint32_t *vertex_count = NULL;
 
 
 
     struct EdgeList *sorted_edges_array = newEdgeList(num_edges);
 
-    #pragma omp parallel default(none) shared(vertex_count,sorted_edges_array,edgeList,num_edges,num_vertices) firstprivate(t_id, P, offset_end,offset_start,base,i,j,key,pos)
+    #pragma omp parallel default(none) shared(P,vertex_count,sorted_edges_array,edgeList,num_edges,num_vertices) firstprivate(t_id, offset_end,offset_start,base,i,j,key,pos)
     {
-        P = omp_get_num_threads();
+
         t_id = omp_get_thread_num();
+
+        if(t_id == 0)
+        {
+            P = omp_get_num_threads();
+            vertex_count = (uint32_t *) my_malloc(P * num_vertices * sizeof(uint32_t));
+        }
+
+        #pragma omp barrier
+
         offset_start = t_id * (num_edges / P);
 
         if(t_id == (P - 1))
@@ -135,23 +144,31 @@ struct EdgeList *countSortEdgesByDestination (struct EdgeList *edgeList)
     uint32_t num_edges = edgeList->num_edges;
     uint32_t i = 0;
     uint32_t j = 0;
-    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = 1;  // 32/8 8 bit radix needs 4 iterations
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
     uint32_t base = 0;
 
 
-    uint32_t *vertex_count = (uint32_t *) my_malloc( P * num_vertices * sizeof(uint32_t));
+    uint32_t *vertex_count = NULL;
 
 
 
     struct EdgeList *sorted_edges_array = newEdgeList(num_edges);
 
-    #pragma omp parallel default(none) shared(vertex_count,sorted_edges_array,edgeList,num_edges,num_vertices) firstprivate(t_id, P, offset_end,offset_start,base,i,j,key,pos)
+    #pragma omp parallel default(none) shared(P,vertex_count,sorted_edges_array,edgeList,num_edges,num_vertices) firstprivate(t_id, offset_end,offset_start,base,i,j,key,pos)
     {
-        P = omp_get_num_threads();
+        
         t_id = omp_get_thread_num();
+
+        if(t_id == 0){
+            P = omp_get_num_threads();
+            vertex_count = (uint32_t *) my_malloc( P * num_vertices * sizeof(uint32_t));
+        }
+
+        #pragma omp barrier
+
         offset_start = t_id * (num_edges / P);
 
         if(t_id == (P - 1))

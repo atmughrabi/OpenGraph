@@ -17,7 +17,7 @@ struct  ArrayQueue
 
 
 struct ArrayQueue *newArrayQueue 	(uint32_t size);
-void 	freeArrayQueue				(struct ArrayQueue *q);
+void freeArrayQueue	(struct ArrayQueue *q);
 void resetArrayQueue(struct ArrayQueue *q);
 void softResetArrayQueue(struct ArrayQueue *q);
 
@@ -27,8 +27,8 @@ void enArrayQueueAtomic 			(struct ArrayQueue *q, uint32_t k);
 void enArrayQueueWithBitmapAtomic 	(struct ArrayQueue *q, uint32_t k);
 
 
-uint32_t 	deArrayQueue	(struct ArrayQueue *q);
-uint32_t 	frontArrayQueue (struct ArrayQueue *q);
+uint32_t deArrayQueue	(struct ArrayQueue *q);
+uint32_t frontArrayQueue (struct ArrayQueue *q);
 uint8_t  isEmptyArrayQueue (struct ArrayQueue *q);
 uint8_t  isEnArrayQueued 	(struct ArrayQueue *q, uint32_t k);
 
@@ -52,6 +52,10 @@ void arrayQueueGenerateBitmap(struct ArrayQueue *q);
 void flushArrayQueueToShared(struct ArrayQueue *local_q, struct ArrayQueue *shared_q);
 void arrayQueueToBitmap(struct ArrayQueue *q, struct Bitmap *b);
 void bitmapToArrayQueue(struct Bitmap *b, struct ArrayQueue *q, struct ArrayQueue **localFrontierQueues);
+
+//added for dual order graphs where mapping between push/pull is needed.
+void arrayQueueToBitmapDualOrder(struct ArrayQueue *q, struct Bitmap *b, uint32_t *labels);
+void bitmapToArrayQueueDualOrder(struct Bitmap *b, struct ArrayQueue *q, struct ArrayQueue **localFrontierQueues, uint32_t *labels);
 
 #endif
 

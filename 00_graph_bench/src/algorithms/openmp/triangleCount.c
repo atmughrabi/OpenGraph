@@ -24,7 +24,7 @@
 #include "boolean.h"
 #include "arrayQueue.h"
 #include "bitmap.h"
-
+#include "reorder.h"
 #include "graphConfig.h"
 
 #include "graphCSR.h"
@@ -33,7 +33,6 @@
 #include "graphAdjLinkedList.h"
 
 #include "triangleCount.h"
-
 
 struct TCStats *newTCStatsGraphCSR(struct GraphCSR *graph)
 {
@@ -160,14 +159,14 @@ uint32_t countIntersectionsBinarySearch(uint32_t u, uint32_t v, struct GraphCSR 
     for(iter = edge_idx_iter ; iter < (edge_idx_iter + degree_iter); iter++ )
     {
 
-        uint32_t u_iter = graph->sorted_edges_array->edges_array_dest[iter];
+        uint32_t u_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[iter]);
         if(u_iter > v)
             break;
 
         uint32_t bottom = 0;
         uint32_t top = degree_comp;
         uint32_t mid = (top + bottom) >> 1;
-        uint32_t v_comp = graph->sorted_edges_array->edges_array_dest[edge_idx_comp + mid];
+        uint32_t v_comp = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[edge_idx_comp + mid]);
 
         while( bottom < (top - 1))
         {
@@ -190,8 +189,8 @@ uint32_t countIntersectionsBinarySearch(uint32_t u, uint32_t v, struct GraphCSR 
 
 
             mid = (top + bottom) >> 1;
-            v_comp = graph->sorted_edges_array->edges_array_dest[edge_idx_comp + mid];
-            u_iter = graph->sorted_edges_array->edges_array_dest[iter];
+            v_comp = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[edge_idx_comp + mid]);
+            u_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[iter]);
 
         }
 
@@ -208,11 +207,11 @@ uint32_t countIntersectionsBinarySearch(uint32_t u, uint32_t v, struct GraphCSR 
 // ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphCSR(uint32_t pushpull, struct GraphCSR *graph)
+struct TCStats *triangleCountGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
     struct TCStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // basic slow
         stats = triangleCountBasicGraphCSR(graph);
@@ -249,6 +248,7 @@ struct TCStats *triangleCountBasicGraphCSR(struct GraphCSR *graph)
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
     Start(timer);
+
     #pragma omp parallel for shared(stats) schedule(dynamic, 128)
     for(u = 0; u < graph->num_vertices; u++)
     {
@@ -258,7 +258,7 @@ struct TCStats *triangleCountBasicGraphCSR(struct GraphCSR *graph)
 
         for(v = edge_idx_u; v < (edge_idx_u + degree_u) ; v++)
         {
-            uint32_t node_v = graph->sorted_edges_array->edges_array_dest[v];
+            uint32_t node_v = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[v]);
             uint32_t degree_v = graph->vertices->out_degree[node_v];
             uint32_t edge_idx_v = graph->vertices->edges_idx[node_v];
             uint32_t w;
@@ -269,14 +269,15 @@ struct TCStats *triangleCountBasicGraphCSR(struct GraphCSR *graph)
 
             for(w = edge_idx_v; w < (edge_idx_v + degree_v) ; w++)
             {
-                uint32_t node_w = graph->sorted_edges_array->edges_array_dest[w];
-                uint32_t node_iter = graph->sorted_edges_array->edges_array_dest[edge_idx_iter];
+                uint32_t node_w = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[w]);
+                uint32_t node_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[edge_idx_iter]);
 
                 for(iter = edge_idx_iter; iter < (edge_idx_iter + degree_iter) ; iter++)
                 {
-                    node_iter = graph->sorted_edges_array->edges_array_dest[iter];
+                    node_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[iter]);
 
                     if(node_iter == node_w)
+                        // #pragma omp atomic update
                         stats->counts[u]++;
                 }
             }
@@ -318,6 +319,7 @@ struct TCStats *triangleCountPullGraphCSR(struct GraphCSR *graph)
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
     Start(timer);
+
     #pragma omp parallel for shared(stats) reduction(+:counts) schedule(dynamic, 128)
     for(u = 0; u < graph->num_vertices; u++)
     {
@@ -328,7 +330,7 @@ struct TCStats *triangleCountPullGraphCSR(struct GraphCSR *graph)
         steps++;
         for(v = edge_idx_u; v < (edge_idx_u + degree_u) ; v++)
         {
-            uint32_t node_v = graph->sorted_edges_array->edges_array_dest[v];
+            uint32_t node_v = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[v]);
             uint32_t degree_v = graph->vertices->out_degree[node_v];
 
             if(node_v > u)
@@ -345,17 +347,17 @@ struct TCStats *triangleCountPullGraphCSR(struct GraphCSR *graph)
             for(w = edge_idx_v; w < (edge_idx_v + degree_v) ; w++)
             {
 
-                uint32_t node_w = graph->sorted_edges_array->edges_array_dest[w];
+                uint32_t node_w = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[w]);
                 if(node_w > node_v)
                     break;
 
-                uint32_t node_iter = graph->sorted_edges_array->edges_array_dest[edge_idx_iter];
+                uint32_t node_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[edge_idx_iter]);
 
 
 
                 for(iter = edge_idx_iter; iter < (edge_idx_iter + degree_iter) ; iter++)
                 {
-                    node_iter = graph->sorted_edges_array->edges_array_dest[iter];
+                    node_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[iter]);
 
                     if(node_iter >= node_w)
                         break;
@@ -369,6 +371,7 @@ struct TCStats *triangleCountPullGraphCSR(struct GraphCSR *graph)
             }
         }
     }
+
     Stop(timer);
     stats->time_total = Seconds(timer);
 
@@ -396,6 +399,7 @@ struct TCStats *triangleCountPushGraphCSR(struct GraphCSR *graph)
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
     Start(timer);
+
     #pragma omp parallel for shared(stats) schedule(dynamic, 128)
     for(u = 0; u < graph->num_vertices; u++)
     {
@@ -405,7 +409,7 @@ struct TCStats *triangleCountPushGraphCSR(struct GraphCSR *graph)
 
         for(v = edge_idx_u; v < (edge_idx_u + degree_u) ; v++)
         {
-            uint32_t node_v = graph->sorted_edges_array->edges_array_dest[v];
+            uint32_t node_v = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[v]);
 
             if(node_v > u)
                 break;
@@ -421,16 +425,16 @@ struct TCStats *triangleCountPushGraphCSR(struct GraphCSR *graph)
             for(w = edge_idx_v; w < (edge_idx_v + degree_v) ; w++)
             {
 
-                uint32_t node_w = graph->sorted_edges_array->edges_array_dest[w];
+                uint32_t node_w = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[w]);
 
                 if(node_w > node_v)
                     break;
 
-                uint32_t node_iter = graph->sorted_edges_array->edges_array_dest[edge_idx_iter];
+                uint32_t node_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[edge_idx_iter]);
 
                 for(iter = edge_idx_iter; iter < (edge_idx_iter + degree_iter) ; iter++)
                 {
-                    node_iter = graph->sorted_edges_array->edges_array_dest[iter];
+                    node_iter = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[iter]);
 
                     if(node_iter >= node_w)
                         break;
@@ -481,6 +485,7 @@ struct TCStats *triangleCountBinaryIntersectionGraphCSR(struct GraphCSR *graph)
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
     Start(timer);
+
     #pragma omp parallel for shared(stats) reduction(+:counts) schedule(dynamic, 128)
     for(u = 0; u < graph->num_vertices; u++)
     {
@@ -491,7 +496,7 @@ struct TCStats *triangleCountBinaryIntersectionGraphCSR(struct GraphCSR *graph)
         steps++;
         for(v = edge_idx_u; v < (edge_idx_u + degree_u) ; v++)
         {
-            uint32_t node_v = graph->sorted_edges_array->edges_array_dest[v];
+            uint32_t node_v = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[v]);
 
             if(node_v > u)
                 break;
@@ -516,11 +521,11 @@ struct TCStats *triangleCountBinaryIntersectionGraphCSR(struct GraphCSR *graph)
 // ***************                  GRID DataStructure                           **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphGrid(uint32_t pushpull, struct GraphGrid *graph)
+struct TCStats *triangleCountGraphGrid(struct Arguments *arguments, struct GraphGrid *graph)
 {
     struct TCStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // pull
         stats = triangleCountRowGraphGrid(graph);
@@ -539,7 +544,7 @@ struct TCStats *triangleCountGraphGrid(uint32_t pushpull, struct GraphGrid *grap
 struct TCStats *triangleCountRowGraphGrid(struct GraphGrid *graph)
 {
 
-    
+
     uint64_t counts = 0;
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting Triangle Count To Be Implemented");
@@ -582,11 +587,11 @@ struct TCStats *triangleCountColumnGraphGrid(struct GraphGrid *graph)
 // ***************                  ArrayList DataStructure                      **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphAdjArrayList(uint32_t pushpull, struct GraphAdjArrayList *graph)
+struct TCStats *triangleCountGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph)
 {
     struct TCStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // pull
         stats = triangleCountPullGraphAdjArrayList(graph);
@@ -644,11 +649,11 @@ struct TCStats *triangleCountPushGraphAdjArrayList(struct GraphAdjArrayList *gra
 // ***************                  LinkedList DataStructure                     **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphAdjLinkedList(uint32_t pushpull, struct GraphAdjLinkedList *graph)
+struct TCStats *triangleCountGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph)
 {
     struct TCStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // pull
         stats = triangleCountPullGraphAdjLinkedList(graph);

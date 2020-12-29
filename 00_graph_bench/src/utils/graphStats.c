@@ -975,7 +975,7 @@ void collectStatsPageRank( struct Arguments *arguments,   struct PageRankStats *
 
 
     fprintf(stdout, "-----------------------------------------------------\n");
-    fprintf(stdout, "numThreads:           %u \n", arguments->numThreads);
+    fprintf(stdout, "numThreads:           %u \n", arguments->pre_numThreads);
     fprintf(stdout, "Time (S):             %lf\n", stats->time_total);
     fprintf(stdout, "Iterations:           %u \n", stats->iterations);
     fprintf(stdout, "-----------------------------------------------------\n");
@@ -997,7 +997,7 @@ void collectStatsPageRank( struct Arguments *arguments,   struct PageRankStats *
         fprintf(fptr, "-----------------------------------------------------\n");
 
         fprintf(fptr, "-----------------------------------------------------\n");
-        fprintf(fptr, "numThreads:           %u \n", arguments->numThreads);
+        fprintf(fptr, "numThreads:           %u \n", arguments->pre_numThreads);
         fprintf(fptr, "Time (S):             %lf\n", stats->time_total);
         fprintf(fptr, "Iterations:           %u \n", stats->iterations);
         fprintf(fptr, "-----------------------------------------------------\n");

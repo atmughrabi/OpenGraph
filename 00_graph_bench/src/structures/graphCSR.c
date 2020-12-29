@@ -111,6 +111,11 @@ struct GraphCSR *graphCSRNew(uint32_t V, uint32_t E, uint8_t inverse)
     graphCSR->num_vertices = V;
     graphCSR->num_edges = E;
     graphCSR->avg_degree = E / V;
+    graphCSR->sorted_edges_array = NULL; // sorted edge array
+
+#if DIRECTED
+    graphCSR->inverse_sorted_edges_array = NULL; // sorted edge array
+#endif
 
 #if WEIGHTED
     graphCSR->max_weight = 0;
@@ -160,16 +165,12 @@ struct GraphCSR *graphCSRPreProcessingStep (struct Arguments *arguments)
 {
 
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
-   
+
     Start(timer);
     struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted); // read edglist from binary file
     Stop(timer);
     // edgeListPrint(edgeList);
     graphCSRPrintMessageWithtime("Read Edge List From File (Seconds)", Seconds(timer));
-
-
-    if(arguments->lmode)
-        edgeList = reorderGraphProcess(edgeList, arguments);
 
     edgeList = sortRunAlgorithms(edgeList, arguments->sort);
 
@@ -181,13 +182,35 @@ struct GraphCSR *graphCSRPreProcessingStep (struct Arguments *arguments)
         graphCSRPrintMessageWithtime("Removing duplicate edges (Seconds)", Seconds(timer));
     }
 
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+    // add another layer 2 of reordering to test how DBG affect Gorder, or Gorder affect Rabbit order ...etc
+    arguments->lmode = arguments->lmode_l2;
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+    arguments->lmode = arguments->lmode_l3;
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+    if(arguments->mmode)
+        edgeList = maskGraphProcess(edgeList, arguments);
+
 #if DIRECTED
     struct GraphCSR *graphCSR = graphCSRNew(edgeList->num_vertices, edgeList->num_edges, 1);
 #else
     struct GraphCSR *graphCSR = graphCSRNew(edgeList->num_vertices, edgeList->num_edges, 0);
 #endif
-
-
 
     // edgeListPrint(edgeList);
     Start(timer);
@@ -221,6 +244,136 @@ struct GraphCSR *graphCSRPreProcessingStep (struct Arguments *arguments)
 
     return graphCSR;
 
+
+}
+
+struct GraphCSR *graphCSRPreProcessingStepDualOrder (struct Arguments *arguments)
+{
+
+    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
+
+    Start(timer);
+    struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted); // read edglist from binary file
+    Stop(timer);
+    // edgeListPrint(edgeList);
+    graphCSRPrintMessageWithtime("Read Edge List From File (Seconds)", Seconds(timer));
+
+    edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+
+    if(arguments->dflag)
+    {
+        Start(timer);
+        edgeList = removeDulpicatesSelfLoopEdges(edgeList);
+        Stop(timer);
+        graphCSRPrintMessageWithtime("Removing duplicate edges (Seconds)", Seconds(timer));
+    }
+
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+
+#if DIRECTED
+    struct GraphCSR *graphCSR = graphCSRNew(edgeList->num_vertices, edgeList->num_edges, 1);
+#else
+    struct GraphCSR *graphCSR = graphCSRNew(edgeList->num_vertices, edgeList->num_edges, 0);
+#endif
+
+#if DIRECTED
+    Start(timer);
+    struct EdgeList *inverse_edgeList = readEdgeListsMem(edgeList, 1, 0, 0); // read edglist from memory since we pre loaded it
+    Stop(timer);
+
+    graphCSRPrintMessageWithtime("Read Inverse Edge List From Memory (Seconds)", Seconds(timer));
+
+    inverse_edgeList = sortRunAlgorithms(inverse_edgeList, arguments->sort);
+
+    // add another layer 2 of reordering to test how DBG affect Gorder, or Gorder affect Rabbit order ...etc
+    arguments->lmode = arguments->lmode_l2;
+    if(arguments->lmode)
+    {
+        inverse_edgeList = reorderGraphProcess(inverse_edgeList, arguments);
+        inverse_edgeList = sortRunAlgorithms(inverse_edgeList, arguments->sort);
+    }
+    // edgeListPrint(inverse_edgeList);
+
+    Start(timer);
+    graphCSR = graphCSRAssignEdgeList (graphCSR, inverse_edgeList, 1);
+    Stop(timer);
+    graphCSRPrintMessageWithtime("Process In/Out degrees of Inverse Nodes (Seconds)", Seconds(timer));
+#endif
+
+
+    // add another layer 2 of reordering to test how DBG affect Gorder, or Gorder affect Rabbit order ...etc
+    arguments->lmode = arguments->lmode_l2;
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+    // edgeListPrint(edgeList);
+    Start(timer);
+    graphCSR = graphCSRAssignEdgeList (graphCSR, edgeList, 0);
+    graphCSRVertexLabelRemappingDualOrder (graphCSR);
+    Stop(timer);
+
+    graphCSRPrintMessageWithtime("Mappign Vertices to CSR (Seconds)", Seconds(timer));
+
+    // edgeListPrint(edgeList);
+
+    graphCSRPrint(graphCSR);
+
+
+    free(timer);
+
+    return graphCSR;
+
+
+}
+
+void graphCSRVertexLabelRemappingDualOrder (struct GraphCSR *graphCSR)
+{
+
+    uint32_t *label_array_el = NULL;
+    uint32_t *label_array_iel = NULL;
+    uint32_t *inverse_label_array_el = NULL;
+    uint32_t *inverse_label_array_iel = NULL;
+    uint32_t num_vertices = graphCSR->num_vertices;
+    uint32_t v;
+
+#if DIRECTED
+    inverse_label_array_iel = graphCSR->inverse_sorted_edges_array->inverse_label_array;
+    label_array_iel = graphCSR->inverse_sorted_edges_array->label_array;
+#else
+    inverse_label_array_iel = graphCSR->sorted_edges_array->inverse_label_array;
+    label_array_iel = graphCSR->sorted_edges_array->label_array;
+#endif
+
+    inverse_label_array_el = graphCSR->sorted_edges_array->inverse_label_array;
+    label_array_el = graphCSR->sorted_edges_array->label_array;
+
+    #pragma omp parallel for
+    for (v = 0; v < num_vertices; ++v)
+    {
+        uint32_t u = label_array_el[v];
+        uint32_t t = label_array_iel[v];
+
+        inverse_label_array_el[u] = t;
+    }
+
+#if DIRECTED
+    #pragma omp parallel for
+    for (v = 0; v < num_vertices; ++v)
+    {
+        uint32_t u = label_array_el[v];
+        uint32_t t = label_array_iel[v];
+
+        inverse_label_array_iel[t] = u;
+    }
+#endif
 
 }
 

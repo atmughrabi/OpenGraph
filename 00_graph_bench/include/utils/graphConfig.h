@@ -7,9 +7,6 @@
 #define WEIGHTED 0
 #define DIRECTED 1
 
-extern int numThreads;
-extern mt19937state *mt19937var;
-
 /* Used by main to communicate with parse_opt. */
 struct Arguments
 {
@@ -23,25 +20,26 @@ struct Arguments
     uint32_t iterations;
     uint32_t trials;
     double epsilon;
-    int root;
+    int source;
     uint32_t algorithm;
     uint32_t datastructure;
     uint32_t pushpull;
     uint32_t sort;
-    uint32_t lmode;
+    uint32_t lmode; // reorder mode
+    uint32_t lmode_l2; // reorder mode second layer
+    uint32_t lmode_l3; // reorder mode third layer
+    uint32_t mmode; // mask mode
     uint32_t symmetric;
     uint32_t weighted;
     uint32_t delta;
-    uint32_t numThreads;
+    int pre_numThreads;
+    int algo_numThreads;
+    int ker_numThreads;
     char *fnameb;
+    char *fnamel;
     uint32_t fnameb_format;
     uint32_t convert_format;
-
-    //ACCEL GRAPH variables
-    uint64_t afu_config; // parameters to pass for CAPI integration
-    uint64_t cu_config;  // parameters to pass for CAPI integration
-    uint64_t afu_config_2; // parameters to pass for CAPI integration
-    uint64_t cu_config_2;  // parameters to pass for CAPI integration
+    mt19937state mt19937var;
 };
 
 #endif

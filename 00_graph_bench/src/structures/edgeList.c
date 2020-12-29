@@ -26,6 +26,7 @@
 #include <omp.h>
 #include <math.h>
 
+#include "reorder.h"
 #include "mt19937.h"
 #include "myMalloc.h"
 #include "graphConfig.h"
@@ -117,6 +118,9 @@ struct EdgeList *newEdgeList( uint32_t num_edges)
 #endif
     }
 
+    newEdgeList->mask_array = NULL;
+    newEdgeList->label_array = NULL;
+    newEdgeList->inverse_label_array = NULL;
     newEdgeList->num_edges = num_edges;
     newEdgeList->num_vertices = 0;
     newEdgeList->avg_degree = 0;
@@ -188,10 +192,22 @@ struct EdgeList *removeDulpicatesSelfLoopEdges( struct EdgeList *edgeList)
 #if WEIGHTED
     tempEdgeList->max_weight = edgeList->max_weight ;
 #endif
-    tempEdgeList->avg_degree = tempEdgeList->num_edges / tempEdgeList->num_vertices ;
+    tempEdgeList->avg_degree = tempEdgeList->num_edges / tempEdgeList->num_vertices;
+
+    tempEdgeList->mask_array = (uint32_t *) my_malloc(tempEdgeList->num_vertices * sizeof(uint32_t));
+    tempEdgeList->label_array = (uint32_t *) my_malloc(tempEdgeList->num_vertices * sizeof(uint32_t));
+    tempEdgeList->inverse_label_array = (uint32_t *) my_malloc(tempEdgeList->num_vertices * sizeof(uint32_t));
+
+    #pragma omp parallel for
+    for (i = 0; i < edgeList->num_vertices; ++i)
+    {
+        tempEdgeList->mask_array[i] = edgeList->mask_array[i] ;
+        tempEdgeList->label_array[i] =  edgeList->label_array[i];
+        tempEdgeList->inverse_label_array[i] =  edgeList->inverse_label_array[i];
+    }
+
     freeEdgeList(edgeList);
     return tempEdgeList;
-
 }
 
 void freeEdgeList( struct EdgeList *edgeList)
@@ -204,6 +220,12 @@ void freeEdgeList( struct EdgeList *edgeList)
             free(edgeList->edges_array_src);
         if(edgeList->edges_array_dest)
             free(edgeList->edges_array_dest);
+        if(edgeList->mask_array)
+            free(edgeList->mask_array);
+        if(edgeList->label_array)
+            free(edgeList->label_array);
+        if(edgeList->inverse_label_array)
+            free(edgeList->inverse_label_array);
 
 #if WEIGHTED
         if(edgeList->edges_array_weight)
@@ -226,6 +248,7 @@ char *readEdgeListstxt(const char *fname, uint32_t weighted)
     float weight = 1.0;
 
 
+
     char *fname_txt = (char *) malloc((strlen(fname) + 10) * sizeof(char));
     char *fname_bin = (char *) malloc((strlen(fname) + 10) * sizeof(char));
 
@@ -233,6 +256,8 @@ char *readEdgeListstxt(const char *fname, uint32_t weighted)
 
 #if WEIGHTED
     fname_bin = strcat (fname_txt, ".wbin");
+    mt19937state *mt19937var = (mt19937state *) my_malloc(sizeof(mt19937state));
+    initializeMersenneState (mt19937var, 27491095);
 #else
     fname_bin = strcat (fname_txt, ".bin");
 #endif
@@ -300,7 +325,10 @@ char *readEdgeListstxt(const char *fname, uint32_t weighted)
 
     fclose(pText);
     fclose(pBinary);
-
+    
+#if WEIGHTED
+    free(mt19937var);
+#endif
 
     return fname_bin;
 }
@@ -315,10 +343,13 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
     uint32_t  *buf_pointer;
 #if WEIGHTED
     float    *buf_pointer_float;
+    mt19937state *mt19937var = (mt19937state *) my_malloc(sizeof(mt19937state));
+    initializeMersenneState (mt19937var, 27491095);
 #endif
     uint32_t  src = 0, dest = 0;
     uint32_t offset = 0;
     uint32_t offset_size;
+
 
     if (fd == -1)
     {
@@ -350,7 +381,7 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 #endif
 
 #if WEIGHTED
-    if(weighted) 
+    if(weighted)
     {
         offset = 3;
         offset_size = (2 * sizeof(uint32_t)) + sizeof(float);
@@ -539,9 +570,22 @@ struct EdgeList *readEdgeListsbin(const char *fname, uint8_t inverse, uint32_t s
 
 #if WEIGHTED
     edgeList->max_weight = max_weight;
+    free(mt19937var);
 #endif
     // printf("DONE Reading EdgeList from file %s \n", fname);
     // edgeListPrint(edgeList);
+
+    edgeList->mask_array = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    edgeList->label_array = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    edgeList->inverse_label_array = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+
+    #pragma omp parallel for
+    for (i = 0; i < edgeList->num_vertices; ++i)
+    {
+        edgeList->mask_array[i] = 0;
+        edgeList->label_array[i] = i;
+        edgeList->inverse_label_array[i] = i;
+    }
 
     munmap(buf_addr, fs.st_size);
     close(fd);
@@ -555,23 +599,55 @@ struct EdgeList *readEdgeListsMem( struct EdgeList *edgeListmem,  uint8_t invers
 
 
     uint32_t num_edges = edgeListmem->num_edges;
+    uint32_t num_vertices = edgeListmem->num_vertices;
+    uint32_t i;
     uint32_t  src = 0, dest = 0;
-#if WEIGHTED
-    float weight = 1;
-#endif
+
     struct EdgeList *edgeList;
 
     edgeList = newEdgeList((num_edges));
 
-    uint32_t i;
+    if(edgeListmem->mask_array)
+    {
+        edgeList->mask_array = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
-    // #pragma omp parallel for
+        #pragma omp parallel for
+        for ( i = 0; i < num_vertices; ++i)
+        {
+            edgeList->mask_array[i] = edgeListmem->mask_array[i];
+        }
+
+    }
+
+    if(edgeListmem->label_array)
+    {
+        edgeList->label_array = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+
+        #pragma omp parallel for
+        for ( i = 0; i < num_vertices; ++i)
+        {
+            edgeList->label_array[i] = edgeListmem->label_array[i];
+        }
+    }
+
+    if(edgeListmem->inverse_label_array)
+    {
+        edgeList->inverse_label_array = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
+
+        #pragma omp parallel for
+        for ( i = 0; i < num_vertices; ++i)
+        {
+            edgeList->inverse_label_array[i] = edgeListmem->inverse_label_array[i];
+        }
+    }
+
+    #pragma omp parallel for private(src,dest)
     for(i = 0; i < num_edges; i++)
     {
         src = edgeListmem->edges_array_src[i];
         dest = edgeListmem->edges_array_dest[i];
 #if WEIGHTED
-        weight = edgeListmem->edges_array_weight[i];
+        float weight = edgeListmem->edges_array_weight[i];
 #endif
         // printf(" %u %lu -> %lu \n",src,dest);
 #if DIRECTED
@@ -676,6 +752,13 @@ void edgeListPrint(struct EdgeList *edgeList)
     printf("average degree     (D) : %u \n", edgeList->avg_degree);
 
     uint32_t i;
+
+
+    for(i = 0; i < edgeList->num_vertices; i++)
+    {
+        printf("label %-2u->%-2u - %-2u->%-2u \n",  i, edgeList->label_array[i], i, edgeList->inverse_label_array[i] );
+    }
+
     for(i = 0; i < edgeList->num_edges; i++)
     {
 #if WEIGHTED

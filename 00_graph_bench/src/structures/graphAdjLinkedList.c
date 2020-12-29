@@ -274,9 +274,6 @@ struct GraphAdjLinkedList *graphAdjLinkedListPreProcessingStep (struct Arguments
     Stop(timer);
     // edgeListPrint(edgeList);
 
-    if(arguments->lmode)
-        edgeList = reorderGraphProcess(edgeList, arguments);
-
     edgeList = sortRunAlgorithms(edgeList, arguments->sort);
 
     if(arguments->dflag)
@@ -286,6 +283,32 @@ struct GraphAdjLinkedList *graphAdjLinkedListPreProcessingStep (struct Arguments
         Stop(timer);
         graphCSRPrintMessageWithtime("Removing duplicate edges (Seconds)", Seconds(timer));
     }
+
+
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+    // add another layer 2 of reordering to test how DBG affect Gorder, or Gorder affect Rabbit order ...etc
+    arguments->lmode = arguments->lmode_l2;
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+    arguments->lmode = arguments->lmode_l3;
+    if(arguments->lmode)
+    {
+        edgeList = reorderGraphProcess(edgeList, arguments);
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+    }
+
+    if(arguments->mmode)
+        edgeList = maskGraphProcess(edgeList, arguments);
+
 
     graphAdjLinkedListPrintMessageWithtime("Read Edge List From File (Seconds)", Seconds(timer));
 

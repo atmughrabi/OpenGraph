@@ -15,18 +15,20 @@
 
 #ifndef HASHSIZE
 #define HASHSIZE (1 << 16) // hash table size 256
-#endif 
-#define JUDYERROR_SAMPLE 1 
+#endif
+#define JUDYERROR_SAMPLE 1
 
 struct CCStats
-{	
-    uint32_t neighbor_rounds;
+{
     uint32_t iterations;
+    uint32_t neighbor_rounds;
+    struct Arguments *arguments;
     uint32_t num_vertices;
     uint32_t *components;
     uint32_t *counts;
     uint32_t *labels;
     double time_total;
+
 };
 
 struct CCStats *newCCStatsGraphCSR(struct GraphCSR *graph);
@@ -39,50 +41,50 @@ void freeCCStats(struct CCStats *stats);
 
 void printComponents(struct CCStats *stats);
 // ********************************************************************************************
-// ***************						 Helper Functions						 **************
+// ***************                       Helper Functions                        **************
 // ********************************************************************************************
 uint32_t atomicMin(uint32_t *oldValue, uint32_t newValue);
 void addSample(uint32_t id);
 void linkNodes(uint32_t u, uint32_t v, uint32_t *components);
 void compressNodes(uint32_t num_vertices, uint32_t *components);
-uint32_t sampleFrequentNode(uint32_t num_vertices, uint32_t num_samples, uint32_t *components);
+uint32_t sampleFrequentNode(mt19937state *mt19937var, uint32_t num_vertices, uint32_t num_samples, uint32_t *components);
 
 // ********************************************************************************************
-// ***************					CSR DataStructure							 **************
+// ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
-struct CCStats *connectedComponentsGraphCSR(uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph);
-struct CCStats *connectedComponentsAfforestGraphCSR(uint32_t iterations, struct GraphCSR *graph);
-struct CCStats *connectedComponentsShiloachVishkinGraphCSR(uint32_t iterations, struct GraphCSR *graph);
-struct CCStats *connectedComponentsWeaklyGraphCSR( uint32_t iterations, struct GraphCSR *graph);
+struct CCStats *connectedComponentsGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct CCStats *connectedComponentsAfforestGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct CCStats *connectedComponentsShiloachVishkinGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct CCStats *connectedComponentsWeaklyGraphCSR( struct Arguments *arguments, struct GraphCSR *graph);
 uint32_t connectedComponentsVerifyGraphCSR(struct CCStats *stats, struct GraphCSR *graph);
 
 // ********************************************************************************************
-// ***************					GRID DataStructure							 **************
+// ***************                  GRID DataStructure                           **************
 // ********************************************************************************************
 
-struct CCStats *connectedComponentsGraphGrid(uint32_t iterations, uint32_t pushpull, struct GraphGrid *graph);
-struct CCStats *connectedComponentsAfforestGraphGrid(uint32_t iterations, struct GraphGrid *graph);
-struct CCStats *connectedComponentsShiloachVishkinGraphGrid(uint32_t iterations, struct GraphGrid *graph);
-struct CCStats *connectedComponentsWeaklyGraphGrid(uint32_t iterations, struct GraphGrid *graph);
+struct CCStats *connectedComponentsGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct CCStats *connectedComponentsAfforestGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct CCStats *connectedComponentsShiloachVishkinGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct CCStats *connectedComponentsWeaklyGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
 
 // ********************************************************************************************
-// ***************					ArrayList DataStructure					     **************
+// ***************                  ArrayList DataStructure                      **************
 // ********************************************************************************************
 
-struct CCStats *connectedComponentsGraphAdjArrayList(uint32_t iterations, uint32_t pushpull, struct GraphAdjArrayList *graph);
-struct CCStats *connectedComponentsAfforestGraphAdjArrayList(uint32_t iterations, struct GraphAdjArrayList *graph);
-struct CCStats *connectedComponentsShiloachVishkinGraphAdjArrayList(uint32_t iterations, struct GraphAdjArrayList *graph);
-struct CCStats *connectedComponentsWeaklyGraphAdjArrayList( uint32_t iterations, struct GraphAdjArrayList *graph);
+struct CCStats *connectedComponentsGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct CCStats *connectedComponentsAfforestGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct CCStats *connectedComponentsShiloachVishkinGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct CCStats *connectedComponentsWeaklyGraphAdjArrayList( struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
 // ********************************************************************************************
-// ***************					LinkedList DataStructure					 **************
+// ***************                  LinkedList DataStructure                     **************
 // ********************************************************************************************
 
-struct CCStats *connectedComponentsGraphAdjLinkedList(uint32_t iterations, uint32_t pushpull, struct GraphAdjLinkedList *graph);
-struct CCStats *connectedComponentsAfforestGraphAdjLinkedList(uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct CCStats *connectedComponentsShiloachVishkinGraphAdjLinkedList(uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct CCStats *connectedComponentsWeaklyGraphAdjLinkedList( uint32_t iterations, struct GraphAdjLinkedList *graph);
+struct CCStats *connectedComponentsGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct CCStats *connectedComponentsAfforestGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct CCStats *connectedComponentsShiloachVishkinGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct CCStats *connectedComponentsWeaklyGraphAdjLinkedList( struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
 
 

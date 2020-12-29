@@ -1,104 +1,57 @@
 
 #########################################################
-#       		 GENERAL DIRECTOIRES   	    			#
+#                GENERAL DIRECTOIRES                    #
 #########################################################
 # globals binaary /bin/accel-graph name doesn't need to match main/accel-graph.c
 APP               ?= open-graph
 
 # test name needs to match the file name test/test_accel-graph.c
-APP_TEST          ?= test_open-graph
+APP_TEST          ?= test_open-graph-match
 
 
 # dirs Root app
-APP_DIR           	?= .
-# BENCHMARKS_DIR    	?= ../../01_GraphDatasets
-BENCHMARKS_DIR    	?= ../01_test_graphs
+APP_DIR             ?= .
+# BENCHMARKS_DIR        ?= ../../01_GraphDatasets
+BENCHMARKS_DIR      ?= ../01_test_graphs
 
 #dir root/managed_folders
-SRC_DIR           	?= src
-OBJ_DIR			  	?= obj
-INC_DIR			  	?= include
-BIN_DIR			  	?= bin
-RES_DIR			  	?= results
+SRC_DIR             ?= src
+OBJ_DIR             ?= obj
+INC_DIR             ?= include
+BIN_DIR             ?= bin
+RES_DIR             ?= results
 
 #if you want to compile from cmake you need this directory
 #cd build
 #cmake ..
-BUILD_DIR		  	?= build
+BUILD_DIR           ?= build
 
 # relative directories used for managing src/obj files
-STRUCT_DIR		  	?= structures
-PREPRO_DIR		  	?= preprocess
-ALGO_DIR		  	?= algorithms
-UTIL_DIR		  	?= utils
+STRUCT_DIR          ?= structures
+PREPRO_DIR          ?= preprocess
+ALGO_DIR            ?= algorithms
+UTIL_DIR            ?= utils
 
 # Folders needed when using CAPI
 
 
 #contains the tests use make run-test to compile what in this directory
-TEST_DIR		  	?= tests
+TEST_DIR            ?= tests
 
 #contains the main for the graph processing framework
-MAIN_DIR		  	?= main
+MAIN_DIR            ?= main
 
 ##################################################
 ##################################################
 
 #########################################################
-#       		 ACCEL RUN GRAPH ARGUMENTS    			#
+#                ACCEL RUN GRAPH ARGUMENTS              #
 #########################################################
 
 #small test graphs
 GRAPH_NAME ?= test
 # GRAPH_NAME ?= v51_e1021
 # GRAPH_NAME  ?= v300_e2730
-
-#gem5-Aladdin small dynamic traces
-# GRAPH_NAME ?= Gnutella
-# GRAPH_NAME ?= dblp
-# GRAPH_NAME ?= amazon
-# GRAPH_NAME ?= euall
-
-# generates large dynamic traces for gem5-Aladdin
-# GRAPH_NAME ?= com-youtube
-# GRAPH_NAME ?= web-BerkStan
-# GRAPH_NAME ?= web-Google
-# GRAPH_NAME ?= wiki-Talk
-
-# synthetic graphs
-# GRAPH_NAME ?= RMAT20
-# GRAPH_NAME ?= RMAT22
-
-# real world large graphs binary format
-# GRAPH_NAME ?= orkut
-# GRAPH_NAME ?= gplus
-# GRAPH_NAME ?= sk-2005
-# GRAPH_NAME ?= twitter
-# GRAPH_NAME ?= livejournal
-# GRAPH_NAME ?= USA-Road
-# GRAPH_NAME ?= enwiki-2013
-# GRAPH_NAME ?= arabic-2005
-
-# real world large graphs binary LAW
-# GRAPH_NAME ?= amazon-2008
-# GRAPH_NAME ?= arabic-2005
-# GRAPH_NAME ?= cnr-2000
-# GRAPH_NAME ?= dblp-2010
-# GRAPH_NAME ?= enron
-# GRAPH_NAME ?= eu-2005
-# GRAPH_NAME ?= hollywood-2009
-# GRAPH_NAME ?= in-2004
-# GRAPH_NAME ?= indochina-2004
-# GRAPH_NAME ?= it-2004
-# GRAPH_NAME ?= ljournal-2008
-# GRAPH_NAME ?= sk-2005
-# GRAPH_NAME ?= uk-2002
-# GRAPH_NAME ?= uk-2005
-# GRAPH_NAME ?= webbase-2001
-
-LAW ?= amazon-2008 arabic-2005 cnr-2000 dblp-2010 enron eu-2005 hollywood-2009 in-2004 indochina-2004 it-2004 ljournal-2008 sk-2005 uk-2002 uk-2005 webbase-2001
-MIX ?= GAP-kron GAP-road GAP-twitter GAP-urand GAP-web
-CU_CONFIG_MODES ?= 0x00000000 0x00041000 0x00841000 0x10041000 0x10841000
 
 # TEXT formant
 # export FILE_BIN = $(BENCHMARKS_DIR)/$(GRAPH_NAME)/graph
@@ -107,41 +60,41 @@ CU_CONFIG_MODES ?= 0x00000000 0x00041000 0x00841000 0x10041000 0x10841000
 # export FILE_BIN = $(BENCHMARKS_DIR)/$(GRAPH_NAME)/graph.bin
 
 # FILE_BIN_TYPE ?= graph
-# FILE_BIN_TYPE ?= graph.bin
-FILE_BIN_TYPE ?= graph.wbin
+FILE_BIN_TYPE ?= graph.bin
+# FILE_BIN_TYPE ?= graph.wbin
 
 #WEIGHTED
 FILE_BIN ?= $(BENCHMARKS_DIR)/$(GRAPH_NAME)/$(FILE_BIN_TYPE)
 
 
-
 #GRAPH RUN
-SORT_TYPE 		?= 0
-REORDER 		?= 0
+SORT_TYPE       ?= 0
+REORDER_LAYER1  ?= 0
+REORDER_LAYER2  ?= 0
+REORDER_LAYER3  ?= 0
 DATA_STRUCTURES ?= 0
-ALGORITHMS 		?= 1
+ALGORITHMS      ?= 1
 
-ROOT 			?= 164
-PULL_PUSH 		?= 2
-TOLERANCE 		?= 1e-8
-DELTA 			?= 800
+ROOT            ?= 164
+PULL_PUSH       ?= 2
+TOLERANCE       ?= 1e-8
+DELTA           ?= 800
 
-START_THREADS   ?= 1
-INC_THREADS     ?= 1
-NUM_THREADS  	?= 64
-# NUM_THREADS  	= $(shell grep -c ^processor /proc/cpuinfo)
-NUM_ITERATIONS 	?= 1
-NUM_TRIALS 		?= 1
+NUM_THREADS_PRE   ?= $(shell grep -c ^processor /proc/cpuinfo)
+NUM_THREADS_ALGO  ?= $(shell grep -c ^processor /proc/cpuinfo)
+NUM_THREADS_KER   ?= $(shell grep -c ^processor /proc/cpuinfo)
+NUM_ITERATIONS  ?= 1
+NUM_TRIALS      ?= 1
 
-FILE_FORMAT 	?= 1
-CONVERT_FORMAT 	?= 1
+FILE_FORMAT     ?= 1
+CONVERT_FORMAT  ?= 1
 
 #STATS COLLECTION VARIABLES
-BIN_SIZE ?= 512
-INOUT_STATS ?= 0
+BIN_SIZE        ?= 512
+INOUT_STATS     ?= 0
+MASK_MODE       ?= 0
 
-ARGS ?= -w -z $(FILE_FORMAT) -d $(DATA_STRUCTURES) -a $(ALGORITHMS) -r $(ROOT) -n $(NUM_THREADS) -i $(NUM_ITERATIONS) -o $(SORT_TYPE) -p $(PULL_PUSH) -t $(NUM_TRIALS) -e $(TOLERANCE) -l $(REORDER) -b $(DELTA)
-
+ARGS ?= -w -z $(FILE_FORMAT) -d $(DATA_STRUCTURES) -a $(ALGORITHMS) -r $(ROOT) -n $(NUM_THREADS_PRE) -N $(NUM_THREADS_ALGO) -K $(NUM_THREADS_KER) -i $(NUM_ITERATIONS) -o $(SORT_TYPE) -p $(PULL_PUSH) -t $(NUM_TRIALS) -e $(TOLERANCE) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3) -b $(DELTA)
 
 ##############################################
 #      ACCEL GRAPH COMPILATION VARIABLES     #
@@ -149,34 +102,35 @@ ARGS ?= -w -z $(FILE_FORMAT) -d $(DATA_STRUCTURES) -a $(ALGORITHMS) -r $(ROOT) -
 
 
 #each implementation is contained in a separate folder. when you compile for openmp for example the files in openmp folder gets included
-SRC_FILES_ALGO_OPENMP		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/*.c)
-SRC_FILES_UTIL		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/*.c)
-SRC_FILES_PREPRO	=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/*.c)
-SRC_FILES_STRUCT	=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/*.c)
-SRC_FILES_MAIN		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/*.c)
-SRC_FILES_TEST		=	$(wildcard $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/*.c)
+SRC_FILES_ALGO_OPENMP       =   $(wildcard $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/*.c)
+SRC_FILES_UTIL      =   $(wildcard $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/*.c)
+SRC_FILES_PREPRO    =   $(wildcard $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/*.c)
+SRC_FILES_STRUCT    =   $(wildcard $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/*.c)
+SRC_FILES_MAIN      =   $(wildcard $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/*.c)
+SRC_FILES_TEST      =   $(wildcard $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/*.c)
 
-INC_FILES_ALGO_OPENMP		=	$(wildcard $(APP_DIR)/$(INC_DIR)/$(ALGO_DIR)/openmp/*.h)
-INC_FILES_UTIL		=	$(wildcard $(APP_DIR)/$(INC_DIR)/$(UTIL_DIR)/*.h)
-INC_FILES_PREPRO	=	$(wildcard $(APP_DIR)/$(INC_DIR)/$(PREPRO_DIR)/*.h)
-INC_FILES_STRUCT	=	$(wildcard $(APP_DIR)/$(INC_DIR)/$(STRUCT_DIR)/*.h)
+
+INC_FILES_ALGO_OPENMP       =   $(wildcard $(APP_DIR)/$(INC_DIR)/$(ALGO_DIR)/openmp/*.h)
+INC_FILES_UTIL      =   $(wildcard $(APP_DIR)/$(INC_DIR)/$(UTIL_DIR)/*.h)
+INC_FILES_PREPRO    =   $(wildcard $(APP_DIR)/$(INC_DIR)/$(PREPRO_DIR)/*.h)
+INC_FILES_STRUCT    =   $(wildcard $(APP_DIR)/$(INC_DIR)/$(STRUCT_DIR)/*.h)
+
 
 ALL_HEADER_FILES    =   $(INC_FILES_ALGO_OPENMP) $(INC_FILES_UTIL) $(INC_FILES_PREPRO) $(INC_FILES_STRUCT)
 
 #create object file rules for the final binary target
-OBJ_FILES_ALGO_OPENMP 		= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/%.c,$(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp/%.o,$(SRC_FILES_ALGO_OPENMP))
+OBJ_FILES_ALGO_OPENMP = $(patsubst $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/%.c,$(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp/%.o,$(SRC_FILES_ALGO_OPENMP))
 
-OBJ_FILES_UTIL 		= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(UTIL_DIR)/%.o,$(SRC_FILES_UTIL))
-OBJ_FILES_PREPRO 	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(PREPRO_DIR)/%.o,$(SRC_FILES_PREPRO))
-OBJ_FILES_STRUCT 	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)/%.o,$(SRC_FILES_STRUCT))
-OBJ_FILES_MAIN  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/%.o,$(SRC_FILES_MAIN))
-OBJ_FILES_TEST  	= $(patsubst $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/%.o,$(SRC_FILES_TEST))
+OBJ_FILES_UTIL      = $(patsubst $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(UTIL_DIR)/%.o,$(SRC_FILES_UTIL))
+OBJ_FILES_PREPRO    = $(patsubst $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(PREPRO_DIR)/%.o,$(SRC_FILES_PREPRO))
+OBJ_FILES_STRUCT    = $(patsubst $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)/%.o,$(SRC_FILES_STRUCT))
+OBJ_FILES_MAIN      = $(patsubst $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/%.o,$(SRC_FILES_MAIN))
+OBJ_FILES_TEST      = $(patsubst $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/%.c,$(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/%.o,$(SRC_FILES_TEST))
 
+CC                = gcc
 
-CC				  = gcc
-
-OPENMP_INC = 	-I$(APP_DIR)/$(INC_DIR)/$(STRUCT_DIR)               \
-				-I$(APP_DIR)/$(INC_DIR)/$(ALGO_DIR)/$(INTEGRATION) 	\
+OPENMP_INC =    -I$(APP_DIR)/$(INC_DIR)/$(STRUCT_DIR)               \
+				-I$(APP_DIR)/$(INC_DIR)/$(ALGO_DIR)/$(INTEGRATION)  \
 				-I$(APP_DIR)/$(INC_DIR)/$(PREPRO_DIR)               \
 				-I$(APP_DIR)/$(INC_DIR)/$(UTIL_DIR)                 
 
@@ -194,13 +148,13 @@ FAIL = \033[91mFAIL\033[0m
 ##################################################
 
 #########################################################
-#       		 ACCEL GRAPH GENERATION    				#
+#                ACCEL GRAPH GENERATION                 #
 #########################################################
 
 .PHONY: app-openmp
 app-openmp : directories directories-openmp $(APP_DIR)/$(BIN_DIR)/$(APP)-openmp
 	@echo "\n ******************************************************************************  "
-	@echo " * DONE!! NOTHING ELSE TO COMPILE ---> AccelGraph: ./$(word 3,$^)"
+	@echo " * DONE!! NOTHING ELSE TO COMPILE ---> OpenGraph-openmp: ./$(word 3,$^)"
 	@echo " ******************************************************************************  \n"
 
 .PHONY: test-openmp
@@ -218,37 +172,36 @@ directories :
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)
-	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(CACHE_DIR)
 
 .PHONY: directories-openmp
 directories-openmp :
 	@mkdir -p $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp
+	@mkdir -p $(APP_DIR)/openmp-results
 
 
-$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE) 
+$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT)
 	@$(CC) $(CFLAGS) -o $@ $^  $(LFLAGS)
 
-$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/$(APP_TEST).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT) $(OBJ_FILES_CACHE)
+$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp : $(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/$(APP_TEST).o $(OBJ_FILES_UTIL) $(OBJ_FILES_ALGO_OPENMP) $(OBJ_FILES_PREPRO) $(OBJ_FILES_STRUCT)
 	@$(CC) $(CFLAGS) -o $@ $^  $(LFLAGS)
 
-$(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o : $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/$(APP).c
-	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
+$(APP_DIR)/$(OBJ_DIR)/$(MAIN_DIR)/$(APP).o : $(APP_DIR)/$(SRC_DIR)/$(MAIN_DIR)/$(APP).c $(ALL_HEADER_FILES)
+	$(CC) $(CFLAGS) $(OPENMP_INC) $(MODE) -c -o $@ $<
 
-$(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/$(APP_TEST).o : $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/$(APP_TEST).c
-	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
+$(APP_DIR)/$(OBJ_DIR)/$(TEST_DIR)/$(APP_TEST).o : $(APP_DIR)/$(SRC_DIR)/$(TEST_DIR)/$(APP_TEST).c $(ALL_HEADER_FILES)
+	$(CC) $(CFLAGS) $(OPENMP_INC) $(MODE) -c -o $@ $<
 
-$(APP_DIR)/$(OBJ_DIR)/$(UTIL_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/%.c $(ALL_HEADER_FILES)
-	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
+$(APP_DIR)/$(OBJ_DIR)/$(UTIL_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(UTIL_DIR)/%.c $(INC_FILES_UTIL)
+	$(CC) $(CFLAGS) $(OPENMP_INC) $(MODE) -c -o $@ $<
 
 $(APP_DIR)/$(OBJ_DIR)/$(ALGO_DIR)/openmp/%.o : $(APP_DIR)/$(SRC_DIR)/$(ALGO_DIR)/openmp/%.c $(ALL_HEADER_FILES)
-	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
+	$(CC) $(CFLAGS) $(OPENMP_INC) $(MODE) -c -o $@ $<
 
-$(APP_DIR)/$(OBJ_DIR)/$(PREPRO_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c $(ALL_HEADER_FILES)
-	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
+$(APP_DIR)/$(OBJ_DIR)/$(PREPRO_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(PREPRO_DIR)/%.c $(INC_FILES_PREPRO)
+	$(CC) $(CFLAGS) $(OPENMP_INC) $(MODE) -c -o $@ $<
 
-$(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/%.c  $(ALL_HEADER_FILES)
-	$(CC) $(CFLAGS) $(OPENMP_INC) -c -o $@ $<
-
+$(APP_DIR)/$(OBJ_DIR)/$(STRUCT_DIR)/%.o : $(APP_DIR)/$(SRC_DIR)/$(STRUCT_DIR)/%.c $(INC_FILES_STRUCT)
+	$(CC) $(CFLAGS) $(OPENMP_INC) $(MODE) -c -o $@ $<
 
 .PHONY: clean
 clean:
@@ -261,50 +214,7 @@ clean-stats:
 	@rm -f $(BENCHMARKS_DIR)/*.perf
 	@rm -f $(BENCHMARKS_DIR)/*/*.perf
 	@rm -f $(BENCHMARKS_DIR)/*/*.stats
-
-
-.PHONY: results-law
-results-law:
-	@mkdir -p $(APP_DIR)/$(RES_DIR)/results-law_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)
-	@for graph in $(LAW); do \
-			if [ -e $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).perf ]; then \
-				cp $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).perf $(APP_DIR)/$(RES_DIR)/results-law_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)/$$graph; \
-			fi ; \
-	done
-
-.PHONY: results-mix
-results-mix:
-	@mkdir -p $(APP_DIR)/$(RES_DIR)/results-mix_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)
-	@for graph in $(MIX); do \
-			if [ -e $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).perf ]; then \
-				cp $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).perf $(APP_DIR)/$(RES_DIR)/results-mix_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)/$$graph; \
-			fi ; \
-	done
-
-.PHONY: stats-law
-stats-law:
-	@mkdir -p $(APP_DIR)/$(RES_DIR)/stats-law_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)
-	@for graph in $(LAW); do \
-			if [ -e $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).stats ]; then \
-				cp $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).stats $(APP_DIR)/$(RES_DIR)/stats-law_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)/$$graph; \
-			fi ; \
-	done
-
-.PHONY: stats-mix
-stats-mix:
-	@mkdir -p $(APP_DIR)/$(RES_DIR)/stats-mix_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)
-	@for graph in $(MIX); do \
-			if [ -e $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).stats ]; then \
-				cp $(BENCHMARKS_DIR)/$$graph/$(FILE_BIN_TYPE)_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH).stats $(APP_DIR)/$(RES_DIR)/stats-mix_$(ALGORITHMS)_$(DATA_STRUCTURES)_$(NUM_TRIALS)_$(PULL_PUSH)/$$graph; \
-			fi ; \
-	done
-
-
-.PHONY: results
-results: results-law results-mix
-
-.PHONY: stats
-stats: stats-law stats-mix
+	@rm -fr $(APP_DIR)/openmp-results
 
 ##################################################
 ##################################################
@@ -335,6 +245,29 @@ convert: INTEGRATION = openmp
 convert: app-openmp
 	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT)
 
+.PHONY: sweep-convert
+sweep-convert: INTEGRATION = openmp
+sweep-convert: app-openmp
+	@for dir in ${BENCHMARKS_DIR}/*;      													\
+	do                                      												\
+		for graph_dir in $${dir}/*;               											\
+		do                                  												\
+			if [ -e $${graph_dir}/graph.bin ]; then											\
+				echo "convert $${graph_dir}/graph.bin";									    \
+				./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -x -c 0 -f $${graph_dir}/graph.bin -z 1 -l 10 -L 10 -O 10;\
+				mv $${graph_dir}/graph.bin.txt $${graph_dir}/graph.rand;                    \
+				mv $${graph_dir}/graph_Gorder.labels $${graph_dir}/graph_Gorder.org.labels; \
+				mv $${graph_dir}/graph_Rabbit.labels $${graph_dir}/graph_Rabbit.org.labels; \
+				../../06_Gorder/Gorder $${graph_dir}/graph.rand ;                  							\
+				../../05_rabbit_order/demo/reorder $${graph_dir}/graph.rand ;      							\
+				mv $${graph_dir}/graph_Gorder.labels $${graph_dir}/graph_Gorder.rand.labels; \
+				mv graph_Rabbit.labels $${graph_dir}/graph_Rabbit.rand.labels; \
+				./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -x -c 1 -f $${graph_dir}/graph.rand -z 0 ;\
+				rm $${graph_dir}/graph.rand;                                                \
+			fi; 																			\
+		done                                												\
+	done
+
 .PHONY: convert-w
 convert-w: INTEGRATION = openmp
 convert-w: app-openmp
@@ -343,7 +276,7 @@ convert-w: app-openmp
 .PHONY: stats-openmp
 stats-openmp: INTEGRATION = openmp
 stats-openmp: app-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -x -f $(FILE_BIN) -n $(NUM_THREADS) -i $(BIN_SIZE) -o $(SORT_TYPE) -l $(REORDER) -p $(INOUT_STATS)
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -x -f $(FILE_BIN) -n 4 $(NUM_THREADS) -i $(BIN_SIZE) -o $(SORT_TYPE) -l $(REORDER) -p $(INOUT_STATS)
 
 .PHONY: debug-openmp
 debug-openmp: INTEGRATION = openmp
@@ -375,18 +308,17 @@ run-test: run-test-openmp
 .PHONY: run-test-openmp
 run-test-openmp: INTEGRATION = openmp
 run-test-openmp: test-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
+	./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp >> $(APP_DIR)/openmp-results/full_results_$(ALGORITHMS).perf
 
 .PHONY: debug-test-openmp
 debug-test-openmp: INTEGRATION = openmp
 debug-test-openmp: test-openmp
-	gdb ./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
+	gdb ./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp  
 
 .PHONY: debug-memory-test-openmp
 debug-memory-test-openmp: INTEGRATION = openmp
 debug-memory-test-openmp: test-openmp
 	valgrind --leak-check=full --show-leak-kinds=all ./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp
-
 # cache performance
 .PHONY: cachegrind-perf-openmp
 cachegrind-perf-openmp: INTEGRATION = openmp
@@ -398,23 +330,3 @@ cache-perf-openmp: INTEGRATION = openmp
 cache-perf-openmp: app-openmp
 	sudo perf record -d ./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -f $(FILE_BIN) $(ARGS)
 
-.PHONY: law
-law: app-openmp
-	@for graph in $(LAW); do \
-	    for num in `seq $(START_THREADS) $(INC_THREADS) $(NUM_THREADS)`; do \
-	    	echo $$config $$graph $$num ; \
-	    	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -j $(INOUT_STATS) -f $(BENCHMARKS_DIR)/$$graph/graph.wbin -m $(AFU_CONFIG_GENERIC) -z $(FILE_FORMAT) -d $(DATA_STRUCTURES) -a $(ALGORITHMS) -r $(ROOT) -n $$num  -i $(NUM_ITERATIONS) -o $(SORT_TYPE) -p $(PULL_PUSH) -t $(NUM_TRIALS) -e $(TOLERANCE) -l $(REORDER) -b $(DELTA) ;\
-	    done ; \
-    done
-
-.PHONY: mix
-mix: app-openmp
-	@for graph in $(MIX); do \
-	    for num in `seq $(START_THREADS) $(INC_THREADS) $(NUM_THREADS)`; do \
-	    	echo $$config $$graph $$num ; \
-	    	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -j $(INOUT_STATS) -f $(BENCHMARKS_DIR)/$$graph/graph.wbin -m $(AFU_CONFIG_GENERIC) -z $(FILE_FORMAT) -d $(DATA_STRUCTURES) -a $(ALGORITHMS) -r $(ROOT) -n $$num  -i $(NUM_ITERATIONS) -o $(SORT_TYPE) -p $(PULL_PUSH) -t $(NUM_TRIALS) -e $(TOLERANCE) -l $(REORDER) -b $(DELTA) ;\
-	    done ; \
-    done
-
-##################################################
-##################################################

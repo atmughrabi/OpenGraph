@@ -56,67 +56,67 @@ void setWorkList(uint8_t *workList,  uint32_t size);
 // ***************                  GRID DataStructure                           **************
 // ********************************************************************************************
 
-struct PageRankStats *pageRankGraphGrid(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphGrid *graph);
-struct PageRankStats *pageRankPullRowGraphGrid(double epsilon,  uint32_t iterations, struct GraphGrid *graph);
-struct PageRankStats *pageRankPushColumnGraphGrid(double epsilon,  uint32_t iterations, struct GraphGrid *graph);
-struct PageRankStats *pageRankPullRowFixedPointGraphGrid(double epsilon,  uint32_t iterations, struct GraphGrid *graph);
-struct PageRankStats *pageRankPushColumnFixedPointGraphGrid(double epsilon,  uint32_t iterations, struct GraphGrid *graph);
+struct PageRankStats *pageRankGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct PageRankStats *pageRankPullRowGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct PageRankStats *pageRankPushColumnGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct PageRankStats *pageRankPullRowFixedPointGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct PageRankStats *pageRankPushColumnFixedPointGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
 
 // ********************************************************************************************
 // ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
-struct PageRankStats *pageRankGraphCSR(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph);
-struct PageRankStats *pageRankPullGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPushGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
+struct PageRankStats *pageRankGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
-struct PageRankStats *pageRankPullFixedPoint64BitGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPullFixedPoint32BitGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPullFixedPoint16BitGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPullFixedPoint8BitGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPushFixedPointGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullFixedPoint64BitGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullFixedPoint32BitGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullFixedPoint16BitGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullFixedPoint8BitGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPushFixedPointGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
-struct PageRankStats *pageRankPullQuant32BitGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPullQuant16BitGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPullQuant8BitGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankPushQuantGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullQuant32BitGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullQuant16BitGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPullQuant8BitGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankPushQuantGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
-struct PageRankStats *pageRankDataDrivenPullGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankDataDrivenPushGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
-struct PageRankStats *pageRankDataDrivenPullPushGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR *graph);
+struct PageRankStats *pageRankDataDrivenPullGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankDataDrivenPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct PageRankStats *pageRankDataDrivenPullPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
-// void pageRankDataDrivenPullFixedPointGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR* graph);
-// void pageRankDataDrivenPushFixedPointGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR* graph);
-// void pageRankDataDrivenPullPushFixedPointGraphCSR(double epsilon,  uint32_t iterations, struct GraphCSR* graph);
+// void pageRankDataDrivenPullFixedPointGraphCSR(struct Arguments *arguments, struct GraphCSR* graph);
+// void pageRankDataDrivenPushFixedPointGraphCSR(struct Arguments *arguments, struct GraphCSR* graph);
+// void pageRankDataDrivenPullPushFixedPointGraphCSR(struct Arguments *arguments, struct GraphCSR* graph);
 
 // ********************************************************************************************
 // ***************                  ArrayList DataStructure                      **************
 // ********************************************************************************************
 
-struct PageRankStats *pageRankGraphAdjArrayList(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphAdjArrayList *graph);
-struct PageRankStats *pageRankPullGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
-struct PageRankStats *pageRankPushGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankPullGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankPushGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
-struct PageRankStats *pageRankPullFixedPointGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
-struct PageRankStats *pageRankPushFixedPointGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankPullFixedPointGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankPushFixedPointGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
-struct PageRankStats *pageRankDataDrivenPullGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
-struct PageRankStats *pageRankDataDrivenPushGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
-struct PageRankStats *pageRankDataDrivenPullPushGraphAdjArrayList(double epsilon,  uint32_t iterations, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankDataDrivenPullGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankDataDrivenPushGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct PageRankStats *pageRankDataDrivenPullPushGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
 // ********************************************************************************************
 // ***************                  LinkedList DataStructure                     **************
 // ********************************************************************************************
 
-struct PageRankStats *pageRankGraphAdjLinkedList(double epsilon,  uint32_t iterations, uint32_t pushpull, struct GraphAdjLinkedList *graph);
-struct PageRankStats *pageRankPullGraphAdjLinkedList(double epsilon,  uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct PageRankStats *pageRankPushGraphAdjLinkedList(double epsilon,  uint32_t iterations, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankPullGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankPushGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
-struct PageRankStats *pageRankPullFixedPointGraphAdjLinkedList(double epsilon,  uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct PageRankStats *pageRankPushFixedPointGraphAdjLinkedList(double epsilon,  uint32_t iterations, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankPullFixedPointGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankPushFixedPointGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
-struct PageRankStats *pageRankDataDrivenPullGraphAdjLinkedList(double epsilon,  uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct PageRankStats *pageRankDataDrivenPushGraphAdjLinkedList(double epsilon,  uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct PageRankStats *pageRankDataDrivenPullPushGraphAdjLinkedList(double epsilon,  uint32_t iterations, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankDataDrivenPullGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankDataDrivenPushGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct PageRankStats *pageRankDataDrivenPullPushGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
 #endif

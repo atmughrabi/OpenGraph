@@ -25,7 +25,7 @@
 #include "bitmap.h"
 
 #include "graphConfig.h"
-
+#include "reorder.h"
 #include "graphCSR.h"
 #include "graphGrid.h"
 #include "graphAdjArrayList.h"
@@ -156,7 +156,7 @@ void freeDFSStats(struct DFSStats *stats)
 
 
 
-struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR *graph)
+struct DFSStats  *depthFirstSearchGraphCSRBase(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct DFSStats *stats = newDFSStatsGraphCSR(graph);
@@ -166,12 +166,12 @@ struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR 
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting Depth First Search (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -180,13 +180,13 @@ struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR 
     }
 
 
-    pushArrayStack(sharedFrontierStack, source);
-    stats->parents[source] = source;
+    pushArrayStack(sharedFrontierStack, arguments->source);
+    stats->parents[arguments->source] = arguments->source;
 
     Start(timer);
+
     while(!isEmptyArrayStackCurr(sharedFrontierStack))  // start while
     {
-
         uint32_t v = popArrayStack(sharedFrontierStack);
 
         stats->processed_nodes++;
@@ -197,18 +197,17 @@ struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR 
         for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
         {
 
-            uint32_t u = graph->sorted_edges_array->edges_array_dest[j];
+            uint32_t u = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[j]);
             int u_parent = stats->parents[u];
             if(u_parent < 0 )
             {
                 stats->parents[u] = v;
-                stats->distances[u] = stats->distances[v]+1;
+                stats->distances[u] = stats->distances[v] + 1;
                 pushArrayStack(sharedFrontierStack, u);
             }
         }
-
-
     } // end while
+
     Stop(timer);
 
     stats->time_total = Seconds(timer);
@@ -228,7 +227,7 @@ struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR 
 
 
 
-struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph)
+struct DFSStats  *depthFirstSearchGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct DFSStats *stats = newDFSStatsGraphCSR(graph);
@@ -239,12 +238,12 @@ struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *gra
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting Depth First Search (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -252,15 +251,13 @@ struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *gra
         return stats;
     }
 
-    pushArrayStack(sharedFrontierStack, source);
-    stats->parents[source] = source;
-
-
+    pushArrayStack(sharedFrontierStack, arguments->source);
+    stats->parents[arguments->source] = arguments->source;
 
     Start(timer);
+
     while(!isEmptyArrayStackCurr(sharedFrontierStack))  // start while
     {
-
         uint32_t v = popArrayStack(sharedFrontierStack);
 
         stats->processed_nodes++;
@@ -270,18 +267,18 @@ struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *gra
         for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
         {
 
-            uint32_t u = graph->sorted_edges_array->edges_array_dest[j];
+            uint32_t u = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[j]);
             int u_parent = stats->parents[u];
             if(u_parent < 0 )
             {
                 stats->parents[u] = v;
-                stats->distances[u] = stats->distances[v]+1;
+                stats->distances[u] = stats->distances[v] + 1;
                 pushArrayStack(sharedFrontierStack, u);
             }
         }
 
-
     } // end while
+
     Stop(timer);
 
     stats->time_total = Seconds(timer);
@@ -299,7 +296,7 @@ struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *gra
     return stats;
 }
 
-struct DFSStats  *pDepthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph)
+struct DFSStats  *pDepthFirstSearchGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct DFSStats *stats = newDFSStatsGraphCSR(graph);
@@ -309,12 +306,12 @@ struct DFSStats  *pDepthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *gr
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting P-Depth First Search (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -322,10 +319,10 @@ struct DFSStats  *pDepthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *gr
         return stats;
     }
 
-    stats->parents[source] = source;
+    stats->parents[arguments->source] = arguments->source;
 
     Start(timer);
-    parallelDepthFirstSearchGraphCSRTask(source, graph, stats);
+    parallelDepthFirstSearchGraphCSRTask(arguments, graph, stats);
     Stop(timer);
 
     stats->time_total = Seconds(timer);
@@ -343,10 +340,10 @@ struct DFSStats  *pDepthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *gr
 
 }
 
-void parallelDepthFirstSearchGraphCSRTask(uint32_t source, struct GraphCSR *graph, struct DFSStats *stats)
+void parallelDepthFirstSearchGraphCSRTask(struct Arguments *arguments, struct GraphCSR *graph, struct DFSStats *stats)
 {
 
-    uint32_t v = source;
+    uint32_t v = arguments->source;
 
     #pragma omp atomic update
     stats->processed_nodes++;
@@ -359,18 +356,18 @@ void parallelDepthFirstSearchGraphCSRTask(uint32_t source, struct GraphCSR *grap
     for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
     {
 
-        uint32_t u = graph->sorted_edges_array->edges_array_dest[j];
+        uint32_t u = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[j]);
         int u_parent = stats->parents[u];
         if(u_parent < 0 )
         {
             if(__sync_bool_compare_and_swap(&(stats->parents[u]), u_parent, v))
             {
 
-                
-                stats->distances[u] = stats->distances[v]+1;
+                arguments->source = u;
+                stats->distances[u] = stats->distances[v] + 1;
 
                 // #pragma omp task
-                parallelDepthFirstSearchGraphCSRTask( u, graph, stats);
+                parallelDepthFirstSearchGraphCSRTask( arguments, graph, stats);
 
             }
         }

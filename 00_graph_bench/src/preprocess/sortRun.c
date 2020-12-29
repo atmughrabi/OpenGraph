@@ -23,7 +23,6 @@
 #include "timer.h"
 #include "sortRun.h"
 
-// -o [sorting algorithm] 0 radix-src 1 radix-src-dest 2 count-src 3 count-src-dst;
 struct EdgeList *sortRunAlgorithms(struct EdgeList *edgeList, uint32_t sort)
 {
 

@@ -27,7 +27,7 @@ struct Bitmap *newBitmap( uint32_t size)
 
     struct Bitmap *bitmap = (struct Bitmap *) my_malloc( sizeof(struct Bitmap));
     bitmap->bitarray = (uint32_t *) my_malloc(sizeof(uint32_t) * ((size + kBitsPerWord - 1) / kBitsPerWord));
-
+    bitmap->real_size = ((size + kBitsPerWord - 1) / kBitsPerWord);
 
 
     memset(bitmap->bitarray, 0, (sizeof(uint32_t) * ((size + kBitsPerWord - 1) / kBitsPerWord)));
@@ -43,7 +43,7 @@ struct Bitmap *newBitmapSet( uint32_t size)
 
     struct Bitmap *bitmap = (struct Bitmap *) my_malloc( sizeof(struct Bitmap));
     bitmap->bitarray = (uint32_t *) my_malloc(sizeof(uint32_t) * ((size + kBitsPerWord - 1) / kBitsPerWord));
-
+    bitmap->real_size = ((size + kBitsPerWord - 1) / kBitsPerWord);
 
 
     memset(bitmap->bitarray, 1, (sizeof(uint32_t) * ((size + kBitsPerWord - 1) / kBitsPerWord)));
@@ -62,7 +62,7 @@ void freeBitmap( struct Bitmap *bitmap)
     {
         if(bitmap->bitarray)
             free(bitmap->bitarray);
-        
+
         free(bitmap);
     }
 }

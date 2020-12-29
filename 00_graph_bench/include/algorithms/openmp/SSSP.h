@@ -44,16 +44,15 @@ uint32_t SSSPAtomicMin(uint32_t *dist, uint32_t new);
 uint32_t SSSPCompareDistanceArrays(struct SSSPStats *stats1, struct SSSPStats *stats2);
 int SSSPAtomicRelax(uint32_t src, uint32_t dest, float weight, struct SSSPStats *stats);
 int SSSPRelax(uint32_t src, uint32_t dest, float weight, struct SSSPStats *stats);
-void durstenfeldShuffle(uint32_t *vertices, uint32_t size);
 
 // ********************************************************************************************
 // ***************                  GRID DataStructure                           **************
 // ********************************************************************************************
 
-struct SSSPStats *SSSPGraphGrid(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphGrid *graph, uint32_t delta);
+struct SSSPStats *SSSPGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
 
-struct SSSPStats *SSSPPullRowGraphGrid(uint32_t source,  uint32_t iterations, struct GraphGrid *graph, uint32_t delta);
-struct SSSPStats *SSSPPushColumnGraphGrid(uint32_t source,  uint32_t iterations, struct GraphGrid *graph, uint32_t delta);
+struct SSSPStats *SSSPPullRowGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct SSSPStats *SSSPPushColumnGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
 
 
 
@@ -61,30 +60,30 @@ struct SSSPStats *SSSPPushColumnGraphGrid(uint32_t source,  uint32_t iterations,
 // ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
-struct SSSPStats *SSSPGraphCSR(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph, uint32_t delta);
+struct SSSPStats *SSSPGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
-struct SSSPStats *SSSPDataDrivenPullGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta);
-struct SSSPStats *SSSPDataDrivenPushGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta);
-struct SSSPStats *SSSPDataDrivenSplitPushGraphCSR(uint32_t source,  uint32_t iterations, struct GraphCSR *graph, uint32_t delta);
+struct SSSPStats *SSSPDataDrivenPullGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct SSSPStats *SSSPDataDrivenPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct SSSPStats *SSSPDataDrivenSplitPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 void SSSPSpiltGraphCSR(struct GraphCSR *graph, struct GraphCSR **graphPlus, struct GraphCSR **graphMinus, uint32_t delta);
 
 // ********************************************************************************************
 // ***************                  ArrayList DataStructure                      **************
 // ********************************************************************************************
 
-struct SSSPStats *SSSPGraphAdjArrayList(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphAdjArrayList *graph, uint32_t delta);
+struct SSSPStats *SSSPGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
-struct SSSPStats *SSSPDataDrivenPullGraphAdjArrayList(uint32_t source,  uint32_t iterations, struct GraphAdjArrayList *graph, uint32_t delta);
-struct SSSPStats *SSSPDataDrivenPushGraphAdjArrayList(uint32_t source,  uint32_t iterations, struct GraphAdjArrayList *graph, uint32_t delta);
+struct SSSPStats *SSSPDataDrivenPullGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct SSSPStats *SSSPDataDrivenPushGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
 // ********************************************************************************************
 // ***************                  LinkedList DataStructure                     **************
 // ********************************************************************************************
 
-struct SSSPStats *SSSPGraphAdjLinkedList(uint32_t source,  uint32_t iterations, uint32_t pushpull, struct GraphAdjLinkedList *graph, uint32_t delta);
+struct SSSPStats *SSSPGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
-struct SSSPStats *SSSPPullGraphAdjLinkedList(uint32_t source,  uint32_t iterations, struct GraphAdjLinkedList *graph, uint32_t delta);
-struct SSSPStats *SSSPPushGraphAdjLinkedList(uint32_t source,  uint32_t iterations, struct GraphAdjLinkedList *graph, uint32_t delta);
+struct SSSPStats *SSSPPullGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct SSSPStats *SSSPPushGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
 
 #endif

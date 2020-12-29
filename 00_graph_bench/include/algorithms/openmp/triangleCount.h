@@ -39,7 +39,7 @@ uint32_t countIntersectionsBinarySearch(uint32_t u, uint32_t v, struct GraphCSR 
 // ***************					CSR DataStructure							 **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphCSR(uint32_t pushpull, struct GraphCSR *graph);
+struct TCStats *triangleCountGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 struct TCStats *triangleCountBasicGraphCSR(struct GraphCSR *graph);
 struct TCStats *triangleCountPullGraphCSR(struct GraphCSR *graph);
 struct TCStats *triangleCountPushGraphCSR(struct GraphCSR *graph);
@@ -49,7 +49,7 @@ struct TCStats *triangleCountBinaryIntersectionGraphCSR(struct GraphCSR *graph);
 // ***************					GRID DataStructure							 **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphGrid(uint32_t pushpull, struct GraphGrid *graph);
+struct TCStats *triangleCountGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
 struct TCStats *triangleCountRowGraphGrid(struct GraphGrid *graph);
 struct TCStats *triangleCountColumnGraphGrid(struct GraphGrid *graph);
 
@@ -57,7 +57,7 @@ struct TCStats *triangleCountColumnGraphGrid(struct GraphGrid *graph);
 // ***************					ArrayList DataStructure					     **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphAdjArrayList(uint32_t pushpull, struct GraphAdjArrayList *graph);
+struct TCStats *triangleCountGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 struct TCStats *triangleCountPullGraphAdjArrayList(struct GraphAdjArrayList *graph);
 struct TCStats *triangleCountPushGraphAdjArrayList(struct GraphAdjArrayList *graph);
 
@@ -65,7 +65,7 @@ struct TCStats *triangleCountPushGraphAdjArrayList(struct GraphAdjArrayList *gra
 // ***************					LinkedList DataStructure					 **************
 // ********************************************************************************************
 
-struct TCStats *triangleCountGraphAdjLinkedList(uint32_t pushpull, struct GraphAdjLinkedList *graph);
+struct TCStats *triangleCountGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 struct TCStats *triangleCountPullGraphAdjLinkedList(struct GraphAdjLinkedList *graph);
 struct TCStats *triangleCountPushGraphAdjLinkedList(struct GraphAdjLinkedList *graph);
 

@@ -22,6 +22,7 @@
 #include "timer.h"
 #include "myMalloc.h"
 #include "boolean.h"
+#include "reorder.h"
 
 #include "graphConfig.h"
 
@@ -354,7 +355,7 @@ void findBestDestination(struct ArrayQueue *Neighbors, struct ArrayQueue *reacha
 
         for(k = edgeTemp ; k < (edgeTemp + degreeTemp) ; k++)
         {
-            tempU = graph->sorted_edges_array->edges_array_dest[k];
+            tempU = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[k]);
 
             while(stats->dest[stats->dest[tempU]] != stats->dest[tempU])
             {

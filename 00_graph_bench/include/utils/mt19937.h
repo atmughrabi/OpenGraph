@@ -58,8 +58,6 @@ typedef struct mt19937_stateStruct
     int mti;
 } mt19937state;
 
-mt19937state *
-GetMersenneState ();
 
 void
 initializeMersenneState (mt19937state *m, unsigned long seed);

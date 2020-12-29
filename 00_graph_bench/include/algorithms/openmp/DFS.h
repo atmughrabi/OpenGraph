@@ -38,9 +38,9 @@ void freeDFSStats(struct DFSStats *stats);
 // ***************					CSR DataStructure							 **************
 // ********************************************************************************************
 
-struct DFSStats  *depthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph);
-struct DFSStats  *depthFirstSearchGraphCSRBase(uint32_t source, struct GraphCSR *graph);
-struct DFSStats  *pDepthFirstSearchGraphCSR(uint32_t source, struct GraphCSR *graph);
-void parallelDepthFirstSearchGraphCSRTask(uint32_t source, struct GraphCSR *graph, struct DFSStats *stats);
+struct DFSStats  *depthFirstSearchGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct DFSStats  *depthFirstSearchGraphCSRBase(struct Arguments *arguments, struct GraphCSR *graph);
+struct DFSStats  *pDepthFirstSearchGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+void parallelDepthFirstSearchGraphCSRTask(struct Arguments *arguments, struct GraphCSR *graph, struct DFSStats *stats);
 
 #endif

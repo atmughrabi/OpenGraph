@@ -27,6 +27,7 @@
 #include "arrayQueue.h"
 #include "bitmap.h"
 #include "graphConfig.h"
+#include "reorder.h"
 
 #include "graphCSR.h"
 #include "graphGrid.h"
@@ -111,7 +112,6 @@ void clearBetweennessCentralityStats(struct BetweennessCentralityStats *stats)
 
     stats->stack->degree  = 0;
     stats->processed_nodes = 0;
-    stats->iteration = 0;
     stats->num_vertices = stats->num_vertices;
     // stats->time_total = 0.0f;
 
@@ -144,6 +144,8 @@ void freeBetweennessCentralityStats(struct BetweennessCentralityStats *stats)
             free(stats->sigma);
         if(stats->betweennessCentrality)
             free(stats->betweennessCentrality);
+        if(stats->realRanks)
+            free(stats->realRanks);
         if(stats->stack)
         {
             if(stats->stack->nodes)
@@ -158,6 +160,7 @@ void freeBetweennessCentralityStats(struct BetweennessCentralityStats *stats)
             }
             free(stats->predecessors);
         }
+
         free(stats);
     }
 }
@@ -166,7 +169,7 @@ void freeBetweennessCentralityStats(struct BetweennessCentralityStats *stats)
 // ***************                  Auxiliary functions                          **************
 // ********************************************************************************************
 
-uint32_t generateRandomRootBetweennessCentrality(struct GraphCSR *graph)
+uint32_t generateRandomRootBetweennessCentrality(mt19937state *mt19937var, struct GraphCSR *graph)
 {
 
     uint32_t root = 0;
@@ -262,8 +265,6 @@ struct BetweennessCentralityStats *betweennessCentralityBFSPullGraphCSR(uint32_t
         swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
         clearBitmap(sharedFrontierQueue->q_bitmap_next);
         stats->processed_nodes += nf;
-
-
     } // end while
 
     freeArrayQueue(sharedFrontierQueue);
@@ -316,7 +317,8 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
 
             for(j = edge_idx ; j < (edge_idx + out_degree) ; j++)
             {
-                u = sorted_edges_array[j];
+                u = EXTRACT_VALUE(sorted_edges_array[j]);
+
                 if(getBit(bitmapCurr, u))
                 {
                     // stats->parents[v] = u;
@@ -324,6 +326,7 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
 
                     if(stats->distances[v] == stats->distances[u] + 1)
                     {
+
                         stats->sigma[v] += stats->sigma[u];
                         stats->predecessors[v].nodes[stats->predecessors[v].degree] = u;
                         stats->predecessors[v].degree++;
@@ -334,10 +337,9 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
                     // break;
                 }
             }
-
         }
-
     }
+
     return nf;
 }
 
@@ -345,17 +347,17 @@ uint32_t betweennessCentralityBottomUpStepGraphCSR(struct GraphCSR *graph, struc
 // ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
 
-struct BetweennessCentralityStats *betweennessCentralityGraphCSR(uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph)
+struct BetweennessCentralityStats *betweennessCentralityGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
     struct BetweennessCentralityStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // Brandes
-        stats = betweennessCentralityBrandesGraphCSR(iterations, graph);
+        stats = betweennessCentralityBrandesGraphCSR(arguments, graph);
         break;
     default:// Brandes
-        stats = betweennessCentralityBrandesGraphCSR(iterations, graph);
+        stats = betweennessCentralityBrandesGraphCSR(arguments, graph);
         break;
     }
 
@@ -363,7 +365,7 @@ struct BetweennessCentralityStats *betweennessCentralityGraphCSR(uint32_t iterat
     return stats;
 }
 
-struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t iterations, struct GraphCSR *graph)
+struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct BetweennessCentralityStats *stats = newBetweennessCentralityStatsGraphCSR(graph);
@@ -371,11 +373,11 @@ struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
+
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting Brandes Betweenness Centrality");
     printf(" -----------------------------------------------------\n");
 
-    uint32_t iter;
     uint32_t s;
     uint32_t v;
     uint32_t w;
@@ -383,16 +385,15 @@ struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t
     uint32_t t;
 
     Start(timer);
-    for(iter = 0 ; iter < iterations ; iter++)
+
+    for(stats->iteration = 0 ; stats->iteration  < arguments->iterations ; stats->iteration++)
     {
-        s = generateRandomRootBetweennessCentrality(graph);
+        s = generateRandomRootBetweennessCentrality(&(arguments->mt19937var), graph);
         Start(timer_inner);
         clearBetweennessCentralityStats(stats);
 
         stats = betweennessCentralityBFSPullGraphCSR(s, graph, stats);
 
-
-        // #pragma omp parallel for
         for (t = stats->stack->degree - 1; t > 0; t--)
         {
             w = stats->stack->nodes[t];
@@ -411,11 +412,13 @@ struct BetweennessCentralityStats *betweennessCentralityBrandesGraphCSR(uint32_t
                 stats->betweennessCentrality[w] += stats->dependency[w] / 2;
             }
         }
+
         Stop(timer_inner);
         stats->time_total += Seconds(timer_inner);
 
         printf("| %-15s | %-15f | %-15u | \n", "Iter.Time", Seconds(timer_inner), stats->processed_nodes);
     }
+
     Stop(timer);
 
     printf(" -----------------------------------------------------\n");

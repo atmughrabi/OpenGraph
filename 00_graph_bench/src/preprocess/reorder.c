@@ -34,6 +34,33 @@
 #include "reorder.h"
 
 
+uint32_t RegionAtomicDecrement(uint32_t *region)
+{
+
+    uint32_t oldValue;
+    uint32_t flag = 0;
+
+    do
+    {
+
+        oldValue = *region;
+        if(oldValue > 0)
+        {
+            if(__sync_bool_compare_and_swap(region, oldValue, (oldValue - 1)))
+            {
+                flag = 1;
+            }
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    while(!flag);
+
+    return 1;
+}
+
 void radixSortCountSortEdgesByRanks (uint32_t **pageRanksFP, uint32_t **pageRanksFPTemp, uint32_t **labels, uint32_t **labelsTemp, uint32_t radix, uint32_t buckets, uint32_t *buckets_count, uint32_t num_vertices)
 {
 
@@ -44,16 +71,24 @@ void radixSortCountSortEdgesByRanks (uint32_t **pageRanksFP, uint32_t **pageRank
     uint32_t u = 0;
     uint32_t i = 0;
     uint32_t j = 0;
-    uint32_t P = numThreads;  // 32/8 8 bit radix needs 4 iterations
+    uint32_t P = 1;  // 32/8 8 bit radix needs 4 iterations
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
     uint32_t base = 0;
 
-    #pragma omp parallel default(none) num_threads(P) shared(pageRanksFP, pageRanksFPTemp,radix,labels,labelsTemp,buckets,buckets_count, num_vertices) firstprivate(t_id, P, offset_end,offset_start,base,i,j,t,u,o)
+    #pragma omp parallel default(none) shared(P,pageRanksFP, pageRanksFPTemp,radix,labels,labelsTemp,buckets,buckets_count, num_vertices) firstprivate(t_id, offset_end,offset_start,base,i,j,t,u,o)
     {
-        P = omp_get_num_threads();
+
         t_id = omp_get_thread_num();
+
+        if(t_id == 0)
+        {
+            P = omp_get_num_threads();
+        }
+
+        #pragma omp barrier
+
         offset_start = t_id * (num_vertices / P);
 
 
@@ -171,10 +206,10 @@ uint32_t *radixSortEdgesByPageRank (float *pageRanks, uint32_t *labels, uint32_t
     }
 
 
-    // free(buckets_count);
-    // free(pageRanksFP);
-    // free(pageRanksFPTemp);
-    // free(labelsTemp);
+    free(buckets_count);
+    free(pageRanksFP);
+    free(pageRanksFPTemp);
+    free(labelsTemp);
 
     //  for(v = 0; v < num_vertices; v++)
     // {
@@ -211,7 +246,7 @@ uint32_t *radixSortEdgesByDegree (uint32_t *degrees, uint32_t *labels, uint32_t 
     degreesTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
     labelsTemp = (uint32_t *) my_malloc(num_vertices * sizeof(uint32_t));
 
-
+    #pragma omp parallel
     for (j = 0; j < num_vertices; ++j)
     {
         labelsTemp[j] = 0;
@@ -244,6 +279,7 @@ struct EdgeList *reorderGraphProcessDegree( uint32_t sort, struct EdgeList *edge
 
     degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
+    #pragma omp parallel
     for (i = 0; i < edgeList->num_vertices; ++i)
     {
         degrees[i] = 0;
@@ -311,16 +347,30 @@ struct EdgeList *reorderGraphListDegree(struct EdgeList *edgeList, uint32_t *deg
         labels[labelsInverse[v]] = edgeList->num_vertices - 1 - v;
     }
 
-    edgeList = relabelEdgeList(edgeList, labels);
-
     Stop(timer);
 
     printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Degree Reordering/Relabeling Complete");
+    printf("| %-51s | \n", "Reordering Complete");
     printf(" -----------------------------------------------------\n");
     printf("| %-51f | \n", Seconds(timer));
     printf(" -----------------------------------------------------\n");
 
+    Start(timer);
+    edgeList = relabelEdgeList(edgeList, labels);
+    Stop(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Relabeling Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    #pragma omp parallel for
+    for (v = 0; v < edgeList->num_vertices; ++v)
+    {
+        edgeList->label_array[v] = labels[edgeList->label_array[v]];
+        edgeList->inverse_label_array[edgeList->label_array[v]] = v;
+    }
 
     free(timer);
     free(labelsInverse);
@@ -346,6 +396,7 @@ struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeLis
     degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
     thresholds = (uint32_t *) my_malloc(num_buckets * sizeof(uint32_t));
 
+    #pragma omp parallel
     for (i = 0; i < edgeList->num_vertices; ++i)
     {
         degrees[i] = 0;
@@ -395,27 +446,38 @@ struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degree
     uint32_t  v = 0;
     uint32_t  t = 0;
     uint32_t  temp_idx = 0;
-    uint32_t P = numThreads;
+    uint32_t P = 1;
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
 
-    uint32_t *start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+    uint32_t *start_idx = NULL;
+    vc_vector **buckets = NULL;
     uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
-    vc_vector **buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
+
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
 
     Start(timer);
-    for (i = 0; i < (P * num_buckets); ++i)
+    #pragma omp parallel default(none) shared(P,labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,t)
     {
-        buckets[i] = vc_vector_create(0, sizeof(uint32_t), NULL);
-    }
 
-    #pragma omp parallel default(none) shared(labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,P,t)
-    {
-        P = omp_get_num_threads();
         t_id = omp_get_thread_num();
+
+        if(t_id == 0)
+        {
+            P = omp_get_num_threads();
+            start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+            buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
+        }
+
+        #pragma omp barrier
+
+        for (i = 0; i < num_buckets; ++i)
+        {
+            buckets[(t_id * num_buckets) + i] = vc_vector_create(0, sizeof(uint32_t), NULL);
+        }
+
         offset_start = t_id * (edgeList->num_vertices / P);
 
         if(t_id == (P - 1))
@@ -468,16 +530,30 @@ struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degree
 
     }
 
-    edgeList = relabelEdgeList(edgeList, labels);
-
     Stop(timer);
 
     printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "DBG Reordering/Relabeling Complete");
+    printf("| %-51s | \n", "Reordering Complete");
     printf(" -----------------------------------------------------\n");
     printf("| %-51f | \n", Seconds(timer));
     printf(" -----------------------------------------------------\n");
 
+    Start(timer);
+    edgeList = relabelEdgeList(edgeList, labels);
+    Stop(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Relabeling Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    #pragma omp parallel for
+    for (v = 0; v < edgeList->num_vertices; ++v)
+    {
+        edgeList->label_array[v] = labels[edgeList->label_array[v]];
+        edgeList->inverse_label_array[edgeList->label_array[v]] = v;
+    }
 
     for (i = 0; i < (P * num_buckets); ++i)
     {
@@ -527,10 +603,10 @@ struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edg
 
     switch(lmode)
     {
-    case 4  :
+    case 6  :
         printf("| %-51s | \n", "HUBSort OUT-DEGREE");
         break;
-    case 5  :
+    case 7  :
         printf("| %-51s | \n", "HUBSort IN-DEGREE");
         break;
     default :
@@ -557,14 +633,14 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
     uint32_t  v = 0;
     uint32_t  t = 0;
     uint32_t  temp_idx = 0;
-    uint32_t P = numThreads;
+    uint32_t P = 1;
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
 
-    uint32_t *start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+    uint32_t *start_idx = NULL;
+    vc_vector **buckets = NULL;
     uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
-    vc_vector **buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
     uint32_t *sizeHot = (uint32_t *) my_malloc(num_buckets * sizeof(uint32_t));
@@ -572,15 +648,24 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
     uint32_t **verticesHot  = (uint32_t **) my_malloc(num_buckets * sizeof(uint32_t *));
 
     Start(timer);
-    for (i = 0; i < (P * num_buckets); ++i)
+    #pragma omp parallel default(none) shared(P,verticesHot,degreesHot,sizeHot,labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,t)
     {
-        buckets[i] = vc_vector_create(0, sizeof(uint32_t), NULL);
-    }
-
-    #pragma omp parallel default(none) shared(verticesHot,degreesHot,sizeHot,labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,P,t)
-    {
-        P = omp_get_num_threads();
         t_id = omp_get_thread_num();
+
+        if(t_id == 0)
+        {
+            P = omp_get_num_threads();
+            start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+            buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
+        }
+
+        #pragma omp barrier
+
+        for (i = 0; i < num_buckets; ++i)
+        {
+            buckets[(t_id * num_buckets) + i] = vc_vector_create(0, sizeof(uint32_t), NULL);
+        }
+
         offset_start = t_id * (edgeList->num_vertices / P);
 
         if(t_id == (P - 1))
@@ -655,16 +740,30 @@ struct EdgeList *reorderGraphListHUBSort(struct EdgeList *edgeList, uint32_t *de
         labels[verticesHot[0][v]] = sizeHot[1] + (v);
     }
 
-    edgeList = relabelEdgeList(edgeList, labels);
-
     Stop(timer);
 
     printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "HUBSort Reordering/Relabeling Complete");
+    printf("| %-51s | \n", "Reordering Complete");
     printf(" -----------------------------------------------------\n");
     printf("| %-51f | \n", Seconds(timer));
     printf(" -----------------------------------------------------\n");
 
+    Start(timer);
+    edgeList = relabelEdgeList(edgeList, labels);
+    Stop(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Relabeling Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    #pragma omp parallel for
+    for (v = 0; v < edgeList->num_vertices; ++v)
+    {
+        edgeList->label_array[v] = labels[edgeList->label_array[v]];
+        edgeList->inverse_label_array[edgeList->label_array[v]] = v;
+    }
 
     for (i = 0; i < (P * num_buckets); ++i)
     {
@@ -720,10 +819,10 @@ struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *
 
     switch(lmode)
     {
-    case 4  :
+    case 8  :
         printf("| %-51s | \n", "HUBCluster OUT-DEGREE");
         break;
-    case 5  :
+    case 9  :
         printf("| %-51s | \n", "HUBCluster IN-DEGREE");
         break;
     default :
@@ -743,33 +842,44 @@ struct EdgeList *reorderGraphProcessHUBCluster( uint32_t sort, struct EdgeList *
 struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t lmode)
 {
 
-    uint32_t  i = 0;
+    uint32_t i = 0;
     int32_t  j = 0;
     int32_t  k = 0;
     void  *iter = 0;
-    uint32_t  v = 0;
-    uint32_t  t = 0;
-    uint32_t  temp_idx = 0;
-    uint32_t P = numThreads;
+    uint32_t v = 0;
+    uint32_t t = 0;
+    uint32_t temp_idx = 0;
+    uint32_t P = 1;
     uint32_t t_id = 0;
     uint32_t offset_start = 0;
     uint32_t offset_end = 0;
 
-    uint32_t *start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+    uint32_t *start_idx = NULL;
+    vc_vector **buckets = NULL;
+
     uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
-    vc_vector **buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
+
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
 
     Start(timer);
-    for (i = 0; i < (P * num_buckets); ++i)
+    #pragma omp parallel default(none) shared(P,labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,t)
     {
-        buckets[i] = vc_vector_create(0, sizeof(uint32_t), NULL);
-    }
-
-    #pragma omp parallel default(none) shared(labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,k,offset_start,offset_end,t_id,i,j,v,P,t)
-    {
-        P = omp_get_num_threads();
         t_id = omp_get_thread_num();
+
+        if(t_id == 0)
+        {
+            P = omp_get_num_threads();
+            start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+            buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
+        }
+
+        #pragma omp barrier
+
+        for (i = 0; i < num_buckets; ++i)
+        {
+            buckets[(t_id * num_buckets) + i] = vc_vector_create(0, sizeof(uint32_t), NULL);
+        }
+
         offset_start = t_id * (edgeList->num_vertices / P);
 
         if(t_id == (P - 1))
@@ -822,16 +932,30 @@ struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t 
 
     }
 
-    edgeList = relabelEdgeList(edgeList, labels);
-
     Stop(timer);
 
     printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "HUBCluster Reordering/Relabeling Complete");
+    printf("| %-51s | \n", "Reordering Complete");
     printf(" -----------------------------------------------------\n");
     printf("| %-51f | \n", Seconds(timer));
     printf(" -----------------------------------------------------\n");
 
+    Start(timer);
+    edgeList = relabelEdgeList(edgeList, labels);
+    Stop(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Relabeling Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    #pragma omp parallel for
+    for (v = 0; v < edgeList->num_vertices; ++v)
+    {
+        edgeList->label_array[v] = labels[edgeList->label_array[v]];
+        edgeList->inverse_label_array[edgeList->label_array[v]] = v;
+    }
 
     for (i = 0; i < (P * num_buckets); ++i)
     {
@@ -845,6 +969,324 @@ struct EdgeList *reorderGraphListHUBCluster(struct EdgeList *edgeList, uint32_t 
     return edgeList;
 }
 
+// ********************************************************************************************
+// ***************                  AccelGraph label-Masking                     **************
+// ********************************************************************************************
+
+struct EdgeList *maskGraphProcess(struct EdgeList *edgeList, struct Arguments *arguments)
+{
+
+    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
+
+    printf(" *****************************************************\n");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Mask Process");
+    printf(" -----------------------------------------------------\n");
+    Start(timer);
+
+    uint32_t cache_size = (32768 >> 2);
+
+    switch(arguments->lmode)
+    {
+    case 1  :
+    case 2  :
+    case 3  :
+    case 4 :
+        edgeList = maskGraphProcessDegree( edgeList, arguments->mmode, cache_size); // degree
+        break;
+    default :
+        edgeList = maskGraphProcessDegree( edgeList, arguments->mmode, cache_size); // out-degree
+    }
+
+    Stop(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Total Mask Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+    printf(" *****************************************************\n");
+
+    free(timer);
+
+    return edgeList;
+}
+
+struct EdgeList *maskGraphProcessDegree( struct EdgeList *edgeList, uint32_t mmode, uint32_t cache_size)
+{
+
+    // UINT32_MAX
+    uint32_t  i;
+    uint32_t *degrees;
+    uint32_t *thresholds;
+    uint32_t  num_buckets = 11;
+
+    degrees = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    thresholds = (uint32_t *) my_malloc(num_buckets * sizeof(uint32_t));
+    #pragma omp parallel
+    for (i = 0; i < edgeList->num_vertices; ++i)
+    {
+        degrees[i] = 0;
+    }
+
+    // START initialize thresholds
+    if(edgeList->avg_degree <= 1)
+        thresholds[0] = 1;
+    else
+        thresholds[0] = (edgeList->avg_degree / 2);
+    for ( i = 1; i < (num_buckets - 1); ++i)
+    {
+        thresholds[i] = thresholds[i - 1] * 2;
+    }
+    thresholds[num_buckets - 1] = UINT32_MAX;
+    // END initialize thresholds
+
+    switch(mmode)
+    {
+    case 1  :
+        printf("| %-51s | \n", "Vertex Property OUT-DEGREE");
+        break;
+    case 2  :
+        printf("| %-51s | \n", "Vertex Structure IN-DEGREE");
+        break;
+    case 3  :
+        printf("| %-51s | \n", "Vertex Property OUT-DEGREE");
+        break;
+    case 4  :
+        printf("| %-51s | \n", "Vertex Structure IN-DEGREE");
+        break;
+    default :
+        printf("| %-51s | \n", "Vertex Property OUT-DEGREE");
+    }
+
+    degrees = maskGraphProcessGenerateInOutDegrees(degrees, edgeList, mmode);
+
+    edgeList = maskGraphProcessGenerateMaskArray(edgeList, degrees, thresholds, num_buckets, mmode, cache_size);
+
+    free(thresholds);
+    free(degrees);
+    return edgeList;
+
+}
+
+uint32_t *maskGraphProcessGenerateInOutDegrees(uint32_t *degrees, struct EdgeList *edgeList, uint32_t mmode)
+{
+
+    uint32_t i;
+    uint32_t src;
+    uint32_t dest;
+
+    #pragma omp parallel for default(none) private(i,src,dest) shared(edgeList,degrees,mmode)
+    for(i = 0; i < edgeList->num_edges; i++)
+    {
+        src  = edgeList->edges_array_src[i];
+        dest = edgeList->edges_array_dest[i];
+
+        switch(mmode)
+        {
+        case 1 :
+        case 3 :
+        {
+            #pragma omp atomic update
+            degrees[src]++;
+        }
+        break;
+        case 2 :
+        case 4 :
+        {
+            #pragma omp atomic update
+            degrees[dest]++;
+        }
+        break;
+        case 5 :
+        case 6 :
+        {
+            #pragma omp atomic update
+            degrees[dest]++;
+            #pragma omp atomic update
+            degrees[src]++;
+        }
+        break;
+        default :
+        {
+            #pragma omp atomic update
+            degrees[src]++;
+        }// out-degree
+        }
+    }
+    return degrees;
+}
+
+struct EdgeList *maskGraphProcessGenerateMaskArray(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t mmode, uint32_t cache_size)
+{
+
+    uint32_t i = 0;
+    int32_t  j = 0;
+    void  *iter = 0;
+    uint32_t  v = 0;
+    uint32_t  t = 0;
+    uint32_t  temp_idx = 0;
+    uint32_t P = 1;
+    uint32_t t_id = 0;
+    uint32_t offset_start = 0;
+    uint32_t offset_end = 0;
+    uint32_t  num_masks = 4;
+
+    uint32_t *start_idx      = NULL;
+    vc_vector **buckets      = NULL;
+
+    uint32_t *labels         = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    uint32_t *mask_array     = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    struct Timer *timer      = (struct Timer *) malloc(sizeof(struct Timer));
+    uint32_t *cache_regions  = (uint32_t *) my_malloc(num_masks * sizeof(uint32_t));
+
+    int diff = (int)edgeList->num_vertices - (int)cache_size;
+
+    if(diff < (2 * (int)cache_size))
+    {
+        cache_regions[0] = edgeList->num_vertices / 3; // VERTEX_VALUE_HOT_U32
+        cache_regions[1] = edgeList->num_vertices / 3; // VERTEX_CACHE_WARM_U32
+        cache_regions[2] = edgeList->num_vertices / 3; // VERTEX_VALUE_LUKEWARM_U32
+    }
+    else
+    {
+        cache_regions[0] = cache_size*8; // VERTEX_VALUE_HOT_U32
+        cache_regions[1] = cache_regions[0]*4; // VERTEX_CACHE_WARM_U32
+        cache_regions[2] = cache_regions[1]*4; // VERTEX_VALUE_LUKEWARM_U32
+    }
+
+    cache_regions[3] = UINT32_MAX; // VERTEX_CACHE_COLD_U32
+
+    #pragma omp parallel for
+    for (i = 0; i < edgeList->num_vertices; ++i)
+    {
+        mask_array[i] = VERTEX_CACHE_COLD_U32;
+    }
+
+    Start(timer);
+    #pragma omp parallel default(none) shared(P,mask_array,mmode,cache_regions,labels,buckets,edgeList,num_buckets,degrees,thresholds,start_idx) firstprivate(iter,temp_idx,offset_start,offset_end,t_id,i,j,v,t)
+    {
+        t_id = omp_get_thread_num();
+
+        if(t_id == 0)
+        {
+            P = omp_get_num_threads();
+            start_idx = (uint32_t *) my_malloc(P * num_buckets * sizeof(uint32_t));
+            buckets = (vc_vector **) malloc(P * num_buckets * sizeof(vc_vector *));
+        }
+
+        #pragma omp barrier
+
+        for (i = 0; i < num_buckets; ++i)
+        {
+            buckets[(t_id * num_buckets) + i] = vc_vector_create(0, sizeof(uint32_t), NULL);
+        }
+
+        offset_start = t_id * (edgeList->num_vertices / P);
+
+        if(t_id == (P - 1))
+        {
+            offset_end = offset_start + (edgeList->num_vertices / P) + (edgeList->num_vertices % P) ;
+        }
+        else
+        {
+            offset_end = offset_start + (edgeList->num_vertices / P);
+        }
+
+        for (v = offset_start; v < offset_end; ++v)
+        {
+            for ( i = 0; i < num_buckets; ++i)
+            {
+                if(degrees[v] <= thresholds[i])
+                {
+                    vc_vector_push_back(buckets[(t_id * num_buckets) + i], &v);
+                    break;
+                }
+            }
+        }
+
+        #pragma omp barrier
+
+        if(t_id == 0)
+        {
+            for ( j = num_buckets - 1; j >= 0; --j)
+            {
+                for (t = 0; t < P; ++t)
+                {
+                    start_idx[(t * num_buckets) + j] = temp_idx;
+                    temp_idx += vc_vector_count(buckets[(t * num_buckets) + j]);
+                }
+            }
+        }
+
+        #pragma omp barrier
+
+        for ( j = num_buckets - 1 ; j >= 0 ; --j)
+        {
+            for (   iter = vc_vector_begin(buckets[(t_id * num_buckets) + j]);
+                    iter != vc_vector_end(buckets[(t_id * num_buckets) + j]);
+                    iter = vc_vector_next(buckets[(t_id * num_buckets) + j], iter))
+            {
+                if(RegionAtomicDecrement(&(cache_regions[0])))
+                {
+                    mask_array[(*(uint32_t *)iter)] = VERTEX_VALUE_HOT_U32;
+                }
+                else if(RegionAtomicDecrement(&(cache_regions[1])))
+                {
+                    mask_array[(*(uint32_t *)iter)] = VERTEX_CACHE_WARM_U32;
+                }
+                else if(RegionAtomicDecrement(&(cache_regions[2])))
+                {
+                    mask_array[(*(uint32_t *)iter)] = VERTEX_VALUE_LUKEWARM_U32;
+                }
+                else
+                {
+                    mask_array[(*(uint32_t *)iter)] = VERTEX_CACHE_COLD_U32;
+                }
+            }
+        }
+
+    }
+
+    Stop(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Mask Complete");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51f | \n", Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    if(mmode == 1 || mmode == 2)
+    {
+        Start(timer);
+        edgeList = maskEdgeList(edgeList, mask_array);
+        Stop(timer);
+        printf(" -----------------------------------------------------\n");
+        printf("| %-51s | \n", "Relabeling Complete");
+        printf(" -----------------------------------------------------\n");
+        printf("| %-51f | \n", Seconds(timer));
+        printf(" -----------------------------------------------------\n");
+    }
+
+    #pragma omp parallel for
+    for (i = 0; i < edgeList->num_vertices; ++i)
+    {
+        edgeList->mask_array[i] = mask_array[i];
+    }
+
+    for (i = 0; i < (P * num_buckets); ++i)
+    {
+        vc_vector_release(buckets[i]);
+    }
+
+    free(mask_array);
+    free(timer);
+    free(buckets);
+    free(start_idx);
+    free(labels);
+    free(cache_regions);
+    return edgeList;
+}
 
 // ********************************************************************************************
 // ***************                  generic functions                            **************
@@ -857,53 +1299,66 @@ uint32_t *reorderGraphGenerateInOutDegrees(uint32_t *degrees, struct EdgeList *e
     uint32_t src;
     uint32_t dest;
 
-    #pragma omp parallel for default(none) private(i,src,dest) shared(mt19937var,edgeList,degrees,lmode)
-    for(i = 0; i < edgeList->num_edges; i++)
+
+
+    if(lmode != 10)
     {
-        src  = edgeList->edges_array_src[i];
-        dest = edgeList->edges_array_dest[i];
+        #pragma omp parallel for default(none) private(i,src,dest) shared(edgeList,degrees,lmode)
+        for(i = 0; i < edgeList->num_edges; i++)
+        {
+            src  = edgeList->edges_array_src[i];
+            dest = edgeList->edges_array_dest[i];
 
-        switch(lmode)
-        {
-        case 1 :
-        case 4 :
-        case 6 :
-        case 8 :
-        {
-            #pragma omp atomic update
-            degrees[src]++;
-        } // degree
-        break;
-        case 2 :
-        case 5 :
-        case 7 :
-        case 9 :
-        {
-            #pragma omp atomic update
-            degrees[dest]++;
+            switch(lmode)
+            {
+            case 1 :
+            case 4 :
+            case 6 :
+            case 8 :
+            {
+                #pragma omp atomic update
+                degrees[src]++;
+            } // degree
+            break;
+            case 2 :
+            case 5 :
+            case 7 :
+            case 9 :
+            {
+                #pragma omp atomic update
+                degrees[dest]++;
+            }
+            break;
+            case 3 :
+            {
+                #pragma omp atomic update
+                degrees[dest]++;
+                #pragma omp atomic update
+                degrees[src]++;
+            }
+            break;
+            default :
+            {
+                #pragma omp atomic update
+                degrees[src]++;
+            }// out-degree
+            }
         }
-        break;
-        case 3 :
-        {
-            #pragma omp atomic update
-            degrees[dest]++;
-            #pragma omp atomic update
-            degrees[src]++;
-        }
-        break;
-        case 10  :
-        {
-            degrees[src] = (generateRandInt(mt19937var) % edgeList->num_vertices) + 1;
-        }
-        break;
-        default :
-        {
-            #pragma omp atomic update
-            degrees[src]++;
-        }// out-degree
-        }
-
     }
+
+
+    if(lmode == 10)
+    {
+        mt19937state *mt19937var = (mt19937state *) my_malloc(sizeof(mt19937state));
+        initializeMersenneState (mt19937var, 27491095);
+        #pragma omp parallel for firstprivate(mt19937var)
+        for (i = 0; i < edgeList->num_vertices; ++i)
+        {
+            degrees[i] = (generateRandInt(mt19937var) % edgeList->num_vertices) + omp_get_thread_num();
+        }
+        free(mt19937var);
+    }
+
 
     return degrees;
 }
@@ -943,7 +1398,7 @@ struct EdgeList *reorderGraphProcess(struct EdgeList *edgeList, struct Arguments
         edgeList = reorderGraphProcessHUBCluster( arguments->sort, edgeList, arguments->lmode);// HUBCluster
         break;
     case 11 :
-        edgeList = relabelEdgeListFromFile(edgeList, arguments->fnameb, edgeList->num_vertices);// load from file
+        edgeList = relabelEdgeListFromFile(edgeList, arguments->fnamel, edgeList->num_vertices);// load from file
         break;
 
     default :
@@ -991,6 +1446,24 @@ struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels)
 
 }
 
+struct EdgeList *maskEdgeList(struct EdgeList *edgeList, uint32_t *mask_array)
+{
+    uint32_t i;
+
+    #pragma omp parallel for
+    for(i = 0; i < edgeList->num_edges; i++)
+    {
+        uint32_t src;
+        uint32_t dest;
+        src = edgeList->edges_array_src[i];
+        dest = edgeList->edges_array_dest[i];
+
+        edgeList->edges_array_src[i] = src | mask_array[src];
+        edgeList->edges_array_dest[i] = dest | mask_array[dest];
+    }
+
+    return edgeList;
+}
 
 // ********************************************************************************************
 // ***************                  File relabel                                 **************
@@ -1001,21 +1474,17 @@ struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *
 
     FILE *pText;
     uint32_t i;
+    uint32_t v = 0;
     uint32_t dest = 0;
     uint32_t x = 0;
+    uint32_t *labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
 
-    uint32_t *labels;
+    // char *fname_txt = (char *) malloc((strlen(fnameb) + 10) * sizeof(char));
 
-    labels = (uint32_t *) my_malloc(edgeList->num_vertices * sizeof(uint32_t));
+    // fname_txt = strcpy (fname_txt, fnameb);
 
-
-    char *fname_txt = (char *) malloc((strlen(fnameb) + 10) * sizeof(char));
-
-    fname_txt = strcpy (fname_txt, fnameb);
-    fname_txt = strcat (fname_txt, ".labels");
-
-    printf("%s\n", fname_txt );
-    pText = fopen(fname_txt, "r");
+    printf("%s\n", fnameb );
+    pText = fopen(fnameb, "r");
 
     if (pText == NULL)
     {
@@ -1029,6 +1498,9 @@ struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *
         labels[x] = dest;
         x++;
 
+        if( x == edgeList->num_vertices )
+            break;
+
         if( i == EOF )
             break;
 
@@ -1039,9 +1511,15 @@ struct EdgeList *relabelEdgeListFromFile(struct EdgeList *edgeList, const char *
 
     edgeList = relabelEdgeList(edgeList, labels);
 
+    #pragma omp parallel for
+    for (v = 0; v < edgeList->num_vertices; ++v)
+    {
+        edgeList->label_array[v] = labels[edgeList->label_array[v]];
+        edgeList->inverse_label_array[edgeList->label_array[v]] = v;
+    }
 
     free(labels);
-    free(fname_txt);
+    // free(fname_txt);
 
     return edgeList;
 }

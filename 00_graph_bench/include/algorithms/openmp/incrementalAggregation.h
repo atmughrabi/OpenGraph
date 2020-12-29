@@ -18,7 +18,8 @@ struct __attribute__((__packed__)) MyPair
 };
 
 
-union Atom {
+union Atom
+{
     uint64_t atomicPair;
     struct MyPair pair;
 };
@@ -56,6 +57,7 @@ struct IncrementalAggregationStats
     uint32_t num_vertices;
     double totalQ;
     double time_total;
+
 };
 
 struct IncrementalAggregationStats *newIncrementalAggregationStatsGraphCSR(struct GraphCSR *graph);

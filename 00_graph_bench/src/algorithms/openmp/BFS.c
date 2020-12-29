@@ -25,6 +25,7 @@
 #include "arrayQueue.h"
 #include "bitmap.h"
 #include "graphConfig.h"
+#include "reorder.h"
 
 #include "graphCSR.h"
 #include "graphGrid.h"
@@ -32,6 +33,7 @@
 #include "graphAdjLinkedList.h"
 
 #include "BFS.h"
+
 
 // ********************************************************************************************
 // ***************                  Stats DataStructure                          **************
@@ -45,7 +47,9 @@ struct BFSStats *newBFSStatsGraphCSR(struct GraphCSR *graph)
     struct BFSStats *stats = (struct BFSStats *) my_malloc(sizeof(struct BFSStats));
 
     stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
+    stats->distances_DualOrder  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
+    stats->parents_DualOrder = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
     stats->iteration = 0;
     stats->num_vertices = graph->num_vertices;
@@ -56,10 +60,17 @@ struct BFSStats *newBFSStatsGraphCSR(struct GraphCSR *graph)
     for(vertex_id = 0; vertex_id < graph->num_vertices ; vertex_id++)
     {
         stats->distances[vertex_id] = 0;
+        // stats->parents_DualOrder[vertex_id] = 0;
         if(graph->vertices->out_degree[vertex_id])
+        {
             stats->parents[vertex_id] = graph->vertices->out_degree[vertex_id] * (-1);
+            stats->parents_DualOrder[vertex_id] = graph->vertices->out_degree[vertex_id] * (-1);
+        }
         else
+        {
             stats->parents[vertex_id] = -1;
+            stats->parents_DualOrder[vertex_id] = -1;
+        }
     }
 
     return stats;
@@ -72,7 +83,8 @@ struct BFSStats *newBFSStatsGraphGrid(struct GraphGrid *graph)
     uint32_t vertex_id;
 
     struct BFSStats *stats = (struct BFSStats *) my_malloc(sizeof(struct BFSStats));
-
+    stats->distances_DualOrder = NULL;
+    stats->parents_DualOrder = NULL;
     stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
@@ -96,7 +108,8 @@ struct BFSStats *newBFSStatsGraphAdjArrayList(struct GraphAdjArrayList *graph)
     uint32_t vertex_id;
 
     struct BFSStats *stats = (struct BFSStats *) my_malloc(sizeof(struct BFSStats));
-
+    stats->distances_DualOrder = NULL;
+    stats->parents_DualOrder = NULL;
     stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
@@ -124,7 +137,8 @@ struct BFSStats *newBFSStatsGraphAdjLinkedList(struct GraphAdjLinkedList *graph)
     uint32_t vertex_id;
 
     struct BFSStats *stats = (struct BFSStats *) my_malloc(sizeof(struct BFSStats));
-
+    stats->distances_DualOrder = NULL;
+    stats->parents_DualOrder = NULL;
     stats->distances  = (uint32_t *) my_malloc(graph->num_vertices * sizeof(uint32_t));
     stats->parents = (int *) my_malloc(graph->num_vertices * sizeof(int));
     stats->processed_nodes = 0;
@@ -156,39 +170,95 @@ void freeBFSStats(struct BFSStats *stats)
             free(stats->distances);
         if(stats->parents)
             free(stats->parents);
-
+        if(stats->distances_DualOrder)
+            free(stats->distances_DualOrder);
+        if(stats->parents_DualOrder)
+            free(stats->parents_DualOrder);
         free(stats);
     }
+
+}
+
+void syncDualOrderParentArrays(int **parents, int **parents_DualOrder, uint32_t *labels, uint32_t num_vertices)
+{
+
+    uint32_t vertex_id;
+    uint32_t vertex_v;
+    int *parents_temp;
+    uint32_t num_threads_max = omp_get_max_threads();
+
+    #pragma omp parallel for default(none) private(vertex_id,vertex_v) shared(parents,parents_DualOrder,labels,num_vertices) num_threads(num_threads_max)
+    for(vertex_id = 0; vertex_id < num_vertices ; vertex_id++)
+    {
+        vertex_v = labels[vertex_id];
+        // vertex_u = inv_labels[vertex_id];
+
+        if((*parents)[vertex_id] >= 0)
+        {
+            (*parents_DualOrder)[vertex_v] = labels[(*parents)[vertex_id]];
+        }
+        else
+        {
+            (*parents_DualOrder)[vertex_v] = (*parents)[vertex_id];
+        }
+
+    }
+
+    parents_temp = *parents;
+    *parents = *parents_DualOrder;
+    *parents_DualOrder = parents_temp;
+}
+
+void syncDualOrderDistancesArrays(uint32_t *distances, uint32_t *distances_DualOrder, uint32_t *labels, uint32_t num_vertices)
+{
+
+    uint32_t vertex_id;
+    uint32_t vertex_v;
+    // uint32_t vertex_u;
+    uint32_t *distances_temp;
+    uint32_t num_threads_max = omp_get_max_threads();
+
+    #pragma omp parallel for default(none) private(vertex_id,vertex_v) shared(distances,distances_DualOrder,labels,num_vertices) num_threads(num_threads_max)
+    for(vertex_id = 0; vertex_id < num_vertices ; vertex_id++)
+    {
+        vertex_v = labels[vertex_id];
+        // vertex_u = inv_labels[vertex_id];
+        distances_DualOrder[vertex_v] = distances[vertex_id];
+    }
+
+    distances_temp = distances;
+    distances = distances_DualOrder;
+    distances_DualOrder = distances_temp;
 
 }
 
 // ********************************************************************************************
 // ***************                  CSR DataStructure                            **************
 // ********************************************************************************************
-struct BFSStats *breadthFirstSearchGraphCSR(uint32_t source, uint32_t pushpull, struct GraphCSR *graph)
+struct BFSStats *breadthFirstSearchGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct BFSStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // pull
-        stats = breadthFirstSearchPullGraphCSR(source, graph);
+        stats = breadthFirstSearchPullGraphCSR(arguments, graph);
         break;
     case 1: // push
-        stats = breadthFirstSearchPushGraphCSR(source, graph);
+        stats = breadthFirstSearchPushGraphCSR(arguments, graph);
         break;
     case 2: // pull/push
-        stats = breadthFirstSearchDirectionOptimizedGraphCSR(source, graph);
+        stats = breadthFirstSearchDirectionOptimizedGraphCSR(arguments, graph);
         break;
     case 3: // push-bitmap queue instead of array queue
-        stats = breadthFirstSearchPushBitmapGraphCSR(source, graph);
+        stats = breadthFirstSearchPushBitmapGraphCSR(arguments, graph);
         break;
     case 4: // pull/push-bitmap queue instead of array queue
-        stats = breadthFirstSearchPushDirectionOptimizedBitmapGraphCSR(source, graph);
+        stats = breadthFirstSearchPushDirectionOptimizedBitmapGraphCSR(arguments, graph);
         break;
     default:// push
-        stats = breadthFirstSearchDirectionOptimizedGraphCSR(source, graph);
+        stats = breadthFirstSearchDirectionOptimizedGraphCSR(arguments, graph);
         break;
     }
 
@@ -197,8 +267,8 @@ struct BFSStats *breadthFirstSearchGraphCSR(uint32_t source, uint32_t pushpull, 
 
 }
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -208,26 +278,28 @@ struct BFSStats *breadthFirstSearchGraphCSR(uint32_t source, uint32_t pushpull, 
 //      end while
 //  return parents
 
-struct BFSStats *breadthFirstSearchPullGraphCSR(uint32_t source, struct GraphCSR *graph)
+struct BFSStats *breadthFirstSearchPullGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphCSR(graph);
 
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Starting BFS PULL/BU (SOURCE NODE)");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
-    printf(" -----------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
-    printf(" -----------------------------------------------------\n");
-
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
         printf(" -----------------------------------------------------\n");
         return stats;
     }
+
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS PULL/BU (SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
 
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
@@ -236,10 +308,11 @@ struct BFSStats *breadthFirstSearchPullGraphCSR(uint32_t source, struct GraphCSR
 
     uint32_t nf = 0; // number of vertices in sharedFrontierQueue
 
+
     Start(timer_inner);
-    setBit(sharedFrontierQueue->q_bitmap_next, source);
+    setBit(sharedFrontierQueue->q_bitmap_next, arguments->source);
     sharedFrontierQueue->q_bitmap_next->numSetBits = 1;
-    stats->parents[source] = source;
+    stats->parents[arguments->source] = arguments->source;
 
     swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
     clearBitmap(sharedFrontierQueue->q_bitmap_next);
@@ -249,11 +322,16 @@ struct BFSStats *breadthFirstSearchPullGraphCSR(uint32_t source, struct GraphCSR
     printf("| BU %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
 
     Start(timer);
+
+
+
     while (sharedFrontierQueue->q_bitmap->numSetBits)
     {
 
         Start(timer_inner);
+
         nf = bottomUpStepGraphCSR(graph, sharedFrontierQueue->q_bitmap, sharedFrontierQueue->q_bitmap_next, stats);
+
         sharedFrontierQueue->q_bitmap_next->numSetBits = nf;
         swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
         clearBitmap(sharedFrontierQueue->q_bitmap_next);
@@ -265,17 +343,17 @@ struct BFSStats *breadthFirstSearchPullGraphCSR(uint32_t source, struct GraphCSR
         printf("| BU %-12u | %-15u | %-15f | \n", stats->iteration++, nf, Seconds(timer_inner));
 
     } // end while
+
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
-
-
     freeArrayQueue(sharedFrontierQueue);
     free(timer);
     free(timer_inner);
@@ -283,8 +361,8 @@ struct BFSStats *breadthFirstSearchPullGraphCSR(uint32_t source, struct GraphCSR
     return stats;
 }
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -294,20 +372,12 @@ struct BFSStats *breadthFirstSearchPullGraphCSR(uint32_t source, struct GraphCSR
 //      end while
 //  return parents
 
-struct BFSStats *breadthFirstSearchPushGraphCSR(uint32_t source, struct GraphCSR *graph)
+struct BFSStats *breadthFirstSearchPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphCSR(graph);
 
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Starting BFS PUSH/TD (SOURCE NODE)");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
-    printf(" -----------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
-    printf(" -----------------------------------------------------\n");
-
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -315,13 +385,23 @@ struct BFSStats *breadthFirstSearchPushGraphCSR(uint32_t source, struct GraphCSR
         return stats;
     }
 
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS PUSH/TD (SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
+
 
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
 
     struct ArrayQueue **localFrontierQueues = (struct ArrayQueue **) my_malloc( P * sizeof(struct ArrayQueue *));
 
@@ -334,12 +414,12 @@ struct BFSStats *breadthFirstSearchPushGraphCSR(uint32_t source, struct GraphCSR
     }
 
     Start(timer_inner);
-    enArrayQueue(sharedFrontierQueue, source);
-    // setBit(sharedFrontierQueue->q_bitmap,source);
-    stats->parents[source] = source;
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     Stop(timer_inner);
     stats->time_total +=  Seconds(timer_inner);
-    // graph->vertices[source].visited = 1;
+    // graph->vertices[arguments->source].visited = 1;
 
 
     printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
@@ -360,11 +440,11 @@ struct BFSStats *breadthFirstSearchPushGraphCSR(uint32_t source, struct GraphCSR
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -382,8 +462,8 @@ struct BFSStats *breadthFirstSearchPushGraphCSR(uint32_t source, struct GraphCSR
     return stats;
 }
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -393,26 +473,31 @@ struct BFSStats *breadthFirstSearchPushGraphCSR(uint32_t source, struct GraphCSR
 //      end while
 //  return parents
 
-struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(uint32_t source, struct GraphCSR *graph)
+struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphCSR(graph);
 
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Starting BFS PUSH/PULL(SOURCE NODE)");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
-    printf(" -----------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
-    printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
         printf(" -----------------------------------------------------\n");
         return stats;
     }
+
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS PUSH/PULL(SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
+
+
 
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
@@ -421,15 +506,14 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(uint32_t source, s
     struct Bitmap *bitmapCurr = newBitmap(graph->num_vertices);
     struct Bitmap *bitmapNext = newBitmap(graph->num_vertices);
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
     uint32_t mu = graph->num_edges; // number of edges to check from sharedFrontierQueue
-    uint32_t mf = graph->vertices->out_degree[source]; // number of edges from unexplored verticies
+    uint32_t mf = graph->vertices->out_degree[arguments->source]; // number of edges from unexplored verticies
     uint32_t nf = 0; // number of vertices in sharedFrontierQueue
     uint32_t nf_prev = 0; // number of vertices in sharedFrontierQueue
     uint32_t n = graph->num_vertices; // number of nodes
     uint32_t alpha = 15;
     uint32_t beta = 18;
-
 
     struct ArrayQueue **localFrontierQueues = (struct ArrayQueue **) my_malloc( P * sizeof(struct ArrayQueue *));
 
@@ -444,17 +528,18 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(uint32_t source, s
 
 
     Start(timer_inner);
-    enArrayQueue(sharedFrontierQueue, source);
-    // setBit(sharedFrontierQueue->q_bitmap,source);
-    stats->parents[source] = source;
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     Stop(timer_inner);
     stats->time_total +=  Seconds(timer_inner);
-    // graph->vertices[source].visited = 1;
+    // graph->vertices[arguments->source].visited = 1;
 
 
     printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
 
     Start(timer);
+
     while(!isEmptyArrayQueue(sharedFrontierQueue))  // start while
     {
 
@@ -472,6 +557,7 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(uint32_t source, s
                 Start(timer_inner);
                 nf_prev = nf;
                 nf = bottomUpStepGraphCSR(graph, bitmapCurr, bitmapNext, stats);
+
                 swapBitmaps(&bitmapCurr, &bitmapNext);
                 clearBitmap(bitmapNext);
                 Stop(timer_inner);
@@ -499,6 +585,7 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(uint32_t source, s
             Start(timer_inner);
             mu -= mf;
             mf = topDownStepGraphCSR(graph, sharedFrontierQueue, localFrontierQueues, stats);
+
             slideWindowArrayQueue(sharedFrontierQueue);
             Stop(timer_inner);
 
@@ -512,12 +599,14 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(uint32_t source, s
 
 
     } // end while
+
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+    // stats->time_total =  Seconds(timer);
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -532,7 +621,6 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSR(uint32_t source, s
     freeBitmap(bitmapCurr);
     free(timer);
     free(timer_inner);
-
 
     return stats;
 }
@@ -561,6 +649,7 @@ uint32_t topDownStepGraphCSR(struct GraphCSR *graph, struct ArrayQueue *sharedFr
     uint32_t mf = 0;
 
 
+
     #pragma omp parallel default (none) private(u,v,j,i,edge_idx) shared(stats,localFrontierQueues,graph,sharedFrontierQueue,mf)
     {
         uint32_t t_id = omp_get_thread_num();
@@ -576,7 +665,7 @@ uint32_t topDownStepGraphCSR(struct GraphCSR *graph, struct ArrayQueue *sharedFr
             for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
             {
 
-                u = graph->sorted_edges_array->edges_array_dest[j];
+                u = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[j]);
                 int u_parent = stats->parents[u];
                 if(u_parent < 0 )
                 {
@@ -635,6 +724,7 @@ uint32_t bottomUpStepGraphCSR(struct GraphCSR *graph, struct Bitmap *bitmapCurr,
     sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
 #endif
 
+
     #pragma omp parallel for default(none) private(j,u,v,out_degree,edge_idx) shared(stats,bitmapCurr,bitmapNext,graph,vertices,sorted_edges_array) reduction(+:nf) schedule(dynamic, 1024)
     for(v = 0 ; v < graph->num_vertices ; v++)
     {
@@ -645,10 +735,11 @@ uint32_t bottomUpStepGraphCSR(struct GraphCSR *graph, struct Bitmap *bitmapCurr,
 
             for(j = edge_idx ; j < (edge_idx + out_degree) ; j++)
             {
-                u = sorted_edges_array[j];
+                u = EXTRACT_VALUE(sorted_edges_array[j]);
                 if(getBit(bitmapCurr, u))
                 {
                     stats->parents[v] = u;
+                    //we are not considering distance array as it is not implemented in AccelGraph
                     stats->distances[v] = stats->distances[u] + 1;
                     setBitAtomic(bitmapNext, v);
                     nf++;
@@ -667,8 +758,8 @@ uint32_t bottomUpStepGraphCSR(struct GraphCSR *graph, struct Bitmap *bitmapCurr,
 // ***************      CSR DataStructure/Bitmap Frontiers                       **************
 // ********************************************************************************************
 
-// / breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// / breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -678,20 +769,14 @@ uint32_t bottomUpStepGraphCSR(struct GraphCSR *graph, struct Bitmap *bitmapCurr,
 //      end while
 //  return parents
 
-struct BFSStats *breadthFirstSearchPushBitmapGraphCSR(uint32_t source, struct GraphCSR *graph)
+struct BFSStats *breadthFirstSearchPushBitmapGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphCSR(graph);
 
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Starting BFS PUSH/Bitmap (SOURCE NODE)");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
-    printf(" -----------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
-    printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -699,15 +784,25 @@ struct BFSStats *breadthFirstSearchPushBitmapGraphCSR(uint32_t source, struct Gr
         return stats;
     }
 
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS PUSH/Bitmap (SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
+
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
     Start(timer_inner);
-    setBit(sharedFrontierQueue->q_bitmap_next, source);
+    setBit(sharedFrontierQueue->q_bitmap_next, arguments->source);
     sharedFrontierQueue->q_bitmap_next->numSetBits = 1;
-    stats->parents[source] = source;
+    stats->parents[arguments->source] = arguments->source;
 
     swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
     clearBitmap(sharedFrontierQueue->q_bitmap_next);
@@ -735,11 +830,12 @@ struct BFSStats *breadthFirstSearchPushBitmapGraphCSR(uint32_t source, struct Gr
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -753,8 +849,8 @@ struct BFSStats *breadthFirstSearchPushBitmapGraphCSR(uint32_t source, struct Gr
 }
 
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -764,20 +860,12 @@ struct BFSStats *breadthFirstSearchPushBitmapGraphCSR(uint32_t source, struct Gr
 //      end while
 //  return parents
 
-struct BFSStats *breadthFirstSearchPushDirectionOptimizedBitmapGraphCSR(uint32_t source, struct GraphCSR *graph)
+struct BFSStats *breadthFirstSearchPushDirectionOptimizedBitmapGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphCSR(graph);
 
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51s | \n", "Starting BFS PUSH/PULL Bitmap (SOURCE NODE)");
-    printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
-    printf(" -----------------------------------------------------\n");
-    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
-    printf(" -----------------------------------------------------\n");
-
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -785,13 +873,23 @@ struct BFSStats *breadthFirstSearchPushDirectionOptimizedBitmapGraphCSR(uint32_t
         return stats;
     }
 
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS PUSH/PULL Bitmap (SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
+
     struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
     struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
 
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
     uint32_t mu = graph->num_edges; // number of edges to check from sharedFrontierQueue
-    uint32_t mf = graph->vertices->out_degree[source]; // number of edges from unexplored verticies
+    uint32_t mf = graph->vertices->out_degree[arguments->source]; // number of edges from unexplored verticies
     uint32_t nf = 0; // number of vertices in sharedFrontierQueue
     uint32_t nf_prev = 0; // number of vertices in sharedFrontierQueue
     uint32_t n = graph->num_vertices; // number of nodes
@@ -800,15 +898,15 @@ struct BFSStats *breadthFirstSearchPushDirectionOptimizedBitmapGraphCSR(uint32_t
 
 
     Start(timer_inner);
-    setBit(sharedFrontierQueue->q_bitmap_next, source);
+    setBit(sharedFrontierQueue->q_bitmap_next, arguments->source);
     sharedFrontierQueue->q_bitmap_next->numSetBits = 1;
-    stats->parents[source] = source;
+    stats->parents[arguments->source] = arguments->source;
 
     swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
     clearBitmap(sharedFrontierQueue->q_bitmap_next);
     Stop(timer_inner);
     stats->time_total +=  Seconds(timer_inner);
-    // graph->vertices[source].visited = 1;
+    // graph->vertices[arguments->source].visited = 1;
 
 
     printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
@@ -873,11 +971,12 @@ struct BFSStats *breadthFirstSearchPushDirectionOptimizedBitmapGraphCSR(uint32_t
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -920,7 +1019,7 @@ uint32_t topDownStepUsingBitmapsGraphCSR(struct GraphCSR *graph, struct ArrayQue
                 {
 
 
-                    u = graph->sorted_edges_array->edges_array_dest[j];
+                    u = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[j]);
                     int u_parent = stats->parents[u];
 
                     if(u_parent < 0 )
@@ -930,51 +1029,558 @@ uint32_t topDownStepUsingBitmapsGraphCSR(struct GraphCSR *graph, struct ArrayQue
                             mf +=  -(u_parent);
                             stats->distances[u] = stats->distances[v] + 1;
                             setBitAtomic(sharedFrontierQueue->q_bitmap_next, u);
-
-
                         }
-
                     }
                 }
+            }
+        }
+    }
+    return mf;
+}
 
+
+// ********************************************************************************************
+// ***************                  CSR DataStructure DualOrder                  **************
+// ********************************************************************************************
+struct BFSStats *breadthFirstSearchGraphCSRDualOrder(struct Arguments *arguments, struct GraphCSR *graph)
+{
+
+    struct BFSStats *stats = NULL;
+
+    switch (arguments->pushpull)
+    {
+    case 0: // pull
+        stats = breadthFirstSearchPullGraphCSRDualOrder(arguments, graph);
+        break;
+    case 1: // push
+        stats = breadthFirstSearchPushGraphCSRDualOrder(arguments, graph);
+        break;
+    case 2: // pull/push
+        stats = breadthFirstSearchDirectionOptimizedGraphCSRDualOrder(arguments, graph);
+        break;
+    default:// push
+        stats = breadthFirstSearchDirectionOptimizedGraphCSRDualOrder(arguments, graph);
+        break;
+    }
+
+
+    return stats;
+
+}
+
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
+//  next ← {}
+//  parents ← [-1,-1,. . . -1]
+//      while sharedFrontierQueue 6= {} do
+//          top-down-step(graph, sharedFrontierQueue, next, parents)
+//          sharedFrontierQueue ← next
+//          next ← {}
+//      end while
+//  return parents
+
+struct BFSStats *breadthFirstSearchPullGraphCSRDualOrder(struct Arguments *arguments, struct GraphCSR *graph)
+{
+
+    struct BFSStats *stats = newBFSStatsGraphCSR(graph);
+
+    if(arguments->source > graph->num_vertices)
+    {
+        printf(" -----------------------------------------------------\n");
+        printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
+        printf(" -----------------------------------------------------\n");
+        return stats;
+    }
+
+#if DIRECTED
+    arguments->source = graph->inverse_sorted_edges_array->label_array[arguments->source];
+#else
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+#endif
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS DualOrder PULL/BU (SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
+
+    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
+    struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
+
+    struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
+
+    uint32_t nf = 0; // number of vertices in sharedFrontierQueue
+
+    Start(timer_inner);
+    setBit(sharedFrontierQueue->q_bitmap_next, arguments->source);
+    sharedFrontierQueue->q_bitmap_next->numSetBits = 1;
+    stats->parents[arguments->source] = arguments->source;
+
+    swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
+    clearBitmap(sharedFrontierQueue->q_bitmap_next);
+    Stop(timer_inner);
+    stats->time_total +=  Seconds(timer_inner);
+
+    printf("| BU %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
+
+    Start(timer);
+
+    while (sharedFrontierQueue->q_bitmap->numSetBits)
+    {
+
+        Start(timer_inner);
+
+        nf = bottomUpStepGraphCSRDualOrder(graph, sharedFrontierQueue->q_bitmap, sharedFrontierQueue->q_bitmap_next, stats);
+
+        sharedFrontierQueue->q_bitmap_next->numSetBits = nf;
+        swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
+        clearBitmap(sharedFrontierQueue->q_bitmap_next);
+        Stop(timer_inner);
+
+        //stats
+        stats->time_total +=  Seconds(timer_inner);
+        stats->processed_nodes += nf;
+        printf("| BU %-12u | %-15u | %-15f | \n", stats->iteration++, nf, Seconds(timer_inner));
+
+    } // end while
+
+    Stop(timer);
+    // stats->time_total =  Seconds(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
+    printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    freeArrayQueue(sharedFrontierQueue);
+    free(timer);
+    free(timer_inner);
+
+    return stats;
+}
+
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
+//  next ← {}
+//  parents ← [-1,-1,. . . -1]
+//      while sharedFrontierQueue 6= {} do
+//          top-down-step(graph, sharedFrontierQueue, next, parents)
+//          sharedFrontierQueue ← next
+//          next ← {}
+//      end while
+//  return parents
+
+struct BFSStats *breadthFirstSearchPushGraphCSRDualOrder(struct Arguments *arguments, struct GraphCSR *graph)
+{
+
+    struct BFSStats *stats = newBFSStatsGraphCSR(graph);
+
+    if(arguments->source > graph->num_vertices)
+    {
+        printf(" -----------------------------------------------------\n");
+        printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
+        printf(" -----------------------------------------------------\n");
+        return stats;
+    }
+
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS DualOrder PUSH/TD (SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
+
+    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
+    struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
+
+    struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
+
+    uint32_t P = arguments->algo_numThreads;
+
+    struct ArrayQueue **localFrontierQueues = (struct ArrayQueue **) my_malloc( P * sizeof(struct ArrayQueue *));
+
+
+    uint32_t i;
+    for(i = 0 ; i < P ; i++)
+    {
+        localFrontierQueues[i] = newArrayQueue(graph->num_vertices);
+
+    }
+
+    Start(timer_inner);
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
+    Stop(timer_inner);
+    stats->time_total +=  Seconds(timer_inner);
+    // graph->vertices[arguments->source].visited = 1;
+
+
+    printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
+
+    Start(timer);
+    while(!isEmptyArrayQueue(sharedFrontierQueue))  // start while
+    {
+
+        Start(timer_inner);
+        topDownStepGraphCSRDualOrder(graph, sharedFrontierQueue, localFrontierQueues, stats);
+        slideWindowArrayQueue(sharedFrontierQueue);
+        Stop(timer_inner);
+
+        //stats collection
+        stats->time_total +=  Seconds(timer_inner);
+        stats->processed_nodes += sharedFrontierQueue->tail - sharedFrontierQueue->head;
+        printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, sharedFrontierQueue->tail - sharedFrontierQueue->head, Seconds(timer_inner));
+
+    } // end while
+    Stop(timer);
+    // stats->time_total =  Seconds(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
+    printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    for(i = 0 ; i < P ; i++)
+    {
+        freeArrayQueue(localFrontierQueues[i]);
+    }
+    free(localFrontierQueues);
+    freeArrayQueue(sharedFrontierQueue);
+    free(timer);
+    free(timer_inner);
+
+
+    return stats;
+}
+
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
+//  next ← {}
+//  parents ← [-1,-1,. . . -1]
+//      while sharedFrontierQueue 6= {} do
+//          top-down-step(graph, sharedFrontierQueue, next, parents)
+//          sharedFrontierQueue ← next
+//          next ← {}
+//      end while
+//  return parents
+
+struct BFSStats *breadthFirstSearchDirectionOptimizedGraphCSRDualOrder(struct Arguments *arguments, struct GraphCSR *graph)
+{
+
+    struct BFSStats *stats = newBFSStatsGraphCSR(graph);
+
+
+    if(arguments->source > graph->num_vertices)
+    {
+        printf(" -----------------------------------------------------\n");
+        printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
+        printf(" -----------------------------------------------------\n");
+        return stats;
+    }
+
+    arguments->source = graph->sorted_edges_array->label_array[arguments->source];
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51s | \n", "Starting BFS DualOrder PUSH/PULL(SOURCE NODE)");
+    printf(" -----------------------------------------------------\n");
+    printf("| %-51u | \n", arguments->source);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
+    printf(" -----------------------------------------------------\n");
+
+
+
+    struct Timer *timer = (struct Timer *) malloc(sizeof(struct Timer));
+    struct Timer *timer_inner = (struct Timer *) malloc(sizeof(struct Timer));
+
+    struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
+    struct Bitmap *bitmapCurr = newBitmap(graph->num_vertices);
+    struct Bitmap *bitmapNext = newBitmap(graph->num_vertices);
+
+    uint32_t P = arguments->algo_numThreads;
+    uint32_t mu = graph->num_edges; // number of edges to check from sharedFrontierQueue
+    uint32_t mf = graph->vertices->out_degree[arguments->source]; // number of edges from unexplored verticies
+    uint32_t nf = 0; // number of vertices in sharedFrontierQueue
+    uint32_t nf_prev = 0; // number of vertices in sharedFrontierQueue
+    uint32_t n = graph->num_vertices; // number of nodes
+    uint32_t alpha = 15;
+    uint32_t beta = 18;
+
+    struct ArrayQueue **localFrontierQueues = (struct ArrayQueue **) my_malloc( P * sizeof(struct ArrayQueue *));
+
+
+    uint32_t i;
+    for(i = 0 ; i < P ; i++)
+    {
+        localFrontierQueues[i] = newArrayQueue(graph->num_vertices);
+
+    }
+
+    Start(timer_inner);
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
+    Stop(timer_inner);
+    stats->time_total +=  Seconds(timer_inner);
+    // graph->vertices[arguments->source].visited = 1;
+
+
+    printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
+
+    Start(timer);
+
+    while(!isEmptyArrayQueue(sharedFrontierQueue))  // start while
+    {
+
+        if(mf > (mu / alpha))
+        {
+
+            Start(timer_inner);
+            arrayQueueToBitmapDualOrder(sharedFrontierQueue, bitmapCurr, graph->sorted_edges_array->inverse_label_array);
+            syncDualOrderParentArrays(&(stats->parents), &(stats->parents_DualOrder), graph->sorted_edges_array->inverse_label_array, graph->num_vertices);
+            // syncDualOrderDistancesArrays(stats->distances, stats->distances_DualOrder, graph->sorted_edges_array->label_array, graph->inverse_sorted_edges_array->label_array, graph->num_vertices);
+            nf = sizeArrayQueue(sharedFrontierQueue);
+            Stop(timer_inner);
+            printf("| E  %-12s | %-15s | %-15f | \n", " ", " ", Seconds(timer_inner));
+
+            do
+            {
+                Start(timer_inner);
+                nf_prev = nf;
+                nf = bottomUpStepGraphCSRDualOrder(graph, bitmapCurr, bitmapNext, stats);
+                swapBitmaps(&bitmapCurr, &bitmapNext);
+                clearBitmap(bitmapNext);
+                Stop(timer_inner);
+
+                //stats collection
+                stats->time_total +=  Seconds(timer_inner);
+                stats->processed_nodes += nf;
+                printf("| BU %-12u | %-15u | %-15f | \n", stats->iteration++, nf, Seconds(timer_inner));
+
+            }
+            while(( nf > nf_prev) ||  // growing;
+                    ( nf > (n / beta)));
+
+            Start(timer_inner);
+            syncDualOrderParentArrays(&(stats->parents), &(stats->parents_DualOrder), graph->inverse_sorted_edges_array->inverse_label_array, graph->num_vertices);
+            // syncDualOrderDistancesArrays(stats->distances, stats->distances_DualOrder, graph->inverse_sorted_edges_array->label_array, graph->sorted_edges_array->label_array, graph->num_vertices);
+            bitmapToArrayQueueDualOrder(bitmapCurr, sharedFrontierQueue, localFrontierQueues, graph->inverse_sorted_edges_array->inverse_label_array);
+            Stop(timer_inner);
+            printf("| C  %-12s | %-15s | %-15f | \n", " ", " ", Seconds(timer_inner));
+
+            mf = 1;
+
+        }
+        else
+        {
+
+            Start(timer_inner);
+            mu -= mf;
+            mf = topDownStepGraphCSRDualOrder(graph, sharedFrontierQueue, localFrontierQueues, stats);
+            slideWindowArrayQueue(sharedFrontierQueue);
+            Stop(timer_inner);
+
+            //stats collection
+            stats->time_total +=  Seconds(timer_inner);
+            stats->processed_nodes += sharedFrontierQueue->tail - sharedFrontierQueue->head;
+            printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, sharedFrontierQueue->tail - sharedFrontierQueue->head, Seconds(timer_inner));
+
+        }
+
+
+
+    } // end while
+
+    Stop(timer);
+    // stats->time_total =  Seconds(timer);
+
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
+    printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
+    printf(" -----------------------------------------------------\n");
+    printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
+    printf(" -----------------------------------------------------\n");
+
+    for(i = 0 ; i < P ; i++)
+    {
+        freeArrayQueue(localFrontierQueues[i]);
+    }
+    free(localFrontierQueues);
+    freeArrayQueue(sharedFrontierQueue);
+    freeBitmap(bitmapNext);
+    freeBitmap(bitmapCurr);
+    free(timer);
+    free(timer_inner);
+
+    return stats;
+}
+
+
+// top-down-step(graph, sharedFrontierQueue, next, parents)
+//  for v ∈ sharedFrontierQueue do
+//      for u ∈ neighbors[v] do
+//          if parents[u] = -1 then
+//              parents[u] ← v
+//              next ← next ∪ {u}
+//          end if
+//      end for
+//  end for
+
+uint32_t topDownStepGraphCSRDualOrder(struct GraphCSR *graph, struct ArrayQueue *sharedFrontierQueue, struct ArrayQueue **localFrontierQueues, struct BFSStats *stats)
+{
+
+
+
+    uint32_t v;
+    uint32_t u;
+    uint32_t i;
+    uint32_t j;
+    uint32_t edge_idx;
+    uint32_t mf = 0;
+
+
+    #pragma omp parallel default (none) private(u,v,j,i,edge_idx) shared(stats,localFrontierQueues,graph,sharedFrontierQueue,mf)
+    {
+        uint32_t t_id = omp_get_thread_num();
+        struct ArrayQueue *localFrontierQueue = localFrontierQueues[t_id];
+
+
+        #pragma omp for reduction(+:mf) schedule(auto)
+        for(i = sharedFrontierQueue->head ; i < sharedFrontierQueue->tail; i++)
+        {
+            v = sharedFrontierQueue->queue[i];
+            edge_idx = graph->vertices->edges_idx[v];
+
+            for(j = edge_idx ; j < (edge_idx + graph->vertices->out_degree[v]) ; j++)
+            {
+
+                u = EXTRACT_VALUE(graph->sorted_edges_array->edges_array_dest[j]);
+                int u_parent = stats->parents[u];
+                if(u_parent < 0 )
+                {
+                    if(__sync_bool_compare_and_swap(&stats->parents[u], u_parent, v))
+                    {
+                        enArrayQueue(localFrontierQueue, u);
+                        mf +=  -(u_parent);
+                        stats->distances[u] = stats->distances[v] + 1;
+                    }
+                }
             }
 
         }
 
+        flushArrayQueueToShared(localFrontierQueue, sharedFrontierQueue);
     }
-
-
 
     return mf;
 }
 
 
+// bottom-up-step(graph, sharedFrontierQueue, next, parents) //pull
+//  for v ∈ vertices do
+//      if parents[v] = -1 then
+//          for u ∈ neighbors[v] do
+//              if u ∈ sharedFrontierQueue then
+//              parents[v] ← u
+//              next ← next ∪ {v}
+//              break
+//              end if
+//          end for
+//      end if
+//  end for
+
+uint32_t bottomUpStepGraphCSRDualOrder(struct GraphCSR *graph, struct Bitmap *bitmapCurr, struct Bitmap *bitmapNext, struct BFSStats *stats)
+{
+
+
+    uint32_t v;
+    uint32_t u;
+    uint32_t j;
+    uint32_t edge_idx;
+    uint32_t out_degree;
+    struct Vertex *vertices = NULL;
+    uint32_t *sorted_edges_array = NULL;
+
+    // uint32_t processed_nodes = bitmapCurr->numSetBits;
+    uint32_t nf = 0; // number of vertices in sharedFrontierQueue
+    // stats->processed_nodes += processed_nodes;
+
+#if DIRECTED
+    vertices = graph->inverse_vertices;
+    sorted_edges_array = graph->inverse_sorted_edges_array->edges_array_dest;
+#else
+    vertices = graph->vertices;
+    sorted_edges_array = graph->sorted_edges_array->edges_array_dest;
+#endif
+
+    #pragma omp parallel for default(none) private(j,u,v,out_degree,edge_idx) shared(stats,bitmapCurr,bitmapNext,graph,vertices,sorted_edges_array) reduction(+:nf) schedule(dynamic, 1024)
+    for(v = 0 ; v < graph->num_vertices ; v++)
+    {
+        out_degree = vertices->out_degree[v];
+        if(stats->parents[v] < 0)  // optmization
+        {
+
+            edge_idx = vertices->edges_idx[v];
+
+            for(j = edge_idx ; j < (edge_idx + out_degree) ; j++)
+            {
+
+                u = EXTRACT_VALUE(sorted_edges_array[j]);
+                if(getBit(bitmapCurr, u))
+                {
+                    stats->parents[v] = u;
+                    //we are not considering distance array as it is not implemented in AccelGraph
+                    stats->distances[v] = stats->distances[u] + 1;
+                    setBitAtomic(bitmapNext, v);
+                    nf++;
+                    break;
+                }
+            }
+
+        }
+
+    }
+    return nf;
+}
 
 // ********************************************************************************************
 // ***************                  GRID DataStructure                           **************
 // ********************************************************************************************
 
-struct BFSStats *breadthFirstSearchGraphGrid(uint32_t source, uint32_t pushpull, struct GraphGrid *graph)
+struct BFSStats *breadthFirstSearchGraphGrid(struct Arguments *arguments, struct GraphGrid *graph)
 {
 
     struct BFSStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // pull
-        stats = breadthFirstSearchRowGraphGrid(source, graph);
+        stats = breadthFirstSearchRowGraphGrid(arguments, graph);
         break;
     case 1: // push
-        stats = breadthFirstSearchRowGraphGridBitmap(source, graph);
+        stats = breadthFirstSearchRowGraphGridBitmap(arguments, graph);
         break;
     case 2: // pull
-        stats = breadthFirstSearchColumnGraphGrid(source, graph);
+        stats = breadthFirstSearchColumnGraphGrid(arguments, graph);
         break;
     case 3: // push
-        stats = breadthFirstSearchColumnGraphGridBitmap(source, graph);
+        stats = breadthFirstSearchColumnGraphGridBitmap(arguments, graph);
         break;
     default:// push
-        stats = breadthFirstSearchRowGraphGrid(source, graph);
+        stats = breadthFirstSearchRowGraphGrid(arguments, graph);
         break;
     }
 
@@ -996,7 +1602,7 @@ struct BFSStats *breadthFirstSearchGraphGrid(uint32_t source, uint32_t pushpull,
 //  Sum = 0
 //      for each active block do >> block with active edges
 //          for each edge ∈ block do
-//              if F(edge.source) then
+//              if F(edge.arguments->source) then
 //                  Sum += Fe(edge)
 //              end if
 //          end for
@@ -1005,19 +1611,19 @@ struct BFSStats *breadthFirstSearchGraphGrid(uint32_t source, uint32_t pushpull,
 // end function
 //we assume that the edges are not sorted in each partition
 
-struct BFSStats *breadthFirstSearchRowGraphGrid(uint32_t source, struct GraphGrid *graph)
+struct BFSStats *breadthFirstSearchRowGraphGrid(struct Arguments *arguments, struct GraphGrid *graph)
 {
     struct BFSStats *stats = newBFSStatsGraphGrid(graph);
 
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS-Row (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -1030,7 +1636,7 @@ struct BFSStats *breadthFirstSearchRowGraphGrid(uint32_t source, struct GraphGri
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
 
 
 
@@ -1050,11 +1656,11 @@ struct BFSStats *breadthFirstSearchRowGraphGrid(uint32_t source, struct GraphGri
     uint32_t processed_nodes = 0;
 
     Start(timer_iteration);
-    enArrayQueue(sharedFrontierQueue, source);
+    enArrayQueue(sharedFrontierQueue, arguments->source);
     arrayQueueGenerateBitmap(sharedFrontierQueue);
-    stats->parents[source] = source;
-    // graphGridSetActivePartitions(graph->grid, source);
-    graphGridSetActivePartitionsMap(graph->grid, source);
+    stats->parents[arguments->source] = arguments->source;
+    // graphGridSetActivePartitions(graph->grid, arguments->source);
+    graphGridSetActivePartitionsMap(graph->grid, arguments->source);
     Stop(timer_iteration);
 
 
@@ -1079,11 +1685,12 @@ struct BFSStats *breadthFirstSearchRowGraphGrid(uint32_t source, struct GraphGri
         printf("| %-15u | %-15u | %-15f | \n", stats->iteration++, processed_nodes, Seconds(timer_iteration));
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", sharedFrontierQueue->tail_next, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "**", sharedFrontierQueue->tail_next, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -1107,19 +1714,19 @@ struct BFSStats *breadthFirstSearchRowGraphGrid(uint32_t source, struct GraphGri
     return stats;
 }
 
-struct BFSStats *breadthFirstSearchColumnGraphGrid(uint32_t source, struct GraphGrid *graph)
+struct BFSStats *breadthFirstSearchColumnGraphGrid(struct Arguments *arguments, struct GraphGrid *graph)
 {
     struct BFSStats *stats = newBFSStatsGraphGrid(graph);
 
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS-Column (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -1132,7 +1739,7 @@ struct BFSStats *breadthFirstSearchColumnGraphGrid(uint32_t source, struct Graph
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
 
 
 
@@ -1152,11 +1759,11 @@ struct BFSStats *breadthFirstSearchColumnGraphGrid(uint32_t source, struct Graph
     uint32_t processed_nodes = 0;
 
     Start(timer_iteration);
-    enArrayQueue(sharedFrontierQueue, source);
+    enArrayQueue(sharedFrontierQueue, arguments->source);
     arrayQueueGenerateBitmap(sharedFrontierQueue);
-    stats->parents[source] = source;
-    // graphGridSetActivePartitions(graph->grid, source);
-    graphGridSetActivePartitionsMap(graph->grid, source);
+    stats->parents[arguments->source] = arguments->source;
+    // graphGridSetActivePartitions(graph->grid, arguments->source);
+    graphGridSetActivePartitionsMap(graph->grid, arguments->source);
     Stop(timer_iteration);
 
 
@@ -1181,11 +1788,12 @@ struct BFSStats *breadthFirstSearchColumnGraphGrid(uint32_t source, struct Graph
         printf("| %-15u | %-15u | %-15f | \n", stats->iteration++, processed_nodes, Seconds(timer_iteration));
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", sharedFrontierQueue->tail_next, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "**", sharedFrontierQueue->tail_next, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -1213,7 +1821,7 @@ struct BFSStats *breadthFirstSearchColumnGraphGrid(uint32_t source, struct Graph
 //  Sum = 0
 //      for each active block do >> block with active edges
 //          for each edge ∈ block do
-//              if F(edge.source) then
+//              if F(edge.arguments->source) then
 //                  Sum += Fe(edge)
 //              end if
 //          end for
@@ -1382,7 +1990,7 @@ void breadthFirstSearchSetActivePartitions(struct GraphGrid *graph, struct Array
 //  Sum = 0
 //      for each active block do >> block with active edges
 //          for each edge ∈ block do
-//              if F(edge.source) then
+//              if F(edge.arguments->source) then
 //                  Sum += Fe(edge)
 //              end if
 //          end for
@@ -1391,7 +1999,7 @@ void breadthFirstSearchSetActivePartitions(struct GraphGrid *graph, struct Array
 // end function
 //we assume that the edges are not sorted in each partition
 
-struct BFSStats *breadthFirstSearchRowGraphGridBitmap(uint32_t source, struct GraphGrid *graph)
+struct BFSStats *breadthFirstSearchRowGraphGridBitmap(struct Arguments *arguments, struct GraphGrid *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphGrid(graph);
@@ -1399,12 +2007,12 @@ struct BFSStats *breadthFirstSearchRowGraphGridBitmap(uint32_t source, struct Gr
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS-Row Bitmap (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -1424,8 +2032,8 @@ struct BFSStats *breadthFirstSearchRowGraphGridBitmap(uint32_t source, struct Gr
     uint32_t total_processed_nodes = 0;
 
     Start(timer_iteration);
-    setBit(FrontierBitmapNext, source);
-    stats->parents[source] = source;
+    setBit(FrontierBitmapNext, arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     processed_nodes = getNumOfSetBits(FrontierBitmapNext);
     swapBitmaps (&FrontierBitmapCurr, &FrontierBitmapNext);
     clearBitmap(FrontierBitmapNext);
@@ -1458,11 +2066,12 @@ struct BFSStats *breadthFirstSearchRowGraphGridBitmap(uint32_t source, struct Gr
         printf("| %-15u | %-15u | %-15f | \n", stats->iteration++, processed_nodes, Seconds(timer_iteration));
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", total_processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "**", total_processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -1476,7 +2085,7 @@ struct BFSStats *breadthFirstSearchRowGraphGridBitmap(uint32_t source, struct Gr
     return stats;
 }
 
-struct BFSStats *breadthFirstSearchColumnGraphGridBitmap(uint32_t source, struct GraphGrid *graph)
+struct BFSStats *breadthFirstSearchColumnGraphGridBitmap(struct Arguments *arguments, struct GraphGrid *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphGrid(graph);
@@ -1484,12 +2093,12 @@ struct BFSStats *breadthFirstSearchColumnGraphGridBitmap(uint32_t source, struct
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS-Column Bitmap (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -1509,8 +2118,8 @@ struct BFSStats *breadthFirstSearchColumnGraphGridBitmap(uint32_t source, struct
     uint32_t total_processed_nodes = 0;
 
     Start(timer_iteration);
-    setBit(FrontierBitmapNext, source);
-    stats->parents[source] = source;
+    setBit(FrontierBitmapNext, arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     processed_nodes = getNumOfSetBits(FrontierBitmapNext);
     swapBitmaps (&FrontierBitmapCurr, &FrontierBitmapNext);
     clearBitmap(FrontierBitmapNext);
@@ -1543,11 +2152,12 @@ struct BFSStats *breadthFirstSearchColumnGraphGridBitmap(uint32_t source, struct
         printf("| %-15u | %-15u | %-15f | \n", stats->iteration++, processed_nodes, Seconds(timer_iteration));
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", total_processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "**", total_processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -1565,7 +2175,7 @@ struct BFSStats *breadthFirstSearchColumnGraphGridBitmap(uint32_t source, struct
 //  Sum = 0
 //      for each active block do >> block with active edges
 //          for each edge ∈ block do
-//              if F(edge.source) then
+//              if F(edge.arguments->source) then
 //                  Sum += Fe(edge)
 //              end if
 //          end for
@@ -1676,24 +2286,24 @@ void breadthFirstSearchSetActivePartitionsBitmap(struct GraphGrid *graph, struct
 // ***************                  ArrayList DataStructure                      **************
 // ********************************************************************************************
 
-struct BFSStats *breadthFirstSearchGraphAdjArrayList(uint32_t source, uint32_t pushpull, struct GraphAdjArrayList *graph)
+struct BFSStats *breadthFirstSearchGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph)
 {
 
     struct BFSStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // pull
-        stats = breadthFirstSearchPullGraphAdjArrayList(source, graph);
+        stats = breadthFirstSearchPullGraphAdjArrayList(arguments, graph);
         break;
     case 1: // push
-        stats = breadthFirstSearchPushGraphAdjArrayList(source, graph);
+        stats = breadthFirstSearchPushGraphAdjArrayList(arguments, graph);
         break;
     case 2: // pull/push
-        stats = breadthFirstSearchDirectionOptimizedGraphAdjArrayList(source, graph);
+        stats = breadthFirstSearchDirectionOptimizedGraphAdjArrayList(arguments, graph);
         break;
     default:// push
-        stats = breadthFirstSearchDirectionOptimizedGraphAdjArrayList(source, graph);
+        stats = breadthFirstSearchDirectionOptimizedGraphAdjArrayList(arguments, graph);
         break;
     }
 
@@ -1701,8 +2311,8 @@ struct BFSStats *breadthFirstSearchGraphAdjArrayList(uint32_t source, uint32_t p
 
 }
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -1713,7 +2323,7 @@ struct BFSStats *breadthFirstSearchGraphAdjArrayList(uint32_t source, uint32_t p
 //  return parents
 
 
-struct BFSStats *breadthFirstSearchPullGraphAdjArrayList(uint32_t source, struct GraphAdjArrayList *graph)
+struct BFSStats *breadthFirstSearchPullGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphAdjArrayList(graph);
@@ -1721,12 +2331,12 @@ struct BFSStats *breadthFirstSearchPullGraphAdjArrayList(uint32_t source, struct
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS PULL/BU (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -1744,9 +2354,9 @@ struct BFSStats *breadthFirstSearchPullGraphAdjArrayList(uint32_t source, struct
 
 
     Start(timer_inner);
-    setBit(sharedFrontierQueue->q_bitmap_next, source);
+    setBit(sharedFrontierQueue->q_bitmap_next, arguments->source);
     sharedFrontierQueue->q_bitmap_next->numSetBits = 1;
-    stats->parents[source] = source;
+    stats->parents[arguments->source] = arguments->source;
 
     swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
     clearBitmap(sharedFrontierQueue->q_bitmap_next);
@@ -1773,11 +2383,12 @@ struct BFSStats *breadthFirstSearchPullGraphAdjArrayList(uint32_t source, struct
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -1791,8 +2402,8 @@ struct BFSStats *breadthFirstSearchPullGraphAdjArrayList(uint32_t source, struct
 }
 
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -1803,7 +2414,7 @@ struct BFSStats *breadthFirstSearchPullGraphAdjArrayList(uint32_t source, struct
 //  return parents
 
 
-struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(uint32_t source, struct GraphAdjArrayList *graph)
+struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphAdjArrayList(graph);
@@ -1811,12 +2422,12 @@ struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(uint32_t source, struct
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS PUSH/TD (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -1829,7 +2440,7 @@ struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(uint32_t source, struct
 
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
 
     struct ArrayQueue **localFrontierQueues = (struct ArrayQueue **) my_malloc( P * sizeof(struct ArrayQueue *));
 
@@ -1843,12 +2454,12 @@ struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(uint32_t source, struct
 
 
     Start(timer_inner);
-    enArrayQueue(sharedFrontierQueue, source);
-    // setBit(sharedFrontierQueue->q_bitmap,source);
-    stats->parents[source] = source;
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     Stop(timer_inner);
     stats->time_total +=  Seconds(timer_inner);
-    // graph->vertices[source].visited = 1;
+    // graph->vertices[arguments->source].visited = 1;
 
 
     printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
@@ -1869,11 +2480,12 @@ struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(uint32_t source, struct
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -1891,8 +2503,8 @@ struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(uint32_t source, struct
     return stats;
 }
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -1903,7 +2515,7 @@ struct BFSStats *breadthFirstSearchPushGraphAdjArrayList(uint32_t source, struct
 //  return parents
 
 
-struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjArrayList(uint32_t source, struct GraphAdjArrayList *graph)
+struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphAdjArrayList(graph);
@@ -1911,12 +2523,12 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjArrayList(uint32_t 
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -1931,9 +2543,9 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjArrayList(uint32_t 
     struct Bitmap *bitmapCurr = newBitmap(graph->num_vertices);
     struct Bitmap *bitmapNext = newBitmap(graph->num_vertices);
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
     uint32_t mu = graph->num_edges; // number of edges to check from sharedFrontierQueue
-    uint32_t mf = graph->vertices[source].out_degree; // number of edges from unexplored verticies
+    uint32_t mf = graph->vertices[arguments->source].out_degree; // number of edges from unexplored verticies
     uint32_t nf = 0; // number of vertices in sharedFrontierQueue
     uint32_t nf_prev = 0; // number of vertices in sharedFrontierQueue
     uint32_t n = graph->num_vertices; // number of nodes
@@ -1952,12 +2564,12 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjArrayList(uint32_t 
     }
 
     Start(timer_inner);
-    enArrayQueue(sharedFrontierQueue, source);
-    // setBit(sharedFrontierQueue->q_bitmap,source);
-    stats->parents[source] = source;
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     Stop(timer_inner);
     stats->time_total +=  Seconds(timer_inner);
-    // graph->vertices[source].visited = 1;
+    // graph->vertices[arguments->source].visited = 1;
 
 
     printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
@@ -2020,11 +2632,12 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjArrayList(uint32_t 
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -2176,24 +2789,24 @@ uint32_t bottomUpStepGraphAdjArrayList(struct GraphAdjArrayList *graph, struct B
 // ***************                  LinkedList DataStructure                     **************
 // ********************************************************************************************
 
-struct BFSStats *breadthFirstSearchGraphAdjLinkedList(uint32_t source, uint32_t pushpull, struct GraphAdjLinkedList *graph)
+struct BFSStats *breadthFirstSearchGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph)
 {
 
     struct BFSStats *stats = NULL;
 
-    switch (pushpull)
+    switch (arguments->pushpull)
     {
     case 0: // pull
-        stats = breadthFirstSearchPullGraphAdjLinkedList(source, graph);
+        stats = breadthFirstSearchPullGraphAdjLinkedList(arguments, graph);
         break;
     case 1: // push
-        stats = breadthFirstSearchPushGraphAdjLinkedList(source, graph);
+        stats = breadthFirstSearchPushGraphAdjLinkedList(arguments, graph);
         break;
     case 2: // pull/push
-        stats = breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(source, graph);
+        stats = breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(arguments, graph);
         break;
     default:// push
-        stats = breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(source, graph);
+        stats = breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(arguments, graph);
         break;
     }
 
@@ -2201,8 +2814,8 @@ struct BFSStats *breadthFirstSearchGraphAdjLinkedList(uint32_t source, uint32_t 
 
 }
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -2213,7 +2826,7 @@ struct BFSStats *breadthFirstSearchGraphAdjLinkedList(uint32_t source, uint32_t 
 //  return parents
 
 
-struct BFSStats *breadthFirstSearchPullGraphAdjLinkedList(uint32_t source, struct GraphAdjLinkedList *graph)
+struct BFSStats *breadthFirstSearchPullGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphAdjLinkedList(graph);
@@ -2221,12 +2834,12 @@ struct BFSStats *breadthFirstSearchPullGraphAdjLinkedList(uint32_t source, struc
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS PULL/BU (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -2245,9 +2858,9 @@ struct BFSStats *breadthFirstSearchPullGraphAdjLinkedList(uint32_t source, struc
 
 
     Start(timer_inner);
-    setBit(sharedFrontierQueue->q_bitmap_next, source);
+    setBit(sharedFrontierQueue->q_bitmap_next, arguments->source);
     sharedFrontierQueue->q_bitmap_next->numSetBits = 1;
-    stats->parents[source] = source;
+    stats->parents[arguments->source] = arguments->source;
 
     swapBitmaps(&sharedFrontierQueue->q_bitmap, &sharedFrontierQueue->q_bitmap_next);
     clearBitmap(sharedFrontierQueue->q_bitmap_next);
@@ -2274,11 +2887,12 @@ struct BFSStats *breadthFirstSearchPullGraphAdjLinkedList(uint32_t source, struc
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -2292,8 +2906,8 @@ struct BFSStats *breadthFirstSearchPullGraphAdjLinkedList(uint32_t source, struc
 }
 
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -2304,7 +2918,7 @@ struct BFSStats *breadthFirstSearchPullGraphAdjLinkedList(uint32_t source, struc
 //  return parents
 
 
-struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(uint32_t source, struct GraphAdjLinkedList *graph)
+struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphAdjLinkedList(graph);
@@ -2312,12 +2926,12 @@ struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(uint32_t source, struc
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS PUSH/TD (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -2330,7 +2944,7 @@ struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(uint32_t source, struc
 
     struct ArrayQueue *sharedFrontierQueue = newArrayQueue(graph->num_vertices);
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
     struct ArrayQueue **localFrontierQueues = (struct ArrayQueue **) my_malloc( P * sizeof(struct ArrayQueue *));
 
 
@@ -2342,12 +2956,12 @@ struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(uint32_t source, struc
     }
 
     Start(timer_inner);
-    enArrayQueue(sharedFrontierQueue, source);
-    // setBit(sharedFrontierQueue->q_bitmap,source);
-    stats->parents[source] = source;
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     Stop(timer_inner);
     stats->time_total +=  Seconds(timer_inner);
-    // graph->vertices[source].visited = 1;
+    // graph->vertices[arguments->source].visited = 1;
 
 
     printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
@@ -2368,11 +2982,12 @@ struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(uint32_t source, struc
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");
@@ -2391,8 +3006,8 @@ struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(uint32_t source, struc
 }
 
 
-// breadth-first-search(graph, source)
-//  sharedFrontierQueue ← {source}
+// breadth-first-search(graph, arguments->source)
+//  sharedFrontierQueue ← {arguments->source}
 //  next ← {}
 //  parents ← [-1,-1,. . . -1]
 //      while sharedFrontierQueue 6= {} do
@@ -2403,7 +3018,7 @@ struct BFSStats *breadthFirstSearchPushGraphAdjLinkedList(uint32_t source, struc
 //  return parents
 
 
-struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(uint32_t source, struct GraphAdjLinkedList *graph)
+struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph)
 {
 
     struct BFSStats *stats = newBFSStatsGraphAdjLinkedList(graph);
@@ -2411,12 +3026,12 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(uint32_t
     printf(" -----------------------------------------------------\n");
     printf("| %-51s | \n", "Starting BFS PULL/PUSH (SOURCE NODE)");
     printf(" -----------------------------------------------------\n");
-    printf("| %-51u | \n", source);
+    printf("| %-51u | \n", arguments->source);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15s | %-15s | \n", "Iteration", "Nodes", "Time (Seconds)");
     printf(" -----------------------------------------------------\n");
 
-    if(source > graph->num_vertices)
+    if(arguments->source > graph->num_vertices)
     {
         printf(" -----------------------------------------------------\n");
         printf("| %-51s | \n", "ERROR!! CHECK SOURCE RANGE");
@@ -2431,9 +3046,9 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(uint32_t
     struct Bitmap *bitmapCurr = newBitmap(graph->num_vertices);
     struct Bitmap *bitmapNext = newBitmap(graph->num_vertices);
 
-    uint32_t P = numThreads;
+    uint32_t P = arguments->algo_numThreads;
     uint32_t mu = graph->num_edges; // number of edges to check from sharedFrontierQueue
-    uint32_t mf = graph->vertices[source].out_degree; // number of edges from unexplored verticies
+    uint32_t mf = graph->vertices[arguments->source].out_degree; // number of edges from unexplored verticies
     uint32_t nf = 0; // number of vertices in sharedFrontierQueue
     uint32_t nf_prev = 0; // number of vertices in sharedFrontierQueue
     uint32_t n = graph->num_vertices; // number of nodes
@@ -2454,12 +3069,12 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(uint32_t
 
 
     Start(timer_inner);
-    enArrayQueue(sharedFrontierQueue, source);
-    // setBit(sharedFrontierQueue->q_bitmap,source);
-    stats->parents[source] = source;
+    enArrayQueue(sharedFrontierQueue, arguments->source);
+    // setBit(sharedFrontierQueue->q_bitmap,arguments->source);
+    stats->parents[arguments->source] = arguments->source;
     Stop(timer_inner);
     stats->time_total +=  Seconds(timer_inner);
-    // graph->vertices[source].visited = 1;
+    // graph->vertices[arguments->source].visited = 1;
 
     printf("| TD %-12u | %-15u | %-15f | \n", stats->iteration++, ++stats->processed_nodes, Seconds(timer_inner));
 
@@ -2521,11 +3136,12 @@ struct BFSStats *breadthFirstSearchDirectionOptimizedGraphAdjLinkedList(uint32_t
 
     } // end while
     Stop(timer);
-    stats->time_total =  Seconds(timer);
+
 
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "No OverHead", stats->processed_nodes, stats->time_total);
     printf(" -----------------------------------------------------\n");
+    stats->time_total =  Seconds(timer);
     printf(" -----------------------------------------------------\n");
     printf("| %-15s | %-15u | %-15f | \n", "total", stats->processed_nodes, Seconds(timer));
     printf(" -----------------------------------------------------\n");

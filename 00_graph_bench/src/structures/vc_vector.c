@@ -25,7 +25,8 @@ bool vc_vector_realloc(vc_vector *vector, size_t new_count)
 // [first_index, last_index)
 void vc_vector_call_deleter(vc_vector *vector, size_t first_index, size_t last_index)
 {
-    for (size_t i = first_index; i < last_index; ++i)
+    size_t i;
+    for (i = first_index; i < last_index; ++i)
     {
         vector->deleter(vc_vector_at(vector, i));
     }

@@ -18,6 +18,7 @@
 
 struct  Bitmap
 {
+    uint32_t real_size;
     uint32_t size;
     uint32_t numSetBits;
     uint32_t *bitarray;

@@ -1,10 +1,9 @@
 00_graph_bench/obj
 00_graph_bench/bin
 00_graph_bench/build
-
+00_graph_bench/openmp-results
 nohup.out
 00_graph_bench/nohup.out
-
-
+.vscode
 opengraph.sublime-project
 opengraph.sublime-workspace

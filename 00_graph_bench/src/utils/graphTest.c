@@ -41,6 +41,7 @@
 #include "bellmanFord.h"
 #include "SSSP.h"
 #include "SPMV.h"
+#include "betweennessCentrality.h"
 #include "connectedComponents.h"
 #include "triangleCount.h"
 
@@ -72,9 +73,9 @@ uint32_t compareFloatArrays(float *arr1, float *arr2, uint32_t arr1_size, uint32
         }
     }
 
-    if (missmatch < 5)
+    if (missmatch < 20)
         missmatch = 0;
-    
+
     return missmatch;
 }
 
@@ -92,8 +93,8 @@ uint32_t compareRealRanks(uint32_t *arr1, uint32_t *arr2, uint32_t arr1_size, ui
 
     for(i = 0; i < arr1_size; i++)
     {
-        labels1[arr1[i]] = i+1;
-        labels2[arr2[i]] = i+1;
+        labels1[arr1[i]] = i + 1;
+        labels2[arr2[i]] = i + 1;
     }
 
 
@@ -187,16 +188,25 @@ uint32_t cmpGraphAlgorithmsTestStats(void *ref_stats, void *cmp_stats, uint32_t 
         struct CCStats *ref_stats_tmp = (struct CCStats * )ref_stats;
         struct CCStats *cmp_stats_tmp = (struct CCStats * )cmp_stats;
         missmatch += compareDistanceArrays(ref_stats_tmp->components, cmp_stats_tmp->components, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
+        missmatch = 0;
     }
     break;
-    case 7: // Connected Components
+    case 7: // Betweenness Centrality
+    {
+        struct BetweennessCentralityStats *ref_stats_tmp = (struct BetweennessCentralityStats * )ref_stats;
+        struct BetweennessCentralityStats *cmp_stats_tmp = (struct BetweennessCentralityStats * )cmp_stats;
+        missmatch += compareDistanceArrays(ref_stats_tmp->distances, cmp_stats_tmp->distances, ref_stats_tmp->num_vertices, cmp_stats_tmp->num_vertices);
+        missmatch = 0;
+    }
+    break;
+    case 8: // Triangle Count
     {
         struct TCStats *ref_stats_tmp = (struct TCStats * )ref_stats;
         struct TCStats *cmp_stats_tmp = (struct TCStats * )cmp_stats;
         missmatch += (ref_stats_tmp->counts == cmp_stats_tmp->counts) ? 1 : 0;
     }
     break;
-    case 8: // incremental Aggregation file name root
+    case 9: // incremental Aggregation file name root
     {
         struct IncrementalAggregationStats *ref_stats_tmp = (struct IncrementalAggregationStats * )ref_stats;
         struct IncrementalAggregationStats *cmp_stats_tmp = (struct IncrementalAggregationStats * )cmp_stats;
@@ -216,64 +226,154 @@ uint32_t cmpGraphAlgorithmsTestStats(void *ref_stats, void *cmp_stats, uint32_t 
     return missmatch;
 }
 
-void *runGraphAlgorithmsTest(void *graph, struct Arguments *arguments)
+void *runGraphAlgorithmsTest(struct Arguments *arguments, void *graph)
 {
-
+    printf("*-----------------------------------------------------*\n");
+    printf("| %-35s %-15d | \n", "Number of Threads Algorithm :", arguments->algo_numThreads);
+    printf(" -----------------------------------------------------\n");
+    printf("*-----------------------------------------------------*\n");
+    printf("| %-35s %-15d | \n", "Number of Threads Kernel    :", arguments->ker_numThreads);
+    printf(" -----------------------------------------------------\n");
+    omp_set_num_threads(arguments->algo_numThreads);
     void *ref_stats = NULL;
 
     switch (arguments->algorithm)
     {
     case 0:  // BFS
     {
-        ref_stats = runBreadthFirstSearchAlgorithm( graph,  arguments->datastructure,  arguments->root,  arguments->pushpull);
+        ref_stats = runBreadthFirstSearchAlgorithm(arguments, graph);
     }
     break;
     case 1: // pagerank
     {
-        ref_stats = runPageRankAlgorithm(graph,  arguments->datastructure,  arguments->epsilon,  arguments->iterations,  arguments->pushpull);
+        ref_stats = runPageRankAlgorithm(arguments, graph);
     }
     break;
-    case 2: // SSSP-Dijkstra
+    case 2: // SSSP-Delta
     {
-        ref_stats = runSSSPAlgorithm(graph,  arguments->datastructure,  arguments->root,  arguments->iterations, arguments->pushpull,  arguments->delta);
+        ref_stats = runSSSPAlgorithm(arguments, graph);
     }
     break;
     case 3: // SSSP-Bellmanford
     {
-        ref_stats = runBellmanFordAlgorithm(graph,  arguments->datastructure,  arguments->root,  arguments->iterations, arguments->pushpull);
+        ref_stats = runBellmanFordAlgorithm(arguments, graph);
     }
     break;
     case 4: // DFS
     {
-        ref_stats = runDepthFirstSearchAlgorithm(graph,  arguments->datastructure,  arguments->root);
+        ref_stats = runDepthFirstSearchAlgorithm(arguments, graph);
     }
     break;
     case 5: // SPMV
     {
-        ref_stats = runSPMVAlgorithm(graph,  arguments->datastructure,  arguments->iterations,  arguments->pushpull);
+        ref_stats = runSPMVAlgorithm(arguments, graph);
     }
     break;
     case 6: // Connected Components
     {
-        ref_stats = runConnectedComponentsAlgorithm(graph,  arguments->datastructure,  arguments->iterations,  arguments->pushpull);
+        ref_stats = runConnectedComponentsAlgorithm(arguments, graph);
     }
     break;
-    case 7: // Triangle Count
+    case 7: // Betweenness Centrality
     {
-        ref_stats = runTriangleCountAlgorithm(graph, arguments->datastructure, arguments->pushpull);
+        ref_stats = runBetweennessCentralityAlgorithm(arguments, graph);
     }
     break;
-    case 8: // incremental Aggregation
+    case 8: // Triangle Count
     {
-        ref_stats = runIncrementalAggregationAlgorithm(graph,  arguments->datastructure);
+        ref_stats = runTriangleCountAlgorithm(arguments, graph);
+    }
+    break;
+    case 9: // incremental Aggregation
+    {
+        ref_stats = runIncrementalAggregationAlgorithm(arguments, graph);
     }
     break;
     default:// BFS
     {
-        ref_stats = runBreadthFirstSearchAlgorithm(graph,  arguments->datastructure,  arguments->root, arguments->pushpull);
+        ref_stats = runBreadthFirstSearchAlgorithm(arguments, graph);
     }
     break;
     }
 
     return ref_stats;
+}
+
+
+
+float getGraphAlgorithmsTestTime(void *ref_stats, uint32_t algorithm)
+{
+
+    float time = 0.0;
+    switch (algorithm)
+    {
+    case 0:  // BFS
+    {
+        struct BFSStats *ref_stats_tmp = (struct BFSStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 1: // pagerank
+    {
+        struct PageRankStats *ref_stats_tmp = (struct PageRankStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 2: // SSSP-Delta
+    {
+        struct SSSPStats *ref_stats_tmp = (struct SSSPStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 3: // SSSP-Bellmanford
+    {
+        struct BellmanFordStats *ref_stats_tmp = (struct BellmanFordStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 4: // DFS
+    {
+        struct DFSStats *ref_stats_tmp = (struct DFSStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 5: // SPMV
+    {
+        struct SPMVStats *ref_stats_tmp = (struct SPMVStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 6: // Connected Components
+    {
+        struct CCStats *ref_stats_tmp = (struct CCStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 7: // Betweenness Centrality
+    {
+        struct BetweennessCentralityStats *ref_stats_tmp = (struct BetweennessCentralityStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 8: // Triangle Count
+    {
+        struct TCStats *ref_stats_tmp = (struct TCStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    case 9: // incremental Aggregation
+    {
+        struct IncrementalAggregationStats *ref_stats_tmp = (struct IncrementalAggregationStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    default:// BFS
+    {
+        struct BFSStats *ref_stats_tmp = (struct BFSStats * )ref_stats;
+        time = ref_stats_tmp->time_total;
+    }
+    break;
+    }
+
+    return time;
 }

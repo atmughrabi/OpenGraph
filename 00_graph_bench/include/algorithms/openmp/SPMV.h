@@ -20,6 +20,7 @@ struct SPMVStats
 {
 
     uint32_t iterations;
+    struct Arguments *arguments;
     uint32_t num_vertices;
     float *vector_output;
     float *vector_input;
@@ -37,44 +38,44 @@ void freeSPMVStats(struct SPMVStats *stats);
 // ***************					GRID DataStructure							 **************
 // ********************************************************************************************
 
-struct SPMVStats *SPMVGraphGrid(uint32_t iterations, uint32_t pushpull, struct GraphGrid *graph);
-struct SPMVStats *SPMVPullRowGraphGrid(uint32_t iterations, struct GraphGrid *graph);
-struct SPMVStats *SPMVPushColumnGraphGrid(uint32_t iterations, struct GraphGrid *graph);
-struct SPMVStats *SPMVPullRowFixedPointGraphGrid(uint32_t iterations, struct GraphGrid *graph);
-struct SPMVStats *SPMVPushColumnFixedPointGraphGrid(uint32_t iterations, struct GraphGrid *graph);
+struct SPMVStats *SPMVGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct SPMVStats *SPMVPullRowGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct SPMVStats *SPMVPushColumnGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct SPMVStats *SPMVPullRowFixedPointGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
+struct SPMVStats *SPMVPushColumnFixedPointGraphGrid(struct Arguments *arguments, struct GraphGrid *graph);
 
 // ********************************************************************************************
 // ***************					CSR DataStructure							 **************
 // ********************************************************************************************
 
-struct SPMVStats *SPMVGraphCSR(uint32_t iterations, uint32_t pushpull, struct GraphCSR *graph);
-struct SPMVStats *SPMVPullGraphCSR(uint32_t iterations, struct GraphCSR *graph);
-struct SPMVStats *SPMVPushGraphCSR(uint32_t iterations, struct GraphCSR *graph);
+struct SPMVStats *SPMVGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct SPMVStats *SPMVPullGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct SPMVStats *SPMVPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
-struct SPMVStats *SPMVPullFixedPointGraphCSR(uint32_t iterations, struct GraphCSR *graph);
-struct SPMVStats *SPMVPushFixedPointGraphCSR(uint32_t iterations, struct GraphCSR *graph);
+struct SPMVStats *SPMVPullFixedPointGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
+struct SPMVStats *SPMVPushFixedPointGraphCSR(struct Arguments *arguments, struct GraphCSR *graph);
 
 
 // ********************************************************************************************
 // ***************					ArrayList DataStructure					     **************
 // ********************************************************************************************
 
-struct SPMVStats *SPMVGraphAdjArrayList(uint32_t iterations, uint32_t pushpull, struct GraphAdjArrayList *graph);
-struct SPMVStats *SPMVPullGraphAdjArrayList(uint32_t iterations, struct GraphAdjArrayList *graph);
-struct SPMVStats *SPMVPushGraphAdjArrayList(uint32_t iterations, struct GraphAdjArrayList *graph);
+struct SPMVStats *SPMVGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct SPMVStats *SPMVPullGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct SPMVStats *SPMVPushGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
-struct SPMVStats *SPMVPullFixedPointGraphAdjArrayList(uint32_t iterations, struct GraphAdjArrayList *graph);
-struct SPMVStats *SPMVPushFixedPointGraphAdjArrayList(uint32_t iterations, struct GraphAdjArrayList *graph);
+struct SPMVStats *SPMVPullFixedPointGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
+struct SPMVStats *SPMVPushFixedPointGraphAdjArrayList(struct Arguments *arguments, struct GraphAdjArrayList *graph);
 
 // ********************************************************************************************
 // ***************					LinkedList DataStructure					 **************
 // ********************************************************************************************
 
-struct SPMVStats *SPMVGraphAdjLinkedList(uint32_t iterations, uint32_t pushpull, struct GraphAdjLinkedList *graph);
-struct SPMVStats *SPMVPullGraphAdjLinkedList(uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct SPMVStats *SPMVPushGraphAdjLinkedList(uint32_t iterations, struct GraphAdjLinkedList *graph);
+struct SPMVStats *SPMVGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct SPMVStats *SPMVPullGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct SPMVStats *SPMVPushGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
-struct SPMVStats *SPMVPullFixedPointGraphAdjLinkedList(uint32_t iterations, struct GraphAdjLinkedList *graph);
-struct SPMVStats *SPMVPushFixedPointGraphAdjLinkedList(uint32_t iterations, struct GraphAdjLinkedList *graph);
+struct SPMVStats *SPMVPullFixedPointGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
+struct SPMVStats *SPMVPushFixedPointGraphAdjLinkedList(struct Arguments *arguments, struct GraphAdjLinkedList *graph);
 
 #endif

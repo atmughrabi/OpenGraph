@@ -24,11 +24,11 @@
 
 
 // Random root helper functions
-uint32_t generateRandomRootGraphCSR(struct GraphCSR *graph);
-uint32_t generateRandomRootGraphGrid(struct GraphGrid *graph);
-uint32_t generateRandomRootGraphAdjLinkedList(struct GraphAdjLinkedList *graph);
-uint32_t generateRandomRootGraphAdjArrayList(struct GraphAdjArrayList *graph);
-uint32_t generateRandomRootGeneral(void *graph, struct Arguments *arguments);
+uint32_t generateRandomRootGraphCSR(mt19937state *mt19937var, struct GraphCSR *graph);
+uint32_t generateRandomRootGraphGrid(mt19937state *mt19937var, struct GraphGrid *graph);
+uint32_t generateRandomRootGraphAdjLinkedList(mt19937state *mt19937var, struct GraphAdjLinkedList *graph);
+uint32_t generateRandomRootGraphAdjArrayList(mt19937state *mt19937var, struct GraphAdjArrayList *graph);
+uint32_t generateRandomRootGeneral(struct Arguments *arguments, void *graph);
 
 void freeGraphDataStructure(void *graph, uint32_t datastructure);
 void freeGraphStatsGeneral(void *stats, uint32_t algorithm);
@@ -39,18 +39,18 @@ void readSerializeGraphDataStructure(struct Arguments *arguments);
 void generateGraphPrintMessageWithtime(const char *msg, double time);
 void *generateGraphDataStructure(struct Arguments *arguments);
 
-void runGraphAlgorithms(void *graph, struct Arguments *arguments);
+void runGraphAlgorithms(struct Arguments *arguments, void *graph);
 
-struct BFSStats *runBreadthFirstSearchAlgorithm(void *graph, uint32_t datastructure, int root, uint32_t pushpull);
-struct PageRankStats *runPageRankAlgorithm(void *graph, uint32_t datastructure, double epsilon, uint32_t iterations, uint32_t pushpull);
-struct DFSStats *runDepthFirstSearchAlgorithm(void *graph, uint32_t datastructure, int root);
-struct IncrementalAggregationStats *runIncrementalAggregationAlgorithm(void *graph, uint32_t datastructure);
-struct BellmanFordStats *runBellmanFordAlgorithm(void *graph, uint32_t datastructure, uint32_t root, uint32_t iterations, uint32_t pushpull);
-struct SSSPStats *runSSSPAlgorithm(void *graph, uint32_t datastructure, uint32_t root, uint32_t iterations, uint32_t pushpull, uint32_t delta);
-struct SPMVStats *runSPMVAlgorithm(void *graph, uint32_t datastructure, uint32_t iterations, uint32_t pushpull);
-struct CCStats *runConnectedComponentsAlgorithm(void *graph, uint32_t datastructure, uint32_t iterations, uint32_t pushpull);
-struct TCStats *runTriangleCountAlgorithm(void *graph, uint32_t datastructure, uint32_t pushpull);
-struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(void *graph, uint32_t datastructure, uint32_t iterations, uint32_t pushpull);
+struct BFSStats *runBreadthFirstSearchAlgorithm(struct Arguments *arguments, void *graph);
+struct PageRankStats *runPageRankAlgorithm(struct Arguments *arguments, void *graph);
+struct DFSStats *runDepthFirstSearchAlgorithm(struct Arguments *arguments, void *graph);
+struct IncrementalAggregationStats *runIncrementalAggregationAlgorithm(struct Arguments *arguments, void *graph);
+struct BellmanFordStats *runBellmanFordAlgorithm(struct Arguments *arguments, void *graph);
+struct SSSPStats *runSSSPAlgorithm(struct Arguments *arguments, void *graph);
+struct SPMVStats *runSPMVAlgorithm(struct Arguments *arguments, void *graph);
+struct CCStats *runConnectedComponentsAlgorithm(struct Arguments *arguments, void *graph);
+struct TCStats *runTriangleCountAlgorithm(struct Arguments *arguments, void *graph);
+struct BetweennessCentralityStats *runBetweennessCentralityAlgorithm(struct Arguments *arguments, void *graph);
 
 
 #endif
