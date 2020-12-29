@@ -5,9 +5,9 @@
 export APP                ?= open-graph
 
 # test name needs to match the file name test/test_accel-graph.c
-# export APP_TEST           ?= test_open-graph-match
+export APP_TEST           ?= test_open-graph-match
 
-export APP_TEST           ?=  sweep_order-OpenGraph-performance-graph
+# export APP_TEST           ?=  sweep_order-OpenGraph-performance-graph
 # export APP_TEST           ?=  sweep_order-PR-performance-graph
 # export APP_TEST           ?=  sweep_order-BFS-performance-graph
 
