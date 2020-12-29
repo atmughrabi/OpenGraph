@@ -40,6 +40,23 @@ struct Arguments
     uint32_t fnameb_format;
     uint32_t convert_format;
     mt19937state mt19937var;
+
+#ifdef CACHE_HARNESS_META
+    uint32_t l1_size;
+    uint32_t l1_assoc;
+    uint32_t blocksize;
+    uint32_t policey;
+#endif
+
+#ifdef CAPI_HARNESS_META
+    uint64_t afu_config;
+    uint64_t afu_config_2;
+    uint64_t cu_config;
+    uint64_t cu_config_2;
+    uint64_t cu_config_3;
+    uint64_t cu_config_4;
+#endif
+
 };
 
 #endif
