@@ -22,6 +22,7 @@ export BIN_DIR			  	= bin
 export RES_DIR			  	= results
 
 
+
 #if you want to compile from cmake you need this directory
 #cd build
 #cmake ..
@@ -32,7 +33,7 @@ export STRUCT_DIR		  	= structures
 export PREPRO_DIR		  	= preprocess
 export ALGO_DIR		  		= algorithms
 export UTIL_DIR		  		= utils
-export CAPI_UTIL_DIR		= capi_utils
+export CONFIG_DIR			= config
 
 #contains the tests use make run-test to compile what in this directory
 export TEST_DIR		  	= tests
