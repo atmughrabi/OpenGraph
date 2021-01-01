@@ -152,7 +152,7 @@ static struct argp_option options[] =
         "Read and reorder vertex labels from a text file, Specify the file name for the new graph reorder, generated from Gorder, Rabbit-order, etc."
     },
     {
-        "cache-size",        'C', "<LLC>",      0,
+        "cache-size",        'C', "<LLC=32768/32KB>",      0,
         "LLC cache size for MASK vertex reodering"
     },
     { 0 }

@@ -252,7 +252,7 @@ benchmarking suite for various graph processing algorithms using pure C.
                              [2]-graphCSR-binary.
 
   -C, --cache-size=<LLC>     
-                             LLC cache size for DBG vertex reodering
+                             LLC cache size for MASK vertex reodering
 
 
   -d, --data-structure=[DEFAULT:[0]-CSR]
