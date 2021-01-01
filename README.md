@@ -251,6 +251,10 @@ benchmarking suite for various graph processing algorithms using pure C.
                              [1]-binary-edgeList,
                              [2]-graphCSR-binary.
 
+  -C, --cache-size=<LLC>     
+                             LLC cache size for DBG vertex reodering
+
+
   -d, --data-structure=[DEFAULT:[0]-CSR]
 
                              [0]-CSR, 
