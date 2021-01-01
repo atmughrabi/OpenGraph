@@ -27,7 +27,7 @@ struct  GraphGrid
 
 void  graphGridReset(struct GraphGrid *graphGrid);
 void  graphGridPrint(struct GraphGrid *graphGrid);
-struct GraphGrid *graphGridNew(struct EdgeList *edgeList);
+struct GraphGrid *graphGridNew(struct EdgeList *edgeList, uint32_t cache_size);
 void   graphGridFree(struct GraphGrid *graphGrid);
 void   graphGridPrintMessageWithtime(const char *msg, double time);
 struct GraphGrid *graphGridPreProcessingStep (struct Arguments *arguments);

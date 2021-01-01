@@ -984,7 +984,7 @@ struct EdgeList *maskGraphProcess(struct EdgeList *edgeList, struct Arguments *a
     printf(" -----------------------------------------------------\n");
     Start(timer);
 
-    uint32_t cache_size = (32768 >> 2);
+    uint32_t cache_size = ((arguments->cache_size) >> 2);
 
     switch(arguments->lmode)
     {

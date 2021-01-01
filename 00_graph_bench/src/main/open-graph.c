@@ -151,6 +151,10 @@ static struct argp_option options[] =
         "labels-file",       'F', "<FILE>",      0,
         "Read and reorder vertex labels from a text file, Specify the file name for the new graph reorder, generated from Gorder, Rabbit-order, etc."
     },
+    {
+        "cache-size",        'C', "<LLC>",      0,
+        "LLC cache size for DBG vertex reodering"
+    },
     { 0 }
 };
 
@@ -235,6 +239,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case 'c':
         arguments->convert_format = atoi(arg);
         break;
+    case 'C':
+        arguments->cache_size = atoi(arg);
+        break;
     case 'g':
         arguments->binSize = atoi(arg);
         break;
@@ -279,6 +286,7 @@ main (int argc, char **argv)
     arguments->pushpull = 0;
     arguments->sort = 0;
     arguments->mmode = 0;
+    arguments->cache_size = 32768; // 32KB for DBG reordering or GRID based structures
     
     arguments->lmode = 0;
     arguments->lmode_l2 = 0;

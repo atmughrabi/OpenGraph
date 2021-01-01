@@ -39,13 +39,13 @@ struct  Grid
 
 
 void gridPrint(struct Grid *grid);
-struct Grid *gridNew(struct EdgeList *edgeList);
+struct Grid *gridNew(struct EdgeList *edgeList, uint32_t cache_size);
 void  gridFree(struct Grid *grid);
 void gridPrintMessageWithtime(const char *msg, double time);
 
 struct Grid *gridPartitionEdgeListSizePreprocessing(struct Grid *grid, struct EdgeList *edgeList);
 struct Grid *gridPartitionVertexSizePreprocessing(struct Grid *grid);
-uint32_t gridCalculatePartitions(struct EdgeList *edgeList);
+uint32_t gridCalculatePartitions(struct EdgeList *edgeList, uint32_t cache_size);
 struct Grid *gridPartitionsMemoryAllocations(struct Grid *grid);
 struct Grid *gridPartitionEdgePopulation(struct Grid *grid, struct EdgeList *edgeList);
 struct Grid *graphGridProcessInOutDegrees(struct Grid *grid, struct EdgeList *edgeList);

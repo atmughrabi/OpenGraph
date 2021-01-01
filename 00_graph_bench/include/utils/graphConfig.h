@@ -40,6 +40,7 @@ struct Arguments
     uint32_t fnameb_format;
     uint32_t convert_format;
     mt19937state mt19937var;
+    uint32_t cache_size;
 };
 
 #endif

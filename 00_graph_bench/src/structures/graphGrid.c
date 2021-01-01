@@ -103,7 +103,7 @@ void  graphGridPrint(struct GraphGrid *graphGrid)
 }
 
 
-struct GraphGrid *graphGridNew(struct EdgeList *edgeList)
+struct GraphGrid *graphGridNew(struct EdgeList *edgeList, uint32_t cache_size)
 {
 
 
@@ -117,7 +117,7 @@ struct GraphGrid *graphGridNew(struct EdgeList *edgeList)
     graphGrid->num_vertices = edgeList->num_vertices;
     graphGrid->avg_degree = edgeList->num_edges / edgeList->num_vertices;
 
-    graphGrid->grid = gridNew(edgeList);
+    graphGrid->grid = gridNew(edgeList, cache_size);
 
 
     return graphGrid;
@@ -194,7 +194,7 @@ struct GraphGrid *graphGridPreProcessingStep (struct Arguments *arguments)
     // graphGridPrintMessageWithtime("Radix Sort Edges By Source (Seconds)",Seconds(timer));
 
     Start(timer);
-    struct GraphGrid *graphGrid = graphGridNew(edgeList);
+    struct GraphGrid *graphGrid = graphGridNew(edgeList, arguments->cache_size);
     Stop(timer);
     graphGridPrintMessageWithtime("Create Graph Grid (Seconds)", Seconds(timer));
 

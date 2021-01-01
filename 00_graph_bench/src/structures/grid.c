@@ -156,7 +156,7 @@ void   graphGridSetActivePartitions(struct Grid *grid, uint32_t vertex)
 
 
 
-struct Grid *gridNew(struct EdgeList *edgeList)
+struct Grid *gridNew(struct EdgeList *edgeList, uint32_t cache_size)
 {
 
 
@@ -170,7 +170,7 @@ struct Grid *gridNew(struct EdgeList *edgeList)
 
     grid->num_edges = edgeList->num_edges;
     grid->num_vertices = edgeList->num_vertices;
-    grid->num_partitions = gridCalculatePartitions(edgeList);
+    grid->num_partitions = gridCalculatePartitions(edgeList, cache_size);
     totalPartitions = grid->num_partitions * grid->num_partitions;
 
     grid->partitions = (struct Partition *) my_malloc(totalPartitions * sizeof(struct Partition));
@@ -441,11 +441,11 @@ struct Grid *gridPartitionsMemoryAllocations(struct Grid *grid)
 
 }
 
-uint32_t gridCalculatePartitions(struct EdgeList *edgeList)
+uint32_t gridCalculatePartitions(struct EdgeList *edgeList, uint32_t cache_size)
 {
     //epfl everything graph
     uint32_t num_vertices  = edgeList->num_vertices;
-    uint32_t num_Paritions = (num_vertices * 8 / 1024) / 20;
+    uint32_t num_Paritions = (num_vertices * 8 / 1024) / cache_size;
     if(num_Paritions > 512)
         num_Paritions = 256;
     if(num_Paritions == 0 )

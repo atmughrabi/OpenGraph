@@ -243,7 +243,7 @@ run-openmp: app-openmp
 .PHONY: convert
 convert: INTEGRATION = openmp
 convert: app-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT)
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3)
 
 .PHONY: sweep-convert
 sweep-convert: INTEGRATION = openmp
@@ -271,12 +271,12 @@ sweep-convert: app-openmp
 .PHONY: convert-w
 convert-w: INTEGRATION = openmp
 convert-w: app-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -w -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT)
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -w -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3)
 
 .PHONY: stats-openmp
 stats-openmp: INTEGRATION = openmp
 stats-openmp: app-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -x -f $(FILE_BIN) -n 4 $(NUM_THREADS) -i $(BIN_SIZE) -o $(SORT_TYPE) -l $(REORDER) -p $(INOUT_STATS)
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -x -f $(FILE_BIN) -n 4 $(NUM_THREADS) -i $(BIN_SIZE) -o $(SORT_TYPE) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3) -j $(INOUT_STATS)
 
 .PHONY: debug-openmp
 debug-openmp: INTEGRATION = openmp
