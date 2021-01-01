@@ -1440,8 +1440,6 @@ struct EdgeList *relabelEdgeList(struct EdgeList *edgeList, uint32_t *labels)
         edgeList->edges_array_dest[i] = labels[dest];
     }
 
-
-
     return edgeList;
 
 }
