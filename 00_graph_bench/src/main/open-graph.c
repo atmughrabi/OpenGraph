@@ -153,7 +153,7 @@ static struct argp_option options[] =
     },
     {
         "cache-size",        'C', "<LLC>",      0,
-        "LLC cache size for DBG vertex reodering"
+        "LLC cache size for MASK vertex reodering"
     },
     { 0 }
 };
