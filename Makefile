@@ -5,9 +5,9 @@
 export APP                ?= open-graph
 
 # test name needs to match the file name test/test_accel-graph.c
-export APP_TEST           ?= test_open-graph-match
+# export APP_TEST           ?= test_open-graph-match
 
-# export APP_TEST           ?=  sweep_order-OpenGraph-performance-graph
+export APP_TEST           ?=  sweep_order-OpenGraph-performance-graph
 # export APP_TEST           ?=  sweep_order-PR-performance-graph
 # export APP_TEST           ?=  sweep_order-BFS-performance-graph
 
@@ -51,8 +51,9 @@ export MAIN_DIR		  	= main
 # export BENCHMARKS_DIR    	?= ../../01_GraphDatasets
 export BENCHMARKS_DIR    	?= ../01_test_graphs
 
-export GRAPH_SUIT ?= TEST
-# export GRAPH_SUIT ?= LAW
+# export GRAPH_SUIT ?=
+# export GRAPH_SUIT ?= TEST
+export GRAPH_SUIT ?= LAW
 # export GRAPH_SUIT ?= GAP
 # export GRAPH_SUIT ?= SNAP
 # export GRAPH_SUIT ?= KONECT
@@ -62,7 +63,7 @@ export GRAPH_SUIT ?= TEST
 # export GRAPH_NAME ?= test
 # export GRAPH_NAME ?= v51_e1021
 # export GRAPH_NAME ?= v300_e2730
-export GRAPH_NAME ?= graphbrew
+# export GRAPH_NAME ?= graphbrew
 
 # GONG # https://gonglab.pratt.duke.edu/google-dataset
 # export GRAPH_NAME ?= GONG-gplus
@@ -83,7 +84,7 @@ export GRAPH_NAME ?= graphbrew
 # export GRAPH_NAME ?= KONECT-wikipedia_link_en
 
 # LAW # https://sparse.tamu.edu/MM/LAW/
-# export GRAPH_NAME ?= LAW-amazon-2008
+export GRAPH_NAME ?= LAW-amazon-2008
 # export GRAPH_NAME ?= LAW-arabic-2005
 # export GRAPH_NAME ?= LAW-cnr-2000
 # export GRAPH_NAME ?= LAW-dblp-2010
@@ -110,16 +111,16 @@ export FILE_BIN = $(BENCHMARKS_DIR)/$(GRAPH_SUIT)/$(GRAPH_NAME)/$(FILE_BIN_TYPE)
 export FILE_LABEL = $(BENCHMARKS_DIR)/$(GRAPH_SUIT)/$(GRAPH_NAME)/$(FILE_LABEL_TYPE)
 
 #ALGORITHM
-export PULL_PUSH 		?= 0
-export ALGORITHMS 		?= 1
+export PULL_PUSH 		?= 1
+export ALGORITHMS 		?= 8
 
 #GRAPH DATA_STRUCTURES
 export SORT_TYPE		?= 1
 export DATA_STRUCTURES  ?= 0
 export REORDER_LAYER1 	?= 0
-export REORDER_LAYER2   ?= 0
+export REORDER_LAYER2   ?= 4
 export REORDER_LAYER3   ?= 0
-export CACHE_SIZE       ?= 32768
+export CACHE_SIZE       ?= 32768 # 32KB
 
 #ALGORITHM SPECIFIC ARGS
 export ROOT 			?= 46050
@@ -128,13 +129,13 @@ export DELTA			?= 800
 export NUM_ITERATIONS	?= 100
 
 #PERFORMANCE
-# export NUM_THREADS_PRE  ?= $(shell grep -c ^processor /proc/cpuinfo)
-# export NUM_THREADS_ALGO ?= $(shell grep -c ^processor /proc/cpuinfo)
-# export NUM_THREADS_KER  ?= 1
+export NUM_THREADS_PRE  ?= $(shell grep -c ^processor /proc/cpuinfo)
+export NUM_THREADS_ALGO ?= $(shell grep -c ^processor /proc/cpuinfo)
+export NUM_THREADS_KER  ?= $(NUM_THREADS_ALGO)
 
-export NUM_THREADS_PRE  ?= 1
-export NUM_THREADS_ALGO ?= 1
-export NUM_THREADS_KER  ?= 1
+# export NUM_THREADS_PRE  ?= 1
+# export NUM_THREADS_ALGO ?= 1
+# export NUM_THREADS_KER  ?= $(NUM_THREADS_ALGO)
 
 #EXPERIMENTS
 export NUM_TRIALS 		?= 1

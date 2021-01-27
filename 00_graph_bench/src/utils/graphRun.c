@@ -494,7 +494,7 @@ uint32_t generateRandomRootGraphCSR(mt19937state *mt19937var, struct GraphCSR *g
         if(source < graph->num_vertices)
         {
             source_temp = graph->sorted_edges_array->label_array[source];
-            if(graph->vertices->out_degree[source_temp] > 0)
+            if(graph->vertices->out_degree[source_temp] > graph->avg_degree)
                 break;
         }
     }
@@ -514,7 +514,7 @@ uint32_t generateRandomRootGraphGrid(mt19937state *mt19937var, struct GraphGrid 
         source = generateRandInt(mt19937var);
         if(source < graph->num_vertices)
         {
-            if(graph->grid->out_degree[source] > 0)
+            if(graph->grid->out_degree[source] > graph->avg_degree)
                 break;
         }
     }
@@ -533,7 +533,7 @@ uint32_t generateRandomRootGraphAdjLinkedList(mt19937state *mt19937var, struct G
         source = generateRandInt(mt19937var);
         if(source < graph->num_vertices)
         {
-            if(graph->vertices[source].out_degree > 0)
+            if(graph->vertices[source].out_degree > graph->avg_degree)
                 break;
         }
     }
@@ -552,7 +552,7 @@ uint32_t generateRandomRootGraphAdjArrayList(mt19937state *mt19937var, struct Gr
         source = generateRandInt(mt19937var);
         if(source < graph->num_vertices)
         {
-            if(graph->vertices[source].out_degree > 0)
+            if(graph->vertices[source].out_degree > graph->avg_degree)
                 break;
         }
     }

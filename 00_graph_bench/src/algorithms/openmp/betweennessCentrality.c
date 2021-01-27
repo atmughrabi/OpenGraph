@@ -179,7 +179,7 @@ uint32_t generateRandomRootBetweennessCentrality(mt19937state *mt19937var, struc
         root = generateRandInt(mt19937var);
         if(root < graph->num_vertices)
         {
-            if(graph->vertices->out_degree[root] > 0)
+            if(graph->vertices->out_degree[root] > graph->avg_degree)
                 break;
         }
     }
