@@ -45,8 +45,9 @@
 #include "triangleCount.h"
 
 #include "graphTest.h"
-// #define GRAPH_NUM 14
 #define GRAPH_NUM 4
+// #define GRAPH_NUM 14
+// #define GRAPH_NUM 9
 
 #define THREAD_POINTS 1
 #define THREAD_SHIFT  64
@@ -122,6 +123,8 @@ main (int argc, char **argv)
         "graph_Gorder.rand.labels"
     };
 
+// -----------------------------------------------------------------------------
+
 
     char *benchmarks_graphs[GRAPH_NUM] =
     {
@@ -138,6 +141,8 @@ main (int argc, char **argv)
         "../01_test_graphs/LAW/LAW-dblp-2010",
         "../01_test_graphs/LAW/LAW-enron"
     };
+
+// -----------------------------------------------------------------------------
 
     // char *benchmarks_graphs[GRAPH_NUM] =
     // {
@@ -175,6 +180,36 @@ main (int argc, char **argv)
     //     "../../01_GraphDatasets/SNAP/SNAP-web-Google"
     // };
 
+// -----------------------------------------------------------------------------
+
+    // char *benchmarks_graphs[GRAPH_NUM] =
+    // {
+    //     "GAP-road",
+    //     "GAP-twitter",
+    //     "GONG-gplus",
+    //     "KONECT-wikipedia_link_en",
+    //     "LAW-uk-2005",
+    //     "LAW-webbase-2001",
+    //     "SNAP-cit-Patents",
+    //     "SNAP-com-Orkut",
+    //     "SNAP-soc-LiveJournal1"
+    // };
+
+    // char *benchmarks_dir[GRAPH_NUM] =
+    // {
+    //     "../../01_GraphDatasets/GAP/GAP-road",
+    //     "../../01_GraphDatasets/GAP/GAP-twitter",
+    //     "../../01_GraphDatasets/GONG/GONG-gplus",
+    //     "../../01_GraphDatasets/KONECT/KONECT-wikipedia_link_en",
+    //     "../../01_GraphDatasets/LAW/LAW-uk-2005",
+    //     "../../01_GraphDatasets/LAW/LAW-webbase-2001",
+    //     "../../01_GraphDatasets/SNAP/SNAP-cit-Patents",
+    //     "../../01_GraphDatasets/SNAP/SNAP-com-Orkut",
+    //     "../../01_GraphDatasets/SNAP/SNAP-soc-LiveJournal1"
+    // };
+
+// -----------------------------------------------------------------------------
+
     struct Arguments arguments;
     /* Default values. */
 
@@ -183,8 +218,8 @@ main (int argc, char **argv)
     arguments.sflag = 0;
     arguments.dflag = 1;
 
-    arguments.iterations = 100;
-    arguments.epsilon = 0.0001;
+    arguments.iterations = 200;
+    arguments.epsilon = 0.00000001;
     arguments.source = 5319;
     arguments.algorithm = 0; // BFS
     arguments.datastructure = 0;
@@ -203,7 +238,7 @@ main (int argc, char **argv)
     arguments.fnamel = "../01_test_graphs/LAW/LAW-enron/graph_Gorder.labels";
     arguments.fnameb_format = 1;
     arguments.convert_format = 1;
-    arguments.trials = 8; // random number of trials
+    arguments.trials = 5; // random number of trials
     initializeMersenneState (&(arguments.mt19937var), 27491095);
     omp_set_nested(1);
 

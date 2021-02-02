@@ -366,7 +366,7 @@ run-test: run-test-openmp
 .PHONY: run-test-openmp
 run-test-openmp: INTEGRATION = openmp
 run-test-openmp: test-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp >> $(APP_DIR)/openmp-results/full_results_$(ALGORITHMS).perf
+	./$(APP_DIR)/$(BIN_DIR)/$(APP_TEST)-openmp >> $(APP_DIR)/openmp-results/full_results_$(NUM_THREADS_KER).perf
 
 .PHONY: debug-test-openmp
 debug-test-openmp: INTEGRATION = openmp
