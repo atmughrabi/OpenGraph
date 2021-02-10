@@ -53,7 +53,8 @@
 #define THREAD_POINTS_START 6
 #define THREAD_POINTS_TOTAL 9
 
-#define ORDER_CONFIG 9
+#define ORDER_CONFIG 7
+#define ORDER_CONFIG_TOTAL 9
 
 void sweepSPMV(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
 void sweepCC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
@@ -68,26 +69,26 @@ char graph_dir[1024];
 char label_dir[1024];
 char unified_perf_file[1024];
 
-float PLRU_stats_BFS[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]            = {0};
-float PLRU_stats_PR[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]             = {0};
-float PLRU_stats_PR_DELTA[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]       = {0};
-float PLRU_stats_BC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]             = {0};
-float PLRU_stats_SPMV[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]           = {0};
-// float PLRU_stats_TC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]    = {0};
-float PLRU_stats_CC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]             = {0};
-float PLRU_stats_CC_Afforest[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]    = {0};
-float PLRU_stats_SSSP[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]           = {0};
-float PLRU_stats_SSSP_DELTA[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]     = {0};
+float PLRU_stats_BFS[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]            = {0};
+float PLRU_stats_PR[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]             = {0};
+float PLRU_stats_PR_DELTA[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]       = {0};
+float PLRU_stats_BC[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]             = {0};
+float PLRU_stats_SPMV[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]           = {0};
+// float PLRU_stats_TC[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS]    = {0};
+float PLRU_stats_CC[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]             = {0};
+float PLRU_stats_CC_Afforest[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]    = {0};
+float PLRU_stats_SSSP[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]           = {0};
+float PLRU_stats_SSSP_DELTA[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]     = {0};
 
-uint32_t lmode_l2[ORDER_CONFIG] = {0, 4, 5, 11, 11, 11, 11, 11, 11};
-uint32_t lmode_l3[ORDER_CONFIG] = {0, 0, 0, 0, 4, 5, 0, 4, 5};
-uint32_t mmode[ORDER_CONFIG]    = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t lmode_l2[ORDER_CONFIG_TOTAL] = {0, 4, 5, 11, 11, 11, 11, 11, 11};
+uint32_t lmode_l3[ORDER_CONFIG_TOTAL] = {0, 0, 0, 0, 4, 5, 0, 4, 5};
+uint32_t mmode[ORDER_CONFIG_TOTAL]    = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 uint32_t threadPoints[THREAD_POINTS_TOTAL]    = {1, 2, 4, 8, 16, 32, 64, 128, 48};
 
 int
 main (int argc, char **argv)
 {
-    char *config_labels[ORDER_CONFIG] =
+    char *config_labels[ORDER_CONFIG_TOTAL] =
     {
         "Rand-Order",
         "DBG-out",
@@ -100,7 +101,7 @@ main (int argc, char **argv)
         "Gorder+DBG-in"
     };
 
-    char *reorder_labels[ORDER_CONFIG] =
+    char *reorder_labels[ORDER_CONFIG_TOTAL] =
     {
         "NO.labels",
         "NO.labels",
