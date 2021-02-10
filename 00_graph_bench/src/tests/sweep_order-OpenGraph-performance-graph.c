@@ -50,7 +50,7 @@
 #define GRAPH_NUM 9
 
 #define THREAD_POINTS 1
-#define THREAD_POINTS_START 6
+#define THREAD_POINTS_START 7
 #define THREAD_POINTS_TOTAL 9
 
 #define ORDER_CONFIG 7
@@ -83,7 +83,7 @@ float PLRU_stats_SSSP_DELTA[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL] 
 uint32_t lmode_l2[ORDER_CONFIG_TOTAL] = {0, 4, 5, 11, 11, 11, 11, 11, 11};
 uint32_t lmode_l3[ORDER_CONFIG_TOTAL] = {0, 0, 0, 0, 4, 5, 0, 4, 5};
 uint32_t mmode[ORDER_CONFIG_TOTAL]    = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-uint32_t threadPoints[THREAD_POINTS_TOTAL]    = {1, 2, 4, 8, 16, 32, 64, 128, 48};
+uint32_t threadPoints[THREAD_POINTS_TOTAL]    = {1, 2, 4, 8, 16, 32, 64, 160, 48};
 
 int
 main (int argc, char **argv)
