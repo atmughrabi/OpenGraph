@@ -45,102 +45,92 @@
 #include "triangleCount.h"
 
 #include "graphTest.h"
-#define GRAPH_NUM 4
+// #define GRAPH_NUM 4
 // #define GRAPH_NUM 14
-// #define GRAPH_NUM 9
+#define GRAPH_NUM 9
 
 #define THREAD_POINTS 1
-#define THREAD_SHIFT  64
+#define THREAD_POINTS_START 6
+#define THREAD_POINTS_TOTAL 9
 
-#define CACHE_CONFIGS 12
-#define MODE_NUM 3
-#define ORDER_CONFIG 6
-#define TOTAL_CONFIG (MODE_NUM+MODE_NUM+ORDER_CONFIG)
+#define ORDER_CONFIG 9
 
-void sweepSPMV(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
-void sweepCC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
-void sweepTC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
-void sweepSSSP(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
-void sweepSSSPDelta(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
-void sweepBFS(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
-void sweepPR(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
-void sweepBC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS]);
+void sweepSPMV(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+void sweepCC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+void sweepTC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+void sweepSSSP(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+void sweepSSSPDelta(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+void sweepBFS(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+void sweepPR(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+void sweepBC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
+
+char graph_dir[1024];
+char label_dir[1024];
+char unified_perf_file[1024];
+
+float PLRU_stats_BFS[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]            = {0};
+float PLRU_stats_PR[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]             = {0};
+float PLRU_stats_PR_DELTA[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]       = {0};
+float PLRU_stats_BC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]             = {0};
+float PLRU_stats_SPMV[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]           = {0};
+// float PLRU_stats_TC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]    = {0};
+float PLRU_stats_CC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]             = {0};
+float PLRU_stats_CC_Afforest[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]    = {0};
+float PLRU_stats_SSSP[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]           = {0};
+float PLRU_stats_SSSP_DELTA[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS_TOTAL]     = {0};
+
+uint32_t lmode_l2[ORDER_CONFIG] = {0, 4, 5, 11, 11, 11, 11, 11, 11};
+uint32_t lmode_l3[ORDER_CONFIG] = {0, 0, 0, 0, 4, 5, 0, 4, 5};
+uint32_t mmode[ORDER_CONFIG]    = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t threadPoints[THREAD_POINTS_TOTAL]    = {1, 2, 4, 8, 16, 32, 64, 128, 48};
 
 int
 main (int argc, char **argv)
 {
-    char graph_dir[1024];
-    char label_dir[1024];
-    char unified_perf_file[1024];
-    // char express_perf_file[1024];
-    // char grasp_perf_file[1024];
-
-    float PLRU_stats_BFS[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]            = {0};
-    float PLRU_stats_PR[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]             = {0};
-    float PLRU_stats_PR_DELTA[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]       = {0};
-    float PLRU_stats_BC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]             = {0};
-    float PLRU_stats_SPMV[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]           = {0};
-    // float PLRU_stats_TC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]    = {0};
-    float PLRU_stats_CC[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]             = {0};
-    float PLRU_stats_CC_Afforest[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]    = {0};
-    float PLRU_stats_SSSP[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]           = {0};
-    float PLRU_stats_SSSP_DELTA[GRAPH_NUM][ORDER_CONFIG][THREAD_POINTS]     = {0};
-
-
-    uint32_t lmode_l2[TOTAL_CONFIG] = {0, 4, 11, 11, 11, 11, 0, 11, 11, 0, 11, 11};
-    uint32_t lmode_l3[TOTAL_CONFIG] = {0, 0, 0, 4, 0, 4, 4, 4, 4, 0, 0, 0 };
-    uint32_t mmode[TOTAL_CONFIG]    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-
-    char *config_labels[TOTAL_CONFIG] =
+    char *config_labels[ORDER_CONFIG] =
     {
         "Rand-Order",
-        "DBG",
+        "DBG-out",
+        "DBG-in",
         "Rabbit",
-        "Rabbit+DBG",
+        "Rabbit+DBG-out",
+        "Rabbit+DBG-in",
         "Gorder",
-        "Gorder+DBG",
-        "DBG",
-        "Rabbit+DBG",
-        "Gorder+DBG",
-        "MASK",
-        "Rabbit+MASK",
-        "Gorder+MASK"
+        "Gorder+DBG-out",
+        "Gorder+DBG-in"
     };
 
-    char *reorder_labels[TOTAL_CONFIG] =
+    char *reorder_labels[ORDER_CONFIG] =
     {
         "NO.labels",
         "NO.labels",
-        "graph_Rabbit.rand.labels",
-        "graph_Rabbit.rand.labels",
-        "graph_Gorder.rand.labels",
-        "graph_Gorder.rand.labels",
         "NO.labels",
         "graph_Rabbit.rand.labels",
-        "graph_Gorder.rand.labels",
-        "NO.labels",
         "graph_Rabbit.rand.labels",
+        "graph_Rabbit.rand.labels",
+        "graph_Gorder.rand.labels",
+        "graph_Gorder.rand.labels",
         "graph_Gorder.rand.labels"
     };
 
 // -----------------------------------------------------------------------------
 
 
-    char *benchmarks_graphs[GRAPH_NUM] =
-    {
-        "LAW-amazon-2008",
-        "LAW-cnr-2000",
-        "LAW-dblp-2010",
-        "LAW-enron"
-    };
+    // char *benchmarks_graphs[GRAPH_NUM] =
+    // {
+    //     "LAW-amazon-2008",
+    //     "LAW-cnr-2000",
+    //     "LAW-dblp-2010",
+    //     "LAW-enron"
+    // };
 
-    char *benchmarks_dir[GRAPH_NUM] =
-    {
-        "../01_test_graphs/LAW/LAW-amazon-2008",
-        "../01_test_graphs/LAW/LAW-cnr-2000",
-        "../01_test_graphs/LAW/LAW-dblp-2010",
-        "../01_test_graphs/LAW/LAW-enron"
-    };
+    // char *benchmarks_dir[GRAPH_NUM] =
+    // {
+    //     "../01_test_graphs/LAW/LAW-amazon-2008",
+    //     "../01_test_graphs/LAW/LAW-cnr-2000",
+    //     "../01_test_graphs/LAW/LAW-dblp-2010",
+    //     "../01_test_graphs/LAW/LAW-enron"
+    // };
 
 // -----------------------------------------------------------------------------
 
@@ -182,31 +172,31 @@ main (int argc, char **argv)
 
 // -----------------------------------------------------------------------------
 
-    // char *benchmarks_graphs[GRAPH_NUM] =
-    // {
-    //     "GAP-road",
-    //     "GAP-twitter",
-    //     "GONG-gplus",
-    //     "KONECT-wikipedia_link_en",
-    //     "LAW-uk-2005",
-    //     "LAW-webbase-2001",
-    //     "SNAP-cit-Patents",
-    //     "SNAP-com-Orkut",
-    //     "SNAP-soc-LiveJournal1"
-    // };
+    char *benchmarks_graphs[GRAPH_NUM] =
+    {
+        "GAP-road",
+        "GAP-twitter",
+        "GONG-gplus",
+        "KONECT-wikipedia_link_en",
+        "LAW-uk-2005",
+        "LAW-webbase-2001",
+        "SNAP-cit-Patents",
+        "SNAP-com-Orkut",
+        "SNAP-soc-LiveJournal1"
+    };
 
-    // char *benchmarks_dir[GRAPH_NUM] =
-    // {
-    //     "../../01_GraphDatasets/GAP/GAP-road",
-    //     "../../01_GraphDatasets/GAP/GAP-twitter",
-    //     "../../01_GraphDatasets/GONG/GONG-gplus",
-    //     "../../01_GraphDatasets/KONECT/KONECT-wikipedia_link_en",
-    //     "../../01_GraphDatasets/LAW/LAW-uk-2005",
-    //     "../../01_GraphDatasets/LAW/LAW-webbase-2001",
-    //     "../../01_GraphDatasets/SNAP/SNAP-cit-Patents",
-    //     "../../01_GraphDatasets/SNAP/SNAP-com-Orkut",
-    //     "../../01_GraphDatasets/SNAP/SNAP-soc-LiveJournal1"
-    // };
+    char *benchmarks_dir[GRAPH_NUM] =
+    {
+        "../../01_GraphDatasets/GAP/GAP-road",
+        "../../01_GraphDatasets/GAP/GAP-twitter",
+        "../../01_GraphDatasets/GONG/GONG-gplus",
+        "../../01_GraphDatasets/KONECT/KONECT-wikipedia_link_en",
+        "../../01_GraphDatasets/LAW/LAW-uk-2005",
+        "../../01_GraphDatasets/LAW/LAW-webbase-2001",
+        "../../01_GraphDatasets/SNAP/SNAP-cit-Patents",
+        "../../01_GraphDatasets/SNAP/SNAP-com-Orkut",
+        "../../01_GraphDatasets/SNAP/SNAP-soc-LiveJournal1"
+    };
 
 // -----------------------------------------------------------------------------
 
@@ -218,7 +208,7 @@ main (int argc, char **argv)
     arguments.sflag = 0;
     arguments.dflag = 1;
 
-    arguments.iterations = 200;
+    arguments.iterations = 100;
     arguments.epsilon = 0.00000001;
     arguments.source = 5319;
     arguments.algorithm = 0; // BFS
@@ -238,7 +228,7 @@ main (int argc, char **argv)
     arguments.fnamel = "../01_test_graphs/LAW/LAW-enron/graph_Gorder.labels";
     arguments.fnameb_format = 1;
     arguments.convert_format = 1;
-    arguments.trials = 5; // random number of trials
+    arguments.trials = 4; // random number of trials
     initializeMersenneState (&(arguments.mt19937var), 27491095);
     omp_set_nested(1);
 
@@ -312,13 +302,13 @@ main (int argc, char **argv)
     FILE *fptr1;
     fptr1 = fopen(unified_perf_file, "a+");
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) BFS, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) BFS, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -337,13 +327,13 @@ main (int argc, char **argv)
         fprintf(fptr1, " -----------------------------------------------------\n");
     }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) PR, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) PR, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ", threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -362,13 +352,13 @@ main (int argc, char **argv)
         fprintf(fptr1, " -----------------------------------------------------\n");
     }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) PR_DELTA, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) PR_DELTA, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -387,13 +377,13 @@ main (int argc, char **argv)
         fprintf(fptr1, " -----------------------------------------------------\n");
     }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) BC, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) BC, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -412,13 +402,13 @@ main (int argc, char **argv)
         fprintf(fptr1, " -----------------------------------------------------\n");
     }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) CC ShiloachVishkin, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) CC ShiloachVishkin, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -437,13 +427,13 @@ main (int argc, char **argv)
         fprintf(fptr1, " -----------------------------------------------------\n");
     }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) CC Afforest, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) CC Afforest, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -463,13 +453,13 @@ main (int argc, char **argv)
     }
 
 
-    // for(k = 0; k < THREAD_POINTS; k ++)
+    // for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     // {
     //     fprintf(fptr1, " -----------------------------------------------------\n");
-    //     fprintf(fptr1, " Performance (Seconds) TC, Num Threads %u \n",  1 << k);
+    //     fprintf(fptr1, " Performance (Seconds) TC, Num Threads %u \n",   threadPoints[k]);
     //     fprintf(fptr1, " -----------------------------------------------------\n");
 
-    //     fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+    //     fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
     //     for (j = 0; j < ORDER_CONFIG; ++j)
     //     {
     //         fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -488,13 +478,13 @@ main (int argc, char **argv)
     //     fprintf(fptr1, " -----------------------------------------------------\n");
     // }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) SPMV, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) SPMV, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -513,13 +503,13 @@ main (int argc, char **argv)
         fprintf(fptr1, " -----------------------------------------------------\n");
     }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) SSSP bellmanFord, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) SSSP bellmanFord, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -538,13 +528,13 @@ main (int argc, char **argv)
         fprintf(fptr1, " -----------------------------------------------------\n");
     }
 
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
         fprintf(fptr1, " -----------------------------------------------------\n");
-        fprintf(fptr1, " Performance (Seconds) SSSP Delta, Num Threads %u \n",  1 << k);
+        fprintf(fptr1, " Performance (Seconds) SSSP Delta, Num Threads %u \n",   threadPoints[k]);
         fprintf(fptr1, " -----------------------------------------------------\n");
 
-        fprintf(fptr1, "NumThreads%-15u, ", 1 << k);
+        fprintf(fptr1, "NumThreads%-15u, ",  threadPoints[k]);
         for (j = 0; j < ORDER_CONFIG; ++j)
         {
             fprintf(fptr1, "%-14s, ",  config_labels[j]);
@@ -570,15 +560,15 @@ main (int argc, char **argv)
 }
 
 
-void sweepBFS(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepBFS(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     uint32_t k = 0;
     uint32_t kk = 0;
     void *ref_data;
     arguments.algorithm = 0; // BFS
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         initializeMersenneState (&(arguments.mt19937var), 27491095);
         for(kk = 0 ; kk < arguments.trials; kk++)
@@ -592,15 +582,15 @@ void sweepBFS(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_P
     }
 }
 
-void sweepSSSP(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepSSSP(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     uint32_t k = 0;
     uint32_t kk = 0;
     void *ref_data;
     arguments.algorithm = 3; // SSSP-bellmanford
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         initializeMersenneState (&(arguments.mt19937var), 27491095);
         for(kk = 0 ; kk < arguments.trials; kk++)
@@ -614,15 +604,15 @@ void sweepSSSP(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_
     }
 }
 
-void sweepSSSPDelta(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepSSSPDelta(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     uint32_t k = 0;
     uint32_t kk = 0;
     void *ref_data;
     arguments.algorithm = 2; // SSSP-delta
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         initializeMersenneState (&(arguments.mt19937var), 27491095);
         for(kk = 0 ; kk < arguments.trials; kk++)
@@ -636,14 +626,14 @@ void sweepSSSPDelta(struct Arguments arguments, void *graph, float PLRU_stats[TH
     }
 }
 
-void sweepPR(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepPR(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     uint32_t k = 0;
     void *ref_data;
     arguments.algorithm = 1; // PR
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         ref_data = runGraphAlgorithmsTest(&arguments, graph); // ref stats should mach oother algo
         PLRU_stats[k] += getGraphAlgorithmsTestTime(ref_data, arguments.algorithm);
@@ -653,14 +643,14 @@ void sweepPR(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_PO
 
 }
 
-void sweepBC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepBC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     uint32_t k = 0;
     void *ref_data;
     arguments.algorithm = 7; // BC
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         ref_data = runGraphAlgorithmsTest(&arguments, graph); // ref stats should mach oother algo
         PLRU_stats[k] += getGraphAlgorithmsTestTime(ref_data, arguments.algorithm);
@@ -670,7 +660,7 @@ void sweepBC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_PO
 
 }
 
-void sweepTC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepTC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     // case 3: // With binary intersection
     //    stats = triangleCountBinaryIntersectionGraphCSR(graph);
@@ -678,9 +668,9 @@ void sweepTC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_PO
     uint32_t k = 0;
     void *ref_data;
     arguments.algorithm = 8; // TC
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         ref_data = runGraphAlgorithmsTest(&arguments, graph); // ref stats should mach oother algo
         PLRU_stats[k] += getGraphAlgorithmsTestTime(ref_data, arguments.algorithm);
@@ -691,14 +681,14 @@ void sweepTC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_PO
 }
 
 
-void sweepSPMV(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepSPMV(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     uint32_t k = 0;
     void *ref_data;
     arguments.algorithm = 5; // SPMV
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         ref_data = runGraphAlgorithmsTest(&arguments, graph); // ref stats should mach oother algo
         PLRU_stats[k] += getGraphAlgorithmsTestTime(ref_data, arguments.algorithm);
@@ -708,14 +698,14 @@ void sweepSPMV(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_
 
 }
 
-void sweepCC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS])
+void sweepCC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL])
 {
     uint32_t k = 0;
     void *ref_data;
     arguments.algorithm = 6; // CC
-    for(k = 0; k < THREAD_POINTS; k ++)
+    for(k = THREAD_POINTS_START; k < THREAD_POINTS+THREAD_POINTS_START; k ++)
     {
-        arguments.algo_numThreads = THREAD_SHIFT << k;
+        arguments.algo_numThreads = threadPoints[k];
         arguments.ker_numThreads = arguments.algo_numThreads ;
         ref_data = runGraphAlgorithmsTest(&arguments, graph); // ref stats should mach oother algo
         PLRU_stats[k] += getGraphAlgorithmsTestTime(ref_data, arguments.algorithm);
