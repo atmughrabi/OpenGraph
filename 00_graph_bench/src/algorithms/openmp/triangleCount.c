@@ -214,26 +214,26 @@ struct TCStats *triangleCountGraphCSR(struct Arguments *arguments, struct GraphC
     switch (arguments->pushpull)
     {
     case 0: // basic slow
-        stats = triangleCountBasicGraphCSR(graph);
+        stats = triangleCountBasicGraphCSR(arguments, graph);
         break;
     case 1: // pull
-        stats = triangleCountPullGraphCSR(graph);
+        stats = triangleCountPullGraphCSR(arguments, graph);
         break;
     case 2: // push
-        stats = triangleCountPushGraphCSR(graph);
+        stats = triangleCountPushGraphCSR(arguments, graph);
         break;
     case 3: // With binary intersection
-        stats = triangleCountBinaryIntersectionGraphCSR(graph);
+        stats = triangleCountBinaryIntersectionGraphCSR(arguments, graph);
         break;
     default:// pull
-        stats = triangleCountPullGraphCSR(graph);
+        stats = triangleCountPullGraphCSR(arguments, graph);
         break;
     }
 
     return stats;
 
 }
-struct TCStats *triangleCountBasicGraphCSR(struct GraphCSR *graph)
+struct TCStats *triangleCountBasicGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     uint32_t u;
@@ -303,7 +303,7 @@ struct TCStats *triangleCountBasicGraphCSR(struct GraphCSR *graph)
 
 }
 
-struct TCStats *triangleCountPullGraphCSR(struct GraphCSR *graph)
+struct TCStats *triangleCountPullGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     uint32_t u;
@@ -384,7 +384,7 @@ struct TCStats *triangleCountPullGraphCSR(struct GraphCSR *graph)
     return stats;
 
 }
-struct TCStats *triangleCountPushGraphCSR(struct GraphCSR *graph)
+struct TCStats *triangleCountPushGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     uint32_t u;
@@ -469,7 +469,7 @@ struct TCStats *triangleCountPushGraphCSR(struct GraphCSR *graph)
 }
 
 
-struct TCStats *triangleCountBinaryIntersectionGraphCSR(struct GraphCSR *graph)
+struct TCStats *triangleCountBinaryIntersectionGraphCSR(struct Arguments *arguments, struct GraphCSR *graph)
 {
 
     uint32_t u;
