@@ -125,6 +125,14 @@ struct EdgeList  *countSortEdgesBySource (struct EdgeList *edgeList)
 
     }
 
+    sorted_edges_array->num_vertices = edgeList->num_vertices;
+    sorted_edges_array->num_edges = edgeList->num_edges;
+    sorted_edges_array->avg_degree = edgeList->avg_degree;
+
+#if WEIGHTED
+    sorted_edges_array->max_weight = edgeList->max_weight;
+#endif
+
     free(vertex_count);
     freeEdgeList(edgeList);
 
@@ -159,10 +167,11 @@ struct EdgeList *countSortEdgesByDestination (struct EdgeList *edgeList)
 
     #pragma omp parallel default(none) shared(P,vertex_count,sorted_edges_array,edgeList,num_edges,num_vertices) firstprivate(t_id, offset_end,offset_start,base,i,j,key,pos)
     {
-        
+
         t_id = omp_get_thread_num();
 
-        if(t_id == 0){
+        if(t_id == 0)
+        {
             P = omp_get_num_threads();
             vertex_count = (uint32_t *) my_malloc( P * num_vertices * sizeof(uint32_t));
         }
@@ -231,6 +240,14 @@ struct EdgeList *countSortEdgesByDestination (struct EdgeList *edgeList)
 
     }
 
+    sorted_edges_array->num_vertices = edgeList->num_vertices;
+    sorted_edges_array->num_edges = edgeList->num_edges;
+    sorted_edges_array->avg_degree = edgeList->avg_degree;
+
+#if WEIGHTED
+    sorted_edges_array->max_weight = edgeList->max_weight;
+#endif
+
     free(vertex_count);
     freeEdgeList(edgeList);
 
@@ -251,6 +268,7 @@ struct EdgeList  *countSortEdgesBySourceAndDestination (struct EdgeList *edgeLis
     edgeList = countSortEdgesByDestination (edgeList);
     edgeList = countSortEdgesBySource (edgeList);
 
+    printf("***** %u \n", edgeList->num_vertices);
     return edgeList;
 }
 
