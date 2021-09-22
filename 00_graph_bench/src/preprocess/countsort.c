@@ -267,8 +267,7 @@ struct EdgeList  *countSortEdgesBySourceAndDestination (struct EdgeList *edgeLis
 
     edgeList = countSortEdgesByDestination (edgeList);
     edgeList = countSortEdgesBySource (edgeList);
-
-    printf("***** %u \n", edgeList->num_vertices);
+    
     return edgeList;
 }
 
