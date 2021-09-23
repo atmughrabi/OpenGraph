@@ -125,18 +125,15 @@ struct EdgeList  *countSortEdgesBySource (struct EdgeList *edgeList)
 
     }
 
-    sorted_edges_array->num_vertices = edgeList->num_vertices;
-    sorted_edges_array->num_edges = edgeList->num_edges;
-    sorted_edges_array->avg_degree = edgeList->avg_degree;
-
+    #pragma omp parallel for
+    for(i = 0; i < num_edges; i++)
+    {
+        edgeList->edges_array_dest[i] = sorted_edges_array->edges_array_dest[i];
+        edgeList->edges_array_src[i] = sorted_edges_array->edges_array_src[i];
 #if WEIGHTED
-    sorted_edges_array->max_weight = edgeList->max_weight;
+        edgeList->edges_array_weight[i] = sorted_edges_array->edges_array_weight[i] ;
 #endif
-
-    free(vertex_count);
-    freeEdgeList(edgeList);
-
-    edgeList = sorted_edges_array;
+    }
 
     return edgeList;
 
@@ -240,18 +237,19 @@ struct EdgeList *countSortEdgesByDestination (struct EdgeList *edgeList)
 
     }
 
-    sorted_edges_array->num_vertices = edgeList->num_vertices;
-    sorted_edges_array->num_edges = edgeList->num_edges;
-    sorted_edges_array->avg_degree = edgeList->avg_degree;
 
+    #pragma omp parallel for
+    for(i = 0; i < num_edges; i++)
+    {
+        edgeList->edges_array_dest[i] = sorted_edges_array->edges_array_dest[i];
+        edgeList->edges_array_src[i] = sorted_edges_array->edges_array_src[i];
 #if WEIGHTED
-    sorted_edges_array->max_weight = edgeList->max_weight;
+        edgeList->edges_array_weight[i] = sorted_edges_array->edges_array_weight[i] ;
 #endif
+    }
 
     free(vertex_count);
-    freeEdgeList(edgeList);
-
-    edgeList = sorted_edges_array;
+    freeEdgeList(sorted_edges_array);
 
     return edgeList;
 
@@ -267,7 +265,7 @@ struct EdgeList  *countSortEdgesBySourceAndDestination (struct EdgeList *edgeLis
 
     edgeList = countSortEdgesByDestination (edgeList);
     edgeList = countSortEdgesBySource (edgeList);
-    
+
     return edgeList;
 }
 
