@@ -194,6 +194,10 @@ convert:
 sweep-convert:
 	$(MAKE) sweep-convert $(MAKE_ARGS)
 
+.PHONY: sweep-convert-2
+sweep-convert-2:
+	$(MAKE) sweep-convert-2 $(MAKE_ARGS)
+
 .PHONY: echo-dir
 echo-dir: 
 	$(MAKE) echo-dir $(MAKE_ARGS)

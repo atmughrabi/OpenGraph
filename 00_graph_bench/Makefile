@@ -326,6 +326,24 @@ sweep-convert: app-openmp
 		done                                												\
 	done
 
+# 				./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -x -c $(CONVERT_FORMAT) -f $${graph_dir}/$(FILE_BIN_TYPE) -z $(FILE_FORMAT) -l 0 -L 0 -O 0 -F $(FILE_LABEL);\
+# 				/home/ab/Documents/github_repos/12_pcpm/csr_gen/a.out $${graph_dir}/$(FILE_BIN_TYPE) $${graph_dir}/$(FILE_BIN_TYPE).csr;\
+  
+
+.PHONY: sweep-convert-2
+sweep-convert-2: INTEGRATION = openmp
+sweep-convert-2: app-openmp
+	@for dir in ${BENCHMARKS_DIR}/*;      													\
+	do                                      												\
+		for graph_dir in $${dir}/*;               											\
+		do                                  												\
+			if [ -e $${graph_dir}/$(FILE_BIN_TYPE) ]; then											\
+				echo "convert 2 $${graph_dir}/$(FILE_BIN_TYPE)";									\
+                /home/ab/Documents/github_repos/13_Corder-TPDS-21/corder -d $${graph_dir}/$(FILE_BIN_TYPE).csr -a 7 -s 512 ;\
+			fi; 																			\
+		done                                												\
+	done
+
 .PHONY: convert-w
 convert-w: INTEGRATION = openmp
 convert-w: app-openmp
