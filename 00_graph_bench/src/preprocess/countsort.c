@@ -125,10 +125,15 @@ struct EdgeList  *countSortEdgesBySource (struct EdgeList *edgeList)
 
     }
 
-    free(vertex_count);
-    freeEdgeList(edgeList);
-
-    edgeList = sorted_edges_array;
+    #pragma omp parallel for
+    for(i = 0; i < num_edges; i++)
+    {
+        edgeList->edges_array_dest[i] = sorted_edges_array->edges_array_dest[i];
+        edgeList->edges_array_src[i] = sorted_edges_array->edges_array_src[i];
+#if WEIGHTED
+        edgeList->edges_array_weight[i] = sorted_edges_array->edges_array_weight[i] ;
+#endif
+    }
 
     return edgeList;
 
@@ -159,10 +164,11 @@ struct EdgeList *countSortEdgesByDestination (struct EdgeList *edgeList)
 
     #pragma omp parallel default(none) shared(P,vertex_count,sorted_edges_array,edgeList,num_edges,num_vertices) firstprivate(t_id, offset_end,offset_start,base,i,j,key,pos)
     {
-        
+
         t_id = omp_get_thread_num();
 
-        if(t_id == 0){
+        if(t_id == 0)
+        {
             P = omp_get_num_threads();
             vertex_count = (uint32_t *) my_malloc( P * num_vertices * sizeof(uint32_t));
         }
@@ -231,10 +237,19 @@ struct EdgeList *countSortEdgesByDestination (struct EdgeList *edgeList)
 
     }
 
-    free(vertex_count);
-    freeEdgeList(edgeList);
 
-    edgeList = sorted_edges_array;
+    #pragma omp parallel for
+    for(i = 0; i < num_edges; i++)
+    {
+        edgeList->edges_array_dest[i] = sorted_edges_array->edges_array_dest[i];
+        edgeList->edges_array_src[i] = sorted_edges_array->edges_array_src[i];
+#if WEIGHTED
+        edgeList->edges_array_weight[i] = sorted_edges_array->edges_array_weight[i] ;
+#endif
+    }
+
+    free(vertex_count);
+    freeEdgeList(sorted_edges_array);
 
     return edgeList;
 
