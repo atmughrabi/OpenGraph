@@ -45,6 +45,13 @@ struct EdgeList *reorderGraphProcessDBG( uint32_t sort, struct EdgeList *edgeLis
 struct EdgeList *reorderGraphListDBG(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t lmode);
 
 // ********************************************************************************************
+// ***************                  Corder relabel                               **************
+// ********************************************************************************************
+struct EdgeList *reorderGraphProcessCorder( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);
+struct EdgeList *reorderGraphListCorder(struct EdgeList *edgeList, uint32_t *degrees, uint32_t *thresholds, uint32_t num_buckets, uint32_t lmode);
+
+
+// ********************************************************************************************
 // ***************                  HUBSort relabel                              **************
 // ********************************************************************************************
 struct EdgeList *reorderGraphProcessHUBSort( uint32_t sort, struct EdgeList *edgeList, uint32_t lmode);

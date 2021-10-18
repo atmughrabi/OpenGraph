@@ -339,7 +339,7 @@ sweep-convert-2: app-openmp
 		do                                  												\
 			if [ -e $${graph_dir}/$(FILE_BIN_TYPE) ]; then											\
 				echo "convert 2 $${graph_dir}/$(FILE_BIN_TYPE)";									\
-                /home/ab/Documents/github_repos/13_Corder-TPDS-21/corder -d $${graph_dir}/$(FILE_BIN_TYPE).csr -a 7 -s 512 ;\
+                /home/ab/Documents/github_repos/13_Corder-TPDS-21/corder -d $${graph_dir}/$(FILE_BIN_TYPE).csr -a 6 -s 512 ;\
 			fi; 																			\
 		done                                												\
 	done

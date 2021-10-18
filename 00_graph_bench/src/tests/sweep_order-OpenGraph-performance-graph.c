@@ -53,8 +53,8 @@
 #define THREAD_POINTS_START 5
 #define THREAD_POINTS_TOTAL 9
 
-#define ORDER_CONFIG 7
-#define ORDER_CONFIG_TOTAL 9
+#define ORDER_CONFIG 12
+#define ORDER_CONFIG_TOTAL 12
 
 void sweepSPMV(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
 void sweepCC(struct Arguments arguments, void *graph, float PLRU_stats[THREAD_POINTS_TOTAL]);
@@ -80,9 +80,9 @@ float PLRU_stats_CC_Afforest[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]
 float PLRU_stats_SSSP[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]           = {0};
 float PLRU_stats_SSSP_DELTA[GRAPH_NUM][ORDER_CONFIG_TOTAL][THREAD_POINTS_TOTAL]     = {0};
 
-uint32_t lmode_l2[ORDER_CONFIG_TOTAL] = {0, 4, 5, 11, 11, 11, 11, 11, 11};
-uint32_t lmode_l3[ORDER_CONFIG_TOTAL] = {0, 0, 0, 0, 4, 5, 0, 4, 5};
-uint32_t mmode[ORDER_CONFIG_TOTAL]    = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t lmode_l2[ORDER_CONFIG_TOTAL] = {0, 4, 5, 11, 11, 11, 11, 11, 11, 11, 11, 11};
+uint32_t lmode_l3[ORDER_CONFIG_TOTAL] = {0, 0, 0, 0, 4, 5, 0, 4, 5, 0, 4, 5};
+uint32_t mmode[ORDER_CONFIG_TOTAL]    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 uint32_t threadPoints[THREAD_POINTS_TOTAL]    = {1, 2, 4, 8, 16, 32, 64, 160, 48};
 
 int
@@ -98,7 +98,10 @@ main (int argc, char **argv)
         "Rabbit+DBG-in",
         "Gorder",
         "Gorder+DBG-out",
-        "Gorder+DBG-in"
+        "Gorder+DBG-in",
+        "Corder",
+        "Corder+DBG-out",
+        "Corder+DBG-in"
     };
 
     char *reorder_labels[ORDER_CONFIG_TOTAL] =
@@ -111,7 +114,10 @@ main (int argc, char **argv)
         "graph_Rabbit.rand.labels",
         "graph_Gorder.rand.labels",
         "graph_Gorder.rand.labels",
-        "graph_Gorder.rand.labels"
+        "graph_Gorder.rand.labels",
+        "graph.rand.bin.txt.csr_Corder.labels",
+        "graph.rand.bin.txt.csr_Corder.labels",
+        "graph.rand.bin.txt.csr_Corder.labels"
     };
 
 // -----------------------------------------------------------------------------
