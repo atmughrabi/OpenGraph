@@ -301,7 +301,7 @@ run-openmp: app-openmp
 .PHONY: convert
 convert: INTEGRATION = openmp
 convert: app-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -s -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3) -F $(FILE_LABEL)
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp -k -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3) -F $(FILE_LABEL)
 
 .PHONY: sweep-convert
 sweep-convert: INTEGRATION = openmp
@@ -347,7 +347,7 @@ sweep-convert-2: app-openmp
 .PHONY: convert-w
 convert-w: INTEGRATION = openmp
 convert-w: app-openmp
-	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -w -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3) -F $(FILE_LABEL)
+	./$(APP_DIR)/$(BIN_DIR)/$(APP)-openmp  -k -w -x -c $(CONVERT_FORMAT) -f $(FILE_BIN) -z $(FILE_FORMAT) -l $(REORDER_LAYER1) -L $(REORDER_LAYER2) -O $(REORDER_LAYER3) -F $(FILE_LABEL)
 
 .PHONY: stats-openmp
 stats-openmp: INTEGRATION = openmp

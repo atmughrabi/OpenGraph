@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "mt19937.h"
 
-#define WEIGHTED 0
+#define WEIGHTED 1
 #define DIRECTED 1
 
 /* Used by main to communicate with parse_opt. */

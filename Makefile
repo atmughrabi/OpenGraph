@@ -48,11 +48,11 @@ export MAIN_DIR		  	= main
 #       		 ACCEL RUN GRAPH ARGUMENTS    			#
 #########################################################
 
-export BENCHMARKS_DIR    	?= ../../01_GraphDatasets
-# export BENCHMARKS_DIR    	?= ../01_test_graphs
+# export BENCHMARKS_DIR    	?= ../../01_GraphDatasets
+export BENCHMARKS_DIR    	?= ../01_test_graphs
 
 # export GRAPH_SUIT ?=
-export GRAPH_SUIT ?= TEST
+export GRAPH_SUIT ?= BEEN
 # export GRAPH_SUIT ?= LAW
 # export GRAPH_SUIT ?= GAP
 # export GRAPH_SUIT ?= SNAP
@@ -63,7 +63,7 @@ export GRAPH_SUIT ?= TEST
 # export GRAPH_NAME ?= test
 # export GRAPH_NAME ?= v51_e1021
 # export GRAPH_NAME ?= v300_e2730
-export GRAPH_NAME ?= graphbrew
+export GRAPH_NAME ?= edges
 
 # GONG # https://gonglab.pratt.duke.edu/google-dataset
 # export GRAPH_NAME ?= GONG-gplus
@@ -102,7 +102,7 @@ export GRAPH_NAME ?= graphbrew
 # export FILE_BIN_TYPE ?= graph
 # export FILE_BIN_TYPE ?= graph.bin
 # export FILE_BIN_TYPE ?= graph.wbin
-export FILE_BIN_TYPE ?= graph.bin.txt
+export FILE_BIN_TYPE ?= graph.txt
 # export FILE_BIN_TYPE ?= graph.rand.bin.txt
 
 # export FILE_LABEL_TYPE ?= graph_Gorder.labels
@@ -120,7 +120,7 @@ export ALGORITHMS 		?= 0
 export SORT_TYPE		?= 2
 export DATA_STRUCTURES  ?= 0
 export REORDER_LAYER1 	?= 0
-export REORDER_LAYER2   ?= 4
+export REORDER_LAYER2   ?= 0
 export REORDER_LAYER3   ?= 0
 export CACHE_SIZE       ?= 32768 # 32KB
 
@@ -143,8 +143,8 @@ export NUM_THREADS_KER  ?= $(NUM_THREADS_ALGO)
 export NUM_TRIALS 		?= 1
 
 #GRAPH FROMAT EDGELIST
-export FILE_FORMAT		?= 1
-export CONVERT_FORMAT 	?= 1
+export FILE_FORMAT		?= 0
+export CONVERT_FORMAT 	?= 0
 
 #STATS COLLECTION VARIABLES
 export BIN_SIZE 		?= 1000

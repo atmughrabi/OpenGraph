@@ -39,6 +39,8 @@
 #include "betweennessCentrality.h"
 
 
+
+#include "sortRun.h"
 #include "reorder.h"
 #include "graphStats.h"
 #include "graphRun.h"
@@ -173,19 +175,46 @@ void writeSerializedGraphDataStructure(struct Arguments *arguments)  // for now 
 #else
         arguments->weighted = 0;
 #endif
-        struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted);
+        Start(timer);
+        struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted); // read edglist from binary file
+        Stop(timer);
+        // edgeListPrint(edgeList);
+        graphCSRPrintMessageWithtime("Read Edge List From File (Seconds)", Seconds(timer));
 
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+
+        if(arguments->dflag)
+        {
+            Start(timer);
+            edgeList = removeDulpicatesSelfLoopEdges(edgeList);
+            Stop(timer);
+            graphCSRPrintMessageWithtime("Removing duplicate edges (Seconds)", Seconds(timer));
+        }
 
         if(arguments->lmode)
+        {
             edgeList = reorderGraphProcess(edgeList, arguments);
+            edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+        }
 
-        // add another layer of reordering to test how DBG affect Gorder, or Gorder affect Rabbit order ...etc
+        // add another layer 2 of reordering to test how DBG affect Gorder, or Gorder affect Rabbit order ...etc
         arguments->lmode = arguments->lmode_l2;
         if(arguments->lmode)
+        {
             edgeList = reorderGraphProcess(edgeList, arguments);
+            edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+        }
+
+        arguments->lmode = arguments->lmode_l3;
+        if(arguments->lmode)
+        {
+            edgeList = reorderGraphProcess(edgeList, arguments);
+            edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+        }
 
         if(arguments->mmode)
             edgeList = maskGraphProcess(edgeList, arguments);
+
 
         writeEdgeListToTXTFile(edgeList, arguments->fnameb);
         Stop(timer);
