@@ -52,7 +52,7 @@ export MAIN_DIR		  	= main
 export BENCHMARKS_DIR    	?= ../01_test_graphs
 
 # export GRAPH_SUIT ?=
-export GRAPH_SUIT ?= BEEN
+export GRAPH_SUIT ?= TEST
 # export GRAPH_SUIT ?= LAW
 # export GRAPH_SUIT ?= GAP
 # export GRAPH_SUIT ?= SNAP
@@ -63,7 +63,7 @@ export GRAPH_SUIT ?= BEEN
 # export GRAPH_NAME ?= test
 # export GRAPH_NAME ?= v51_e1021
 # export GRAPH_NAME ?= v300_e2730
-export GRAPH_NAME ?= edges
+export GRAPH_NAME ?= graphbrew
 
 # GONG # https://gonglab.pratt.duke.edu/google-dataset
 # export GRAPH_NAME ?= GONG-gplus
@@ -100,9 +100,9 @@ export GRAPH_NAME ?= edges
 # export GRAPH_NAME ?= LAW-webbase-2001
 
 # export FILE_BIN_TYPE ?= graph
-# export FILE_BIN_TYPE ?= graph.bin
+export FILE_BIN_TYPE ?= graph.bin
 # export FILE_BIN_TYPE ?= graph.wbin
-export FILE_BIN_TYPE ?= graph.txt
+# export FILE_BIN_TYPE ?= graph.txt
 # export FILE_BIN_TYPE ?= graph.rand.bin.txt
 
 # export FILE_LABEL_TYPE ?= graph_Gorder.labels
@@ -143,8 +143,8 @@ export NUM_THREADS_KER  ?= $(NUM_THREADS_ALGO)
 export NUM_TRIALS 		?= 1
 
 #GRAPH FROMAT EDGELIST
-export FILE_FORMAT		?= 0
-export CONVERT_FORMAT 	?= 0
+export FILE_FORMAT		?= 1
+export CONVERT_FORMAT 	?= 1
 
 #STATS COLLECTION VARIABLES
 export BIN_SIZE 		?= 1000

@@ -82,18 +82,41 @@ void writeSerializedGraphDataStructure(struct Arguments *arguments)  // for now 
     else if(arguments->fnameb_format == 1 && arguments->convert_format == 0)  // for now it edge list is text only convert to binary
     {
         Start(timer);
-        struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted);  // read edglist from binary file
+        struct EdgeList *edgeList = readEdgeListsbin(arguments->fnameb, 0, arguments->symmetric, arguments->weighted); // read edglist from binary file
+        Stop(timer);
+        // edgeListPrint(edgeList);
+        graphCSRPrintMessageWithtime("Read Edge List From File (Seconds)", Seconds(timer));
+
+        edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+
+        if(arguments->dflag)
+        {
+            Start(timer);
+            edgeList = removeDulpicatesSelfLoopEdges(edgeList);
+            Stop(timer);
+            graphCSRPrintMessageWithtime("Removing duplicate edges (Seconds)", Seconds(timer));
+        }
 
         if(arguments->lmode)
+        {
             edgeList = reorderGraphProcess(edgeList, arguments);
+            edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+        }
 
+        // add another layer 2 of reordering to test how DBG affect Gorder, or Gorder affect Rabbit order ...etc
         arguments->lmode = arguments->lmode_l2;
         if(arguments->lmode)
+        {
             edgeList = reorderGraphProcess(edgeList, arguments);
+            edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+        }
 
         arguments->lmode = arguments->lmode_l3;
         if(arguments->lmode)
+        {
             edgeList = reorderGraphProcess(edgeList, arguments);
+            edgeList = sortRunAlgorithms(edgeList, arguments->sort);
+        }
 
         if(arguments->mmode)
             edgeList = maskGraphProcess(edgeList, arguments);
