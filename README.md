@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/atmughrabi/OpenGraph.svg?branch=master)](https://travis-ci.com/atmughrabi/OpenGraph)
-[<p align="center"><img src="./02_slides/fig/logo.png" width="650" ></p>](#opengraph-benchmark-suite)
+[<p align="center"><img src="./02_slides/fig/logo.svg" width="200" ></p>](#opengraph-benchmark-suite)
 
 # OpenGraph Benchmark Suite
 
@@ -61,7 +61,7 @@ open@graph:~$ cd OpenGraph/
 open@graph:~OpenGraph$ make
 ```
 
-# Running OpenGraph 
+# Running OpenGraph
 
 ## CPU Mode
 
@@ -199,16 +199,16 @@ OpenGraph can handle multiple representations of the graph structure in memory, 
 
 <p align="center"><img src="./02_slides/fig/datastructures/edgelist-file.png" width ="500" ></p>
 
-##  CSR (Compressed Sparse Row)
+## CSR (Compressed Sparse Row)
 <p align="center"><img src="./02_slides/fig/datastructures/csr.png" width ="450" ></p>
 
-##  Grid
+## Grid
 <p align="center"><img src="./02_slides/fig/datastructures/grid.png" width ="700" ></p>
 
-##  Array-List
+## Array-List
 <p align="center"><img src="./02_slides/fig/datastructures/arraylist.png" width="550" ></p>
 
-##  Linked-List
+## Linked-List
 <p align="center"><img src="./02_slides/fig/datastructures/linkedlist.png" width="600" ></p>
 
 
@@ -514,4 +514,4 @@ benchmarking suite for various graph processing algorithms using pure C.
 Report bugs to:
 - <atmughrabi@gmail.com>
 - <atmughra@ncsu.edu>
-[<p align="right"> <img src="./02_slides/fig/logo1.png" width="200" ></p>](#OpenGraph-benchmark-suite)
+[<p align="right"> <img src="./02_slides/fig/logo.svg" width="100" ></p>](#OpenGraph-benchmark-suite)
